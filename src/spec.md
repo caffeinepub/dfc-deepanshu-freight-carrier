@@ -1,13 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Improve shipment tracking and admin management so public tracking displays exact stored statuses, includes seeded example IDs on first run, and the admin panel is password-gated.
+**Goal:** Fix client password-login failures by validating email/mobile identifiers on the frontend, aligning backend client lookup with provisioning, and issuing a consistent, persistent client session token for authorized queries.
 
 **Planned changes:**
-- Update public “Track Your Shipment” lookup to normalize entered Tracking ID to uppercase before searching localStorage.
-- Change public tracking result rendering to display the stored status string exactly as saved (no added “Status:” prefix), and show the exact invalid-ID message when no match is found.
-- Seed localStorage key `shipments` with example IDs/statuses (DFC1001/DFC1002/DFC1003 with emojis) only when `shipments` is missing or empty, without overwriting existing data.
-- Add a password gate to the Admin Tracking Panel so admin controls and the shipments table remain hidden until the correct password is entered; show an English error message on incorrect password; return to locked state on reload unless an unlocked flag is explicitly persisted (and if so, provide a visible lock/logout action).
-- Update the admin shipment status input to allow saving full custom status text (including emojis and additional details) instead of a fixed dropdown.
+- Add frontend validation on the Client Portal password-login identifier field (email must include `@`; mobile must be exactly 10 digits) and block the backend call when invalid, showing clear English guidance.
+- Keep the existing OTP login tab behavior unchanged.
+- Update backend client-account lookup/normalization so accounts created via `createClientAccount(...)` can be authenticated via `authenticateClient(emailOrMobile, password)` using either stored email or stored mobile.
+- Ensure successful client authentication creates and persists a non-empty `ClientSession` token that works for subsequent client-authorized queries (e.g., account status, shipments, invoices) until timeout.
+- Improve frontend error messaging so it distinguishes: invalid input format (frontend), account not found, and wrong password, using consistent English messages via `getClientAuthErrorMessage(...)`.
 
-**User-visible outcome:** Users can enter tracking IDs in any case (e.g., `dfc1001`) and see the exact saved status text (including emojis), or the exact invalid-ID message; on first use the app includes example tracking IDs; admins must enter a password to access shipment add/update/delete and can save detailed custom status messages.
+**User-visible outcome:** Client users can log in with a valid email or 10-digit mobile + password; invalid identifiers are explained before any backend call, and login errors clearly indicate “Account not found” vs “Invalid email/mobile or password.” Successful login yields a working session for client portal data pages.

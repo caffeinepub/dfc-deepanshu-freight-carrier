@@ -10,7 +10,123 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
-export interface _SERVICE {}
+export interface Client {
+  'id' : Principal,
+  'gstNumber' : string,
+  'address' : string,
+  'companyName' : string,
+  'mobile' : string,
+}
+export interface Invoice {
+  'status' : InvoiceStatus,
+  'client' : Principal,
+  'dueDate' : Time,
+  'invoiceNo' : bigint,
+  'amount' : bigint,
+}
+export type InvoiceStatus = { 'pending' : null } |
+  { 'paid' : null } |
+  { 'overdue' : null };
+export interface Shipment {
+  'status' : string,
+  'client' : Principal,
+  'trackingID' : string,
+  'location' : string,
+}
+export type Time = bigint;
+export interface TransformationInput {
+  'context' : Uint8Array,
+  'response' : http_request_result,
+}
+export interface TransformationOutput {
+  'status' : bigint,
+  'body' : Uint8Array,
+  'headers' : Array<http_header>,
+}
+export interface UserProfile {
+  'gstNumber' : string,
+  'address' : string,
+  'companyName' : string,
+  'mobile' : string,
+}
+export type UserRole = { 'admin' : null } |
+  { 'user' : null } |
+  { 'guest' : null };
+export interface http_header { 'value' : string, 'name' : string }
+export interface http_request_result {
+  'status' : bigint,
+  'body' : Uint8Array,
+  'headers' : Array<http_header>,
+}
+export interface _SERVICE {
+  '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'addClient' : ActorMethod<[string, string, string, string], boolean>,
+  'adminAddOrUpdateClient' : ActorMethod<
+    [Principal, UserProfile, string],
+    undefined
+  >,
+  'adminLogin' : ActorMethod<[string, string], string>,
+  'adminLogout' : ActorMethod<[string], boolean>,
+  'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'authenticateClient' : ActorMethod<[string, string], [] | [string]>,
+  'bootstrapFirstAdmin' : ActorMethod<[], undefined>,
+  'changeAdminPassword' : ActorMethod<[string, string, string], undefined>,
+  'changeClientPassword' : ActorMethod<[string, string, string], boolean>,
+  'createClientAccount' : ActorMethod<
+    [[] | [string], [] | [string], string, UserProfile, string],
+    string
+  >,
+  'createInvoice' : ActorMethod<
+    [bigint, bigint, Time, Principal, string],
+    boolean
+  >,
+  'createShipment' : ActorMethod<
+    [string, string, string, Principal, string],
+    boolean
+  >,
+  'exportInvoices' : ActorMethod<[string], Array<string>>,
+  'getAllClients' : ActorMethod<[string], Array<Client>>,
+  'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
+  'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getClient' : ActorMethod<[Principal, [] | [string]], [] | [Client]>,
+  'getClientAccountStatus' : ActorMethod<
+    [string],
+    { 'isFirstLogin' : boolean }
+  >,
+  'getInvoice' : ActorMethod<
+    [bigint, [] | [string], [] | [string]],
+    [] | [Invoice]
+  >,
+  'getInvoicesByClient' : ActorMethod<
+    [Principal, [] | [string], [] | [string]],
+    Array<Invoice>
+  >,
+  'getShipment' : ActorMethod<[string], [] | [Shipment]>,
+  'getShipmentsByClient' : ActorMethod<
+    [Principal, [] | [string], [] | [string]],
+    Array<Shipment>
+  >,
+  'getUserProfile' : ActorMethod<
+    [Principal, [] | [string]],
+    [] | [UserProfile]
+  >,
+  'grantAdmin' : ActorMethod<[Principal, string], undefined>,
+  'hasAdminRole' : ActorMethod<[Principal, [] | [string]], boolean>,
+  'healthCheck' : ActorMethod<[], string>,
+  'isAdminBootstrapped' : ActorMethod<[], boolean>,
+  'isCallerAdmin' : ActorMethod<[], boolean>,
+  'isMsg91ApiKeyStored' : ActorMethod<[], boolean>,
+  'pay' : ActorMethod<[{ 'invoiceNo' : bigint }], boolean>,
+  'revokeAdmin' : ActorMethod<[Principal, string], undefined>,
+  'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'sendOtp' : ActorMethod<[string], [boolean, string, bigint]>,
+  'storeMsg91ApiKey' : ActorMethod<[string], undefined>,
+  'trackShipment' : ActorMethod<[string], [] | [Shipment]>,
+  'transform' : ActorMethod<[TransformationInput], TransformationOutput>,
+  'verifyMsg91AccessToken' : ActorMethod<[string], [boolean, string, bigint]>,
+  'verifyOtp' : ActorMethod<[string, string], [boolean, string, bigint]>,
+  'verifyOtpAndAuthenticate' : ActorMethod<[string, string], [] | [string]>,
+}
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];
 export declare const idlFactory: IDL.InterfaceFactory;

@@ -1,75 +1,61 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T04:27:49.808Z",
+  "generatedAt": "2026-02-09T16:20:36.487Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 4,
+    "total": 3,
+    "implemented": 2,
     "items": [
       {
-        "id": "REQ-17",
-        "summary": "Update the public “Track Your Shipment” section behavior to match the user-provided HTML/JS: normalize the entered Tracking ID to uppercase before lookup; when a matching shipment exists, display the stored status string exactly as-is (do not prefix it with \"Status: \"); when no match exists, display exactly: \"❌ Invalid Tracking ID. Please Contact DFC Office.\"",
+        "id": "REQ-1",
+        "summary": "Update the Client Portal password-login UI to validate the identifier (email/mobile) before calling `actor.authenticateClient(...)`, and show clear English guidance when the input is malformed (e.g., an email missing '@' or a mobile number not 10 digits).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/App.tsx"
+          "frontend/src/utils/clientIdentifier.ts",
+          "frontend/src/components/client/ClientPortalLoginCard.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/App.tsx"
+          "frontend/src/utils/clientIdentifier.ts",
+          "frontend/src/components/client/ClientPortalLoginCard.tsx"
         ]
       },
       {
-        "id": "REQ-18",
-        "summary": "Seed localStorage shipments with the exact example Tracking IDs and statuses provided by the user when shipments storage is empty (first run / no shipments yet), without overwriting any existing shipments data.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/lib/shipmentsStorage.ts",
-          "frontend/src/App.tsx",
-          "frontend/src/components/AdminTrackingPanel.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/lib/shipmentsStorage.ts",
-          "frontend/src/App.tsx",
-          "frontend/src/components/AdminTrackingPanel.tsx"
-        ]
+        "id": "REQ-2",
+        "summary": "Ensure backend client-account provisioning and lookup are consistent: accounts created via `createClientAccount(email, mobile, temporaryPassword, profile, adminToken)` must be discoverable by `authenticateClient(emailOrMobile, password)` using either the stored email or stored mobile (after trimming/normalizing), and successful authentication must create and persist a non-empty `ClientSession` token usable by subsequent client-authorized queries.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       },
       {
-        "id": "REQ-19",
-        "summary": "Add a password protection gate for the Admin Tracking Panel so that shipment add/update/delete controls and the shipments table are hidden until the correct admin password is entered.",
+        "id": "REQ-3",
+        "summary": "Improve client login error feedback so the UI distinguishes between (a) invalid input format (frontend validation), (b) account not found, and (c) wrong password, using consistent English messages via `getClientAuthErrorMessage(...)`.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/AdminTrackingPanel.tsx"
+          "frontend/src/utils/clientAuthErrors.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/client/ClientPortalLoginCard.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/AdminTrackingPanel.tsx"
-        ]
-      },
-      {
-        "id": "REQ-20",
-        "summary": "Update the Admin Tracking Panel shipment status input to support saving the full, custom status text (including emojis and additional details), rather than being limited to a fixed dropdown list.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/AdminTrackingPanel.tsx",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/AdminTrackingPanel.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/utils/clientAuthErrors.ts",
+          "frontend/src/components/client/ClientPortalLoginCard.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
-    "frontend/src/components/AdminTrackingPanel.tsx",
-    "frontend/src/lib/shipmentsStorage.ts",
+    "frontend/src/components/client/ClientPortalLoginCard.tsx",
+    "frontend/src/utils/clientAuthErrors.ts",
+    "frontend/src/utils/clientIdentifier.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

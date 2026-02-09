@@ -89,10 +89,785 @@ export class ExternalBlob {
         return this;
     }
 }
-export interface backendInterface {
+export interface http_request_result {
+    status: bigint;
+    body: Uint8Array;
+    headers: Array<http_header>;
 }
+export interface TransformationOutput {
+    status: bigint;
+    body: Uint8Array;
+    headers: Array<http_header>;
+}
+export type Time = bigint;
+export interface Shipment {
+    status: string;
+    client: Principal;
+    trackingID: string;
+    location: string;
+}
+export interface TransformationInput {
+    context: Uint8Array;
+    response: http_request_result;
+}
+export interface Invoice {
+    status: InvoiceStatus;
+    client: Principal;
+    dueDate: Time;
+    invoiceNo: bigint;
+    amount: bigint;
+}
+export interface Client {
+    id: Principal;
+    gstNumber: string;
+    address: string;
+    companyName: string;
+    mobile: string;
+}
+export interface UserProfile {
+    gstNumber: string;
+    address: string;
+    companyName: string;
+    mobile: string;
+}
+export interface http_header {
+    value: string;
+    name: string;
+}
+export enum InvoiceStatus {
+    pending = "pending",
+    paid = "paid",
+    overdue = "overdue"
+}
+export enum UserRole {
+    admin = "admin",
+    user = "user",
+    guest = "guest"
+}
+export interface backendInterface {
+    _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
+    addClient(companyName: string, gstNumber: string, address: string, mobile: string): Promise<boolean>;
+    adminAddOrUpdateClient(clientId: Principal, profile: UserProfile, adminToken: string): Promise<void>;
+    adminLogin(password: string, token: string): Promise<string>;
+    adminLogout(token: string): Promise<boolean>;
+    assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    authenticateClient(emailOrMobile: string, password: string): Promise<string | null>;
+    bootstrapFirstAdmin(): Promise<void>;
+    changeAdminPassword(token: string, oldPassword: string, newPassword: string): Promise<void>;
+    changeClientPassword(sessionToken: string, currentPassword: string, newPassword: string): Promise<boolean>;
+    createClientAccount(email: string | null, mobile: string | null, temporaryPassword: string, profile: UserProfile, adminToken: string): Promise<string>;
+    createInvoice(invoiceNo: bigint, amount: bigint, dueDate: Time, client: Principal, adminToken: string): Promise<boolean>;
+    createShipment(trackingID: string, status: string, location: string, client: Principal, adminToken: string): Promise<boolean>;
+    exportInvoices(adminToken: string): Promise<Array<string>>;
+    getAllClients(adminToken: string): Promise<Array<Client>>;
+    getCallerUserProfile(): Promise<UserProfile | null>;
+    getCallerUserRole(): Promise<UserRole>;
+    getClient(id: Principal, adminToken: string | null): Promise<Client | null>;
+    getClientAccountStatus(sessionToken: string): Promise<{
+        isFirstLogin: boolean;
+    }>;
+    getInvoice(invoiceNo: bigint, adminToken: string | null, clientSessionToken: string | null): Promise<Invoice | null>;
+    getInvoicesByClient(client: Principal, adminToken: string | null, clientSessionToken: string | null): Promise<Array<Invoice>>;
+    getShipment(trackingID: string): Promise<Shipment | null>;
+    getShipmentsByClient(client: Principal, adminToken: string | null, clientSessionToken: string | null): Promise<Array<Shipment>>;
+    getUserProfile(user: Principal, adminToken: string | null): Promise<UserProfile | null>;
+    grantAdmin(targetPrincipal: Principal, adminToken: string): Promise<void>;
+    hasAdminRole(target: Principal, adminToken: string | null): Promise<boolean>;
+    healthCheck(): Promise<string>;
+    isAdminBootstrapped(): Promise<boolean>;
+    isCallerAdmin(): Promise<boolean>;
+    isMsg91ApiKeyStored(): Promise<boolean>;
+    pay(arg0: {
+        invoiceNo: bigint;
+    }): Promise<boolean>;
+    revokeAdmin(targetPrincipal: Principal, adminToken: string): Promise<void>;
+    saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    sendOtp(phoneNumber: string): Promise<[boolean, string, bigint]>;
+    storeMsg91ApiKey(apiKey: string): Promise<void>;
+    trackShipment(trackingID: string): Promise<Shipment | null>;
+    transform(input: TransformationInput): Promise<TransformationOutput>;
+    verifyMsg91AccessToken(jwtToken: string): Promise<[boolean, string, bigint]>;
+    verifyOtp(phoneNumber: string, otp: string): Promise<[boolean, string, bigint]>;
+    verifyOtpAndAuthenticate(phoneNumber: string, otp: string): Promise<string | null>;
+}
+import type { Client as _Client, Invoice as _Invoice, InvoiceStatus as _InvoiceStatus, Shipment as _Shipment, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
+    async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor._initializeAccessControlWithSecret(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor._initializeAccessControlWithSecret(arg0);
+            return result;
+        }
+    }
+    async addClient(arg0: string, arg1: string, arg2: string, arg3: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addClient(arg0, arg1, arg2, arg3);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addClient(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
+    async adminAddOrUpdateClient(arg0: Principal, arg1: UserProfile, arg2: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.adminAddOrUpdateClient(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.adminAddOrUpdateClient(arg0, arg1, arg2);
+            return result;
+        }
+    }
+    async adminLogin(arg0: string, arg1: string): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.adminLogin(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.adminLogin(arg0, arg1);
+            return result;
+        }
+    }
+    async adminLogout(arg0: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.adminLogout(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.adminLogout(arg0);
+            return result;
+        }
+    }
+    async assignCallerUserRole(arg0: Principal, arg1: UserRole): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n1(this._uploadFile, this._downloadFile, arg1));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.assignCallerUserRole(arg0, to_candid_UserRole_n1(this._uploadFile, this._downloadFile, arg1));
+            return result;
+        }
+    }
+    async authenticateClient(arg0: string, arg1: string): Promise<string | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.authenticateClient(arg0, arg1);
+                return from_candid_opt_n3(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.authenticateClient(arg0, arg1);
+            return from_candid_opt_n3(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async bootstrapFirstAdmin(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.bootstrapFirstAdmin();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.bootstrapFirstAdmin();
+            return result;
+        }
+    }
+    async changeAdminPassword(arg0: string, arg1: string, arg2: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.changeAdminPassword(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.changeAdminPassword(arg0, arg1, arg2);
+            return result;
+        }
+    }
+    async changeClientPassword(arg0: string, arg1: string, arg2: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.changeClientPassword(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.changeClientPassword(arg0, arg1, arg2);
+            return result;
+        }
+    }
+    async createClientAccount(arg0: string | null, arg1: string | null, arg2: string, arg3: UserProfile, arg4: string): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createClientAccount(to_candid_opt_n4(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1), arg2, arg3, arg4);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createClientAccount(to_candid_opt_n4(this._uploadFile, this._downloadFile, arg0), to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1), arg2, arg3, arg4);
+            return result;
+        }
+    }
+    async createInvoice(arg0: bigint, arg1: bigint, arg2: Time, arg3: Principal, arg4: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createInvoice(arg0, arg1, arg2, arg3, arg4);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createInvoice(arg0, arg1, arg2, arg3, arg4);
+            return result;
+        }
+    }
+    async createShipment(arg0: string, arg1: string, arg2: string, arg3: Principal, arg4: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createShipment(arg0, arg1, arg2, arg3, arg4);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createShipment(arg0, arg1, arg2, arg3, arg4);
+            return result;
+        }
+    }
+    async exportInvoices(arg0: string): Promise<Array<string>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.exportInvoices(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.exportInvoices(arg0);
+            return result;
+        }
+    }
+    async getAllClients(arg0: string): Promise<Array<Client>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllClients(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllClients(arg0);
+            return result;
+        }
+    }
+    async getCallerUserProfile(): Promise<UserProfile | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getCallerUserProfile();
+                return from_candid_opt_n5(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getCallerUserProfile();
+            return from_candid_opt_n5(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getCallerUserRole(): Promise<UserRole> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getCallerUserRole();
+                return from_candid_UserRole_n6(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getCallerUserRole();
+            return from_candid_UserRole_n6(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getClient(arg0: Principal, arg1: string | null): Promise<Client | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getClient(arg0, to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1));
+                return from_candid_opt_n8(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getClient(arg0, to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1));
+            return from_candid_opt_n8(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getClientAccountStatus(arg0: string): Promise<{
+        isFirstLogin: boolean;
+    }> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getClientAccountStatus(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getClientAccountStatus(arg0);
+            return result;
+        }
+    }
+    async getInvoice(arg0: bigint, arg1: string | null, arg2: string | null): Promise<Invoice | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getInvoice(arg0, to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n4(this._uploadFile, this._downloadFile, arg2));
+                return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getInvoice(arg0, to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n4(this._uploadFile, this._downloadFile, arg2));
+            return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getInvoicesByClient(arg0: Principal, arg1: string | null, arg2: string | null): Promise<Array<Invoice>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getInvoicesByClient(arg0, to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n4(this._uploadFile, this._downloadFile, arg2));
+                return from_candid_vec_n14(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getInvoicesByClient(arg0, to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n4(this._uploadFile, this._downloadFile, arg2));
+            return from_candid_vec_n14(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getShipment(arg0: string): Promise<Shipment | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getShipment(arg0);
+                return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getShipment(arg0);
+            return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getShipmentsByClient(arg0: Principal, arg1: string | null, arg2: string | null): Promise<Array<Shipment>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getShipmentsByClient(arg0, to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n4(this._uploadFile, this._downloadFile, arg2));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getShipmentsByClient(arg0, to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n4(this._uploadFile, this._downloadFile, arg2));
+            return result;
+        }
+    }
+    async getUserProfile(arg0: Principal, arg1: string | null): Promise<UserProfile | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getUserProfile(arg0, to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1));
+                return from_candid_opt_n5(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getUserProfile(arg0, to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1));
+            return from_candid_opt_n5(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async grantAdmin(arg0: Principal, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.grantAdmin(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.grantAdmin(arg0, arg1);
+            return result;
+        }
+    }
+    async hasAdminRole(arg0: Principal, arg1: string | null): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.hasAdminRole(arg0, to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.hasAdminRole(arg0, to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1));
+            return result;
+        }
+    }
+    async healthCheck(): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.healthCheck();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.healthCheck();
+            return result;
+        }
+    }
+    async isAdminBootstrapped(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.isAdminBootstrapped();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.isAdminBootstrapped();
+            return result;
+        }
+    }
+    async isCallerAdmin(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.isCallerAdmin();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.isCallerAdmin();
+            return result;
+        }
+    }
+    async isMsg91ApiKeyStored(): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.isMsg91ApiKeyStored();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.isMsg91ApiKeyStored();
+            return result;
+        }
+    }
+    async pay(arg0: {
+        invoiceNo: bigint;
+    }): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.pay(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.pay(arg0);
+            return result;
+        }
+    }
+    async revokeAdmin(arg0: Principal, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.revokeAdmin(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.revokeAdmin(arg0, arg1);
+            return result;
+        }
+    }
+    async saveCallerUserProfile(arg0: UserProfile): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.saveCallerUserProfile(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.saveCallerUserProfile(arg0);
+            return result;
+        }
+    }
+    async sendOtp(arg0: string): Promise<[boolean, string, bigint]> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.sendOtp(arg0);
+                return [
+                    result[0],
+                    result[1],
+                    result[2]
+                ];
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.sendOtp(arg0);
+            return [
+                result[0],
+                result[1],
+                result[2]
+            ];
+        }
+    }
+    async storeMsg91ApiKey(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.storeMsg91ApiKey(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.storeMsg91ApiKey(arg0);
+            return result;
+        }
+    }
+    async trackShipment(arg0: string): Promise<Shipment | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.trackShipment(arg0);
+                return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.trackShipment(arg0);
+            return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async transform(arg0: TransformationInput): Promise<TransformationOutput> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.transform(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.transform(arg0);
+            return result;
+        }
+    }
+    async verifyMsg91AccessToken(arg0: string): Promise<[boolean, string, bigint]> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.verifyMsg91AccessToken(arg0);
+                return [
+                    result[0],
+                    result[1],
+                    result[2]
+                ];
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.verifyMsg91AccessToken(arg0);
+            return [
+                result[0],
+                result[1],
+                result[2]
+            ];
+        }
+    }
+    async verifyOtp(arg0: string, arg1: string): Promise<[boolean, string, bigint]> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.verifyOtp(arg0, arg1);
+                return [
+                    result[0],
+                    result[1],
+                    result[2]
+                ];
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.verifyOtp(arg0, arg1);
+            return [
+                result[0],
+                result[1],
+                result[2]
+            ];
+        }
+    }
+    async verifyOtpAndAuthenticate(arg0: string, arg1: string): Promise<string | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.verifyOtpAndAuthenticate(arg0, arg1);
+                return from_candid_opt_n3(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.verifyOtpAndAuthenticate(arg0, arg1);
+            return from_candid_opt_n3(this._uploadFile, this._downloadFile, result);
+        }
+    }
+}
+function from_candid_InvoiceStatus_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _InvoiceStatus): InvoiceStatus {
+    return from_candid_variant_n13(_uploadFile, _downloadFile, value);
+}
+function from_candid_Invoice_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Invoice): Invoice {
+    return from_candid_record_n11(_uploadFile, _downloadFile, value);
+}
+function from_candid_UserRole_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
+    return from_candid_variant_n7(_uploadFile, _downloadFile, value);
+}
+function from_candid_opt_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Shipment]): Shipment | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [string]): string | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Client]): Client | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Invoice]): Invoice | null {
+    return value.length === 0 ? null : from_candid_Invoice_n10(_uploadFile, _downloadFile, value[0]);
+}
+function from_candid_record_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    status: _InvoiceStatus;
+    client: Principal;
+    dueDate: _Time;
+    invoiceNo: bigint;
+    amount: bigint;
+}): {
+    status: InvoiceStatus;
+    client: Principal;
+    dueDate: Time;
+    invoiceNo: bigint;
+    amount: bigint;
+} {
+    return {
+        status: from_candid_InvoiceStatus_n12(_uploadFile, _downloadFile, value.status),
+        client: value.client,
+        dueDate: value.dueDate,
+        invoiceNo: value.invoiceNo,
+        amount: value.amount
+    };
+}
+function from_candid_variant_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    pending: null;
+} | {
+    paid: null;
+} | {
+    overdue: null;
+}): InvoiceStatus {
+    return "pending" in value ? InvoiceStatus.pending : "paid" in value ? InvoiceStatus.paid : "overdue" in value ? InvoiceStatus.overdue : value;
+}
+function from_candid_variant_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    admin: null;
+} | {
+    user: null;
+} | {
+    guest: null;
+}): UserRole {
+    return "admin" in value ? UserRole.admin : "user" in value ? UserRole.user : "guest" in value ? UserRole.guest : value;
+}
+function from_candid_vec_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Invoice>): Array<Invoice> {
+    return value.map((x)=>from_candid_Invoice_n10(_uploadFile, _downloadFile, x));
+}
+function to_candid_UserRole_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
+    return to_candid_variant_n2(_uploadFile, _downloadFile, value);
+}
+function to_candid_opt_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: string | null): [] | [string] {
+    return value === null ? candid_none() : candid_some(value);
+}
+function to_candid_variant_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): {
+    admin: null;
+} | {
+    user: null;
+} | {
+    guest: null;
+} {
+    return value == UserRole.admin ? {
+        admin: null
+    } : value == UserRole.user ? {
+        user: null
+    } : value == UserRole.guest ? {
+        guest: null
+    } : value;
 }
 export interface CreateActorOptions {
     agent?: Agent;

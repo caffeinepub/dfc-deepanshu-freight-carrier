@@ -1,13 +1,30 @@
 import { useState, FormEvent } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MessageCircle, Truck, Package, FileText, MapPin, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AdminTrackingPanel } from '@/components/AdminTrackingPanel';
-import { shipmentsStorage } from '@/lib/shipmentsStorage';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Toaster } from '@/components/ui/sonner';
+import { AdminLoginCard } from '@/components/auth/AdminLoginCard';
+import { AdminDashboard } from '@/components/admin/AdminDashboard';
+import { ClientPortalLoginCard } from '@/components/client/ClientPortalLoginCard';
+import { ClientDashboard } from '@/components/client/ClientDashboard';
+import { ClientPasswordChangeCard } from '@/components/client/ClientPasswordChangeCard';
+import { useAdminSession } from './hooks/useAdminSession';
+import { useClientSession } from './hooks/useClientSession';
+import { useGetClientAccountStatus } from './hooks/useQueries';
+import { useActor } from './hooks/useActor';
 
-function App() {
+const queryClient = new QueryClient();
+
+function AppContent() {
+  const { isAuthenticated: isAdminAuthenticated, isValidating: isAdminValidating } = useAdminSession();
+  const { isAuthenticated: isClientAuthenticated } = useClientSession();
+  const { data: clientAccountStatus, isLoading: isLoadingClientStatus, isFetched: isClientStatusFetched } = useGetClientAccountStatus();
+  const { actor } = useActor();
+
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -18,6 +35,7 @@ function App() {
 
   const [trackingId, setTrackingId] = useState('');
   const [trackingResult, setTrackingResult] = useState('');
+  const [isTracking, setIsTracking] = useState(false);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -41,17 +59,66 @@ function App() {
     window.open(`https://wa.me/919817783604?text=${message}`, '_blank');
   };
 
-  const handleTrack = () => {
-    const id = trackingId.toUpperCase();
+  const handleTrack = async () => {
+    const id = trackingId.toUpperCase().trim();
     
-    shipmentsStorage.initialize();
-    const status = shipmentsStorage.get(id);
-    
-    if (status) {
-      setTrackingResult(status);
-    } else {
-      setTrackingResult('❌ Invalid Tracking ID. Please Contact DFC Office.');
+    if (!id) {
+      setTrackingResult('❌ Please enter a tracking ID.');
+      return;
     }
+
+    setIsTracking(true);
+    setTrackingResult('');
+
+    try {
+      if (!actor) {
+        setTrackingResult('❌ Service temporarily unavailable. Please try again.');
+        return;
+      }
+
+      const shipment = await actor.trackShipment(id);
+      
+      if (shipment) {
+        setTrackingResult(shipment.status);
+      } else {
+        setTrackingResult('❌ Invalid Tracking ID. Please contact DFC office.');
+      }
+    } catch (error) {
+      console.error('Tracking error:', error);
+      setTrackingResult('❌ Error tracking shipment. Please try again.');
+    } finally {
+      setIsTracking(false);
+    }
+  };
+
+  // Determine what to show in Client Portal section
+  const renderClientPortalContent = () => {
+    if (!isClientAuthenticated) {
+      return <ClientPortalLoginCard />;
+    }
+
+    // Show loading state while fetching account status
+    if (isLoadingClientStatus || !isClientStatusFetched) {
+      return (
+        <Card className="bg-neutral-900 border-neutral-800">
+          <CardContent className="py-8">
+            <div className="flex items-center justify-center">
+              <Skeleton className="h-8 w-48 bg-neutral-800" />
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Show password change if first login
+    if (clientAccountStatus?.isFirstLogin) {
+      return <ClientPasswordChangeCard onSuccess={() => {
+        // The query will automatically refetch and show dashboard
+      }} />;
+    }
+
+    // Show dashboard for regular users
+    return <ClientDashboard />;
   };
 
   return (
@@ -62,7 +129,7 @@ function App() {
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center gap-3">
               <img 
-                src="/assets/uploads/file_0000000002347209bc18a746d0cb6451.png" 
+                src="/assets/file_0000000002347209bc18a746d0cb6451.png" 
                 alt="DFC Logo" 
                 className="h-12 w-auto object-contain"
               />
@@ -88,10 +155,16 @@ function App() {
                 Track
               </button>
               <button 
-                onClick={() => scrollToSection('admin')}
+                onClick={() => scrollToSection('client-portal')}
                 className="text-white hover:text-gold transition-colors font-medium"
               >
-                Admin
+                Client Portal
+              </button>
+              <button 
+                onClick={() => scrollToSection('dashboard')}
+                className="text-white hover:text-gold transition-colors font-medium"
+              >
+                Dashboard
               </button>
               <button 
                 onClick={() => scrollToSection('about')}
@@ -116,28 +189,22 @@ function App() {
                 Home
               </button>
               <button 
-                onClick={() => scrollToSection('services')}
-                className="text-white hover:text-gold transition-colors"
-              >
-                Services
-              </button>
-              <button 
                 onClick={() => scrollToSection('track')}
                 className="text-white hover:text-gold transition-colors"
               >
                 Track
               </button>
               <button 
-                onClick={() => scrollToSection('admin')}
+                onClick={() => scrollToSection('client-portal')}
+                className="text-white hover:text-gold transition-colors"
+              >
+                Portal
+              </button>
+              <button 
+                onClick={() => scrollToSection('dashboard')}
                 className="text-white hover:text-gold transition-colors"
               >
                 Admin
-              </button>
-              <button 
-                onClick={() => scrollToSection('contact')}
-                className="text-white hover:text-gold transition-colors"
-              >
-                Contact
               </button>
             </nav>
           </div>
@@ -238,14 +305,16 @@ function App() {
                 placeholder="Enter Tracking ID"
                 value={trackingId}
                 onChange={(e) => setTrackingId(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleTrack()}
                 className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 h-12"
               />
               
               <Button 
                 onClick={handleTrack}
+                disabled={isTracking}
                 className="w-full bg-gold hover:bg-gold/90 text-black font-bold text-lg h-12 rounded-lg"
               >
-                Track Now
+                {isTracking ? 'Tracking...' : 'Track Now'}
               </Button>
               
               {trackingResult && (
@@ -260,160 +329,197 @@ function App() {
         </div>
       </section>
 
-      {/* Admin Tracking Panel */}
-      <AdminTrackingPanel />
-
-      {/* Stats Section */}
-      <section className="py-16 lg:py-24 bg-black">
+      {/* Client Portal Section */}
+      <section id="client-portal" className="py-20 lg:py-32 bg-neutral-950">
         <div className="container mx-auto px-4 sm:px-6 lg:px-12">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-12 text-center">
-            <div>
-              <h3 className="text-5xl lg:text-6xl font-bold text-gold mb-3">500+</h3>
-              <p className="text-white/80 text-lg">Happy Clients</p>
-            </div>
-            <div>
-              <h3 className="text-5xl lg:text-6xl font-bold text-gold mb-3">10+</h3>
-              <p className="text-white/80 text-lg">Years Experience</p>
-            </div>
-            <div>
-              <h3 className="text-5xl lg:text-6xl font-bold text-gold mb-3">24/7</h3>
-              <p className="text-white/80 text-lg">Support</p>
-            </div>
-          </div>
+          <h2 className="text-3xl sm:text-4xl font-bold text-gold text-center mb-8">
+            Client Portal
+          </h2>
+          <p className="text-white/70 text-center mb-12 max-w-2xl mx-auto">
+            Access your shipment history, invoices, and account details through our secure client portal.
+          </p>
+          {renderClientPortalContent()}
+        </div>
+      </section>
+
+      {/* Admin Dashboard Section */}
+      <section id="dashboard" className="py-20 lg:py-32 bg-black">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-12">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gold text-center mb-8">
+            Admin Dashboard
+          </h2>
+          <p className="text-white/70 text-center mb-12 max-w-2xl mx-auto">
+            Manage clients, shipments, invoices, and system configuration.
+          </p>
+          {isAdminAuthenticated ? (
+            <AdminDashboard />
+          ) : (
+            <AdminLoginCard />
+          )}
         </div>
       </section>
 
       {/* About Section */}
       <section id="about" className="py-20 lg:py-32 bg-neutral-950">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-12 text-center max-w-4xl">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gold mb-8">
-            About Deepanshu Freight Carrier
-          </h2>
-          <p className="text-white/90 text-lg leading-relaxed">
-            Based in Steel Market, Kalamboli, Navi Mumbai,
-            DFC provides secure, reliable and fast container transportation
-            services across India with professional handling and competitive pricing.
-          </p>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section className="py-20 lg:py-32 bg-black">
         <div className="container mx-auto px-4 sm:px-6 lg:px-12">
           <h2 className="text-3xl sm:text-4xl font-bold text-gold text-center mb-16">
-            Client Testimonials
+            About DFC
           </h2>
           
-          <Card className="bg-neutral-900 border-neutral-800 max-w-2xl mx-auto">
-            <CardContent className="pt-8">
-              <p className="text-white/90 text-lg mb-6 italic">
-                "Reliable transport partner for our steel shipments. Always on time!"
-              </p>
-              <p className="text-gold font-semibold">
-                - Industrial Client, Mumbai
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
-
-      {/* Contact Section */}
-      <section id="contact" className="py-20 lg:py-32 bg-neutral-950">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-12">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gold text-center mb-16">
-            Get Instant Quote
-          </h2>
-          
-          <form onSubmit={handleSubmit} className="max-w-xl mx-auto space-y-6 mb-12">
-            <Input
-              type="text"
-              placeholder="Your Name"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="bg-neutral-900 border-neutral-700 text-white placeholder:text-white/50 h-12"
-            />
-            
-            <Input
-              type="tel"
-              placeholder="Mobile Number"
-              required
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="bg-neutral-900 border-neutral-700 text-white placeholder:text-white/50 h-12"
-            />
-            
-            <Input
-              type="text"
-              placeholder="Pickup Location"
-              required
-              value={formData.pickup}
-              onChange={(e) => setFormData({ ...formData, pickup: e.target.value })}
-              className="bg-neutral-900 border-neutral-700 text-white placeholder:text-white/50 h-12"
-            />
-            
-            <Input
-              type="text"
-              placeholder="Drop Location"
-              required
-              value={formData.drop}
-              onChange={(e) => setFormData({ ...formData, drop: e.target.value })}
-              className="bg-neutral-900 border-neutral-700 text-white placeholder:text-white/50 h-12"
-            />
-            
-            <Textarea
-              placeholder="Load Details"
-              value={formData.load}
-              onChange={(e) => setFormData({ ...formData, load: e.target.value })}
-              className="bg-neutral-900 border-neutral-700 text-white placeholder:text-white/50 min-h-32"
-            />
-            
-            <Button 
-              type="submit"
-              className="w-full bg-gold hover:bg-gold/90 text-black font-bold text-lg h-12 rounded-lg"
-            >
-              Send Quote Request
-            </Button>
-          </form>
-
-          <div className="text-center space-y-4 text-white/90">
-            <p className="flex items-center justify-center gap-2 text-base">
-              <MapPin className="w-5 h-5 text-gold" />
-              258, Riddhi Arcade, Steel Market, Kalamboli, Navi Mumbai
+          <div className="max-w-3xl mx-auto text-center space-y-6">
+            <p className="text-white/90 text-lg leading-relaxed">
+              DFC is India's premier container transport company, specializing in 32 Feet, MXL, and SXL container transportation. With years of experience and a commitment to excellence, we ensure your cargo reaches its destination safely and on time.
             </p>
-            <p className="flex items-center justify-center gap-2 text-base">
-              <Phone className="w-5 h-5 text-gold" />
-              9817783604 | 9817983604
-            </p>
-            <p className="flex items-center justify-center gap-2 text-base">
-              <Mail className="w-5 h-5 text-gold" />
-              deepanshufreightcarrier@gmail.com
+            <p className="text-white/90 text-lg leading-relaxed">
+              Our fleet of modern trucks and experienced drivers handle everything from industrial materials to steel products, providing reliable service across India.
             </p>
           </div>
         </div>
       </section>
 
+      {/* Contact Section */}
+      <section id="contact" className="py-20 lg:py-32 bg-black">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-12">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gold text-center mb-16">
+            Get In Touch
+          </h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+            <Card className="bg-neutral-900 border-neutral-800">
+              <CardHeader>
+                <CardTitle className="text-gold text-2xl">Request a Quote</CardTitle>
+                <CardDescription className="text-white/70">
+                  Fill out the form and we'll get back to you shortly
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <Input
+                    placeholder="Your Name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                    className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50"
+                  />
+                  <Input
+                    placeholder="Phone Number"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    required
+                    className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50"
+                  />
+                  <Input
+                    placeholder="Pickup Location"
+                    value={formData.pickup}
+                    onChange={(e) => setFormData({ ...formData, pickup: e.target.value })}
+                    required
+                    className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50"
+                  />
+                  <Input
+                    placeholder="Drop Location"
+                    value={formData.drop}
+                    onChange={(e) => setFormData({ ...formData, drop: e.target.value })}
+                    required
+                    className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50"
+                  />
+                  <Textarea
+                    placeholder="Load Details"
+                    value={formData.load}
+                    onChange={(e) => setFormData({ ...formData, load: e.target.value })}
+                    required
+                    className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 min-h-[100px]"
+                  />
+                  <Button 
+                    type="submit"
+                    className="w-full bg-gold hover:bg-gold/90 text-black font-bold text-lg h-12"
+                  >
+                    <MessageCircle className="w-5 h-5 mr-2" />
+                    Send via WhatsApp
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <div className="space-y-6">
+              <Card className="bg-neutral-900 border-neutral-800">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Phone className="w-6 h-6 text-gold" />
+                    </div>
+                    <div>
+                      <h3 className="text-gold font-semibold text-lg mb-2">Phone</h3>
+                      <p className="text-white/80">+91 98177 83604</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-neutral-900 border-neutral-800">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Mail className="w-6 h-6 text-gold" />
+                    </div>
+                    <div>
+                      <h3 className="text-gold font-semibold text-lg mb-2">Email</h3>
+                      <p className="text-white/80">contact@dfc.com</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-neutral-900 border-neutral-800">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <MapPin className="w-6 h-6 text-gold" />
+                    </div>
+                    <div>
+                      <h3 className="text-gold font-semibold text-lg mb-2">Office</h3>
+                      <p className="text-white/80">India</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="bg-black py-8 border-t border-neutral-800">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-12 text-center">
-          <p className="text-white/70">
-            © 2026 Deepanshu Freight Carrier | All Rights Reserved
-          </p>
+      <footer className="bg-neutral-950 border-t border-neutral-800 py-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-12">
+          <div className="text-center text-white/60">
+            <p className="mb-2">
+              © {new Date().getFullYear()} DFC. All rights reserved.
+            </p>
+            <p className="text-sm">
+              Built with ❤️ using{' '}
+              <a
+                href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(
+                  typeof window !== 'undefined' ? window.location.hostname : 'dfc-app'
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gold hover:text-gold/80 transition-colors"
+              >
+                caffeine.ai
+              </a>
+            </p>
+          </div>
         </div>
       </footer>
 
-      {/* Floating WhatsApp Button */}
-      <a
-        href="https://wa.me/919817783604"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 bg-[#25D366] hover:bg-[#20BA5A] text-white p-4 rounded-full shadow-2xl transition-all hover:scale-110 z-50"
-        aria-label="Contact us on WhatsApp"
-      >
-        <MessageCircle className="w-6 h-6" />
-      </a>
+      <Toaster />
     </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppContent />
+    </QueryClientProvider>
+  );
+}

@@ -1,177 +1,28 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 9,
-  "summary": "Expand DFC project beyond the marketing single-page site to also include a basic shipment tracking system consisting of an Admin Tracking Panel (add/update/delete shipment statuses) and a public Track Shipment page (lookup by Tracking ID), initially implemented client-side using browser localStorage.",
+  "projectStateVersion": 3,
+  "summary": "Project is focused on client login/onboarding, including temporary password, first-login password setup, and improving the password creation/reset flow for new clients.",
   "architectural_notes": [
-    "Single-page static HTML/CSS/JS site with smooth-scroll anchor navigation.",
-    "Quote form submission handled client-side by opening a WhatsApp wa.me link with URL-encoded prefilled text.",
-    "Shipment tracking data initially stored client-side in browser localStorage as a JSON object keyed by Tracking ID.",
-    "Tracking IDs are normalized to uppercase for consistent lookup.",
-    "Admin Tracking Panel and public Track Shipment UI should mirror the user-provided HTML structure/styling (dark background + gold buttons/tables) and use a shared localStorage key \"shipments\" (JSON object).",
-    "Admin Tracking Panel supports Add/Update by Tracking ID + status dropdown (Load Confirmed, In Transit, Out for Delivery, Delivered) and lists all shipments with delete action.",
-    "Track Shipment page looks up Tracking ID (normalized to uppercase) in localStorage.shipments and displays either \"Status: <status>\" or \"Invalid Tracking ID\".",
-    "Admin Tracking Panel should be protected by a password gate before allowing add/update/delete of shipments."
+    "Client login should support first-time password setup (temporary password OR emailed set-password link) and a standard reset-password flow via email."
   ],
-  "known_issues": [],
-  "isFixRequest": false,
+  "known_issues": [
+    "User-provided email appears malformed (missing '@': 'jatinsharmas336gmail.com'), which would cause login failures and confusion."
+  ],
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-build-a-responsive-single-page-website-for-dfc-deepanshu-freight-carrier-that-mirrors-the-provided-html-structure-and-content-using-react-tailwind-with-sections-header-fixed-home-hero-services-stats-about-testimonials-contact-and-footer",
-      "title": "Build a responsive single-page website for “DFC - Deepanshu Freight Carrier” that mirrors the provided HTML structure and content, using React + Tailwind, with sections: Header (fixed), Home/Hero, Services, Stats, About, Testimonials, Contact, and Footer.",
+      "id": "feature-update-the-client-portal-password-login-ui-to-validate-the-identifier-email-mobile-before-calling-actor-authenticateclient-and-show-clear-english-guidance-when-the-input-is-malformed-e-g-an-email-missing-or-a-mobile-number-not-10-digits",
+      "title": "Update the Client Portal password-login UI to validate the identifier (email/mobile) before calling `actor.authenticateClient(...)`, and show clear English guidance when the input is malformed (e.g., an email missing '@' or a mobile number not 10 digits).",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-implement-fixed-header-navigation-with-links-to-in-page-anchors-home-services-about-contact-and-smooth-scrolling-behavior-ensuring-scroll-position-accounts-for-the-fixed-header-height",
-      "title": "Implement fixed header navigation with links to in-page anchors (#home, #services, #about, #contact) and smooth scrolling behavior, ensuring scroll position accounts for the fixed header height.",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-create-the-hero-section-with-a-full-viewport-background-image-dark-overlay-headline-subheadline-and-a-primary-cta-button-get-instant-quote-that-scrolls-to-the-contact-section",
-      "title": "Create the Hero section with a full-viewport background image, dark overlay, headline/subheadline, and a primary CTA button “Get Instant Quote” that scrolls to the Contact section.",
+      "id": "feature-improve-client-login-error-feedback-so-the-ui-distinguishes-between-a-invalid-input-format-frontend-validation-b-account-not-found-and-c-wrong-password-using-consistent-english-messages-via-getclientautherrormessage",
+      "title": "Improve client login error feedback so the UI distinguishes between (a) invalid input format (frontend validation), (b) account not found, and (c) wrong password, using consistent English messages via `getClientAuthErrorMessage(...)`.",
       "reqIds": [
         "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-the-services-section-as-a-responsive-card-grid-with-three-service-cards-and-hover-transitions-lift-subtle-background-change-matching-the-user-provided-titles-and-descriptions",
-      "title": "Implement the Services section as a responsive card grid with three service cards and hover transitions (lift + subtle background change) matching the user-provided titles and descriptions.",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-the-stats-section-as-a-horizontally-distributed-set-of-stat-blocks-that-wrap-on-small-screens-showing-500-happy-clients-10-years-experience-and-24-7-support",
-      "title": "Implement the Stats section as a horizontally distributed set of stat blocks that wrap on small screens, showing: “500+ Happy Clients”, “10+ Years Experience”, and “24/7 Support”.",
-      "reqIds": [
-        "REQ-5"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-the-about-section-with-the-provided-description-text-for-deepanshu-freight-carrier-kalamboli-navi-mumbai",
-      "title": "Implement the About section with the provided description text for Deepanshu Freight Carrier (Kalamboli, Navi Mumbai).",
-      "reqIds": [
-        "REQ-6"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-the-testimonials-section-with-at-least-one-testimonial-card-matching-the-provided-content-and-styling-consistent-with-the-dark-gold-theme",
-      "title": "Implement the Testimonials section with at least one testimonial card matching the provided content and styling consistent with the dark + gold theme.",
-      "reqIds": [
-        "REQ-7"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-the-contact-section-with-a-quote-request-form-name-mobile-number-pickup-location-drop-location-load-details-that-on-submit-opens-whatsapp-to-91-9817783604-with-a-prefilled-message-containing-the-entered-fields-matching-the-provided-message-format",
-      "title": "Implement the Contact section with a quote request form (Name, Mobile Number, Pickup Location, Drop Location, Load Details) that, on submit, opens WhatsApp to +91 9817783604 with a prefilled message containing the entered fields, matching the provided message format.",
-      "reqIds": [
-        "REQ-8"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-a-floating-whatsapp-button-fixed-to-the-bottom-right-that-links-to-https-wa-me-919817783604-and-is-visible-on-all-sections-without-overlapping-core-content-on-small-screens",
-      "title": "Add a floating WhatsApp button fixed to the bottom-right that links to https://wa.me/919817783604 and is visible on all sections without overlapping core content on small screens.",
-      "reqIds": [
-        "REQ-9"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-apply-the-dark-theme-styling-with-gold-accents-and-poppins-typography-across-the-site-including-hover-states-consistent-with-the-provided-css-implemented-via-tailwind-and-or-global-styles-rather-than-inline-styles",
-      "title": "Apply the dark theme styling with gold accents and Poppins typography across the site (including hover states), consistent with the provided CSS, implemented via Tailwind (and/or global styles) rather than inline styles.",
-      "reqIds": [
-        "REQ-10"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-incorporate-the-two-user-uploaded-images-file-0000000002347209bc18a746d0cb6451-png-and-file-0000000002347209bc18a746d0cb6451-1-png-into-the-frontend-as-static-assets-and-display-at-least-the-dfc-logo-mark-in-the-header-replacing-plain-dfc-text-while-keeping-a-clean-professional-layout",
-      "title": "Incorporate the two user-uploaded images (file_0000000002347209bc18a746d0cb6451.png and file_0000000002347209bc18a746d0cb6451-1.png) into the frontend as static assets and display at least the DFC logo mark in the header (replacing plain “DFC” text) while keeping a clean, professional layout.",
-      "reqIds": [
-        "REQ-11"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-a-public-shipment-tracking-ui-to-the-existing-react-app-that-mirrors-the-provided-track-shipment-dfc-html-behavior-show-the-heading-track-your-shipment-an-input-with-placeholder-enter-tracking-id-a-button-labeled-track-now-and-a-result-area-that-displays-either-status-status-when-a-matching-tracking-id-exists-or-invalid-tracking-id-when-it-does-not",
-      "title": "Add a public shipment tracking UI to the existing React app that mirrors the provided “Track Shipment - DFC” HTML behavior: show the heading “Track Your Shipment”, an input with placeholder “Enter Tracking ID”, a button labeled “Track Now”, and a result area that displays either “Status: <status>” when a matching tracking ID exists or “Invalid Tracking ID” when it does not.",
-      "reqIds": [
-        "REQ-12"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-make-the-shipment-tracking-ui-discoverable-from-the-existing-site-by-adding-a-header-navigation-entry-labeled-track-that-scrolls-to-the-tracking-section-or-otherwise-navigates-to-the-tracking-view-without-breaking-the-current-fixed-header-behavior-and-smooth-scrolling-offsets",
-      "title": "Make the shipment tracking UI discoverable from the existing site by adding a header navigation entry labeled “Track” that scrolls to the tracking section (or otherwise navigates to the tracking view) without breaking the current fixed-header behavior and smooth scrolling offsets.",
-      "reqIds": [
-        "REQ-13"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-an-admin-tracking-panel-ui-to-the-existing-react-app-that-mirrors-the-provided-dfc-admin-panel-html-behavior-and-styling-dark-background-gold-accents-allowing-an-admin-to-add-update-and-delete-shipment-tracking-statuses-stored-in-browser-localstorage-under-the-key-shipments",
-      "title": "Add an Admin Tracking Panel UI to the existing React app that mirrors the provided “DFC Admin Panel” HTML behavior and styling (dark background, gold accents), allowing an admin to add/update and delete shipment tracking statuses stored in browser localStorage under the key \"shipments\".",
-      "reqIds": [
-        "REQ-14"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-make-the-admin-tracking-panel-discoverable-from-the-existing-site-navigation-without-breaking-the-current-fixed-header-behavior-and-smooth-scrolling-offsets",
-      "title": "Make the Admin Tracking Panel discoverable from the existing site navigation without breaking the current fixed-header behavior and smooth scrolling offsets.",
-      "reqIds": [
-        "REQ-15"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-ensure-the-existing-public-track-your-shipment-ui-reads-the-same-localstorage-shipments-data-managed-by-the-admin-tracking-panel-so-that-updates-made-in-the-admin-panel-are-reflected-when-tracking-by-id",
-      "title": "Ensure the existing public \"Track Your Shipment\" UI reads the same localStorage \"shipments\" data managed by the Admin Tracking Panel, so that updates made in the admin panel are reflected when tracking by ID.",
-      "reqIds": [
-        "REQ-16"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-public-track-your-shipment-section-behavior-to-match-the-user-provided-html-js-normalize-the-entered-tracking-id-to-uppercase-before-lookup-when-a-matching-shipment-exists-display-the-stored-status-string-exactly-as-is-do-not-prefix-it-with-status-when-no-match-exists-display-exactly-invalid-tracking-id-please-contact-dfc-office",
-      "title": "Update the public “Track Your Shipment” section behavior to match the user-provided HTML/JS: normalize the entered Tracking ID to uppercase before lookup; when a matching shipment exists, display the stored status string exactly as-is (do not prefix it with \"Status: \"); when no match exists, display exactly: \"❌ Invalid Tracking ID. Please Contact DFC Office.\"",
-      "reqIds": [
-        "REQ-17"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-seed-localstorage-shipments-with-the-exact-example-tracking-ids-and-statuses-provided-by-the-user-when-shipments-storage-is-empty-first-run-no-shipments-yet-without-overwriting-any-existing-shipments-data",
-      "title": "Seed localStorage shipments with the exact example Tracking IDs and statuses provided by the user when shipments storage is empty (first run / no shipments yet), without overwriting any existing shipments data.",
-      "reqIds": [
-        "REQ-18"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-a-password-protection-gate-for-the-admin-tracking-panel-so-that-shipment-add-update-delete-controls-and-the-shipments-table-are-hidden-until-the-correct-admin-password-is-entered",
-      "title": "Add a password protection gate for the Admin Tracking Panel so that shipment add/update/delete controls and the shipments table are hidden until the correct admin password is entered.",
-      "reqIds": [
-        "REQ-19"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-admin-tracking-panel-shipment-status-input-to-support-saving-the-full-custom-status-text-including-emojis-and-additional-details-rather-than-being-limited-to-a-fixed-dropdown-list",
-      "title": "Update the Admin Tracking Panel shipment status input to support saving the full, custom status text (including emojis and additional details), rather than being limited to a fixed dropdown list.",
-      "reqIds": [
-        "REQ-20"
       ],
       "version": 1
     }
@@ -179,79 +30,26 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Create DFC single-page website layout with fixed header navigation (Home/Services/About/Contact) and smooth scrolling",
+      "summary": "Add self-service 'Set Password' / onboarding flow for new clients (email-based link) so new clients can create a password using their email",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Add hero section with background image, headline/subheadline, and CTA button linking to Contact (Get Instant Quote)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Implement Services grid with three service cards (Container Transport, Industrial & Steel Transport, Dedicated Contracts)",
+      "summary": "Add 'Forgot Password' / password reset via email for clients who don't know their temporary password",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-4",
-      "summary": "Add stats section showing 500+ Happy Clients, 10+ Years Experience, 24/7 Support",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-5",
-      "summary": "Add About section content for Deepanshu Freight Carrier (Kalamboli, Navi Mumbai)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-6",
-      "summary": "Add Testimonials section with at least one client testimonial card",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-7",
-      "summary": "Add Contact section with quote request form that opens WhatsApp with prefilled message (name/phone/pickup/drop/load) plus address/phone/email display",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-8",
-      "summary": "Add floating WhatsApp contact button linking to wa.me number",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-9",
-      "summary": "Apply dark theme styling with gold accents, Poppins font, responsive grid layout, and hover transitions",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-10",
-      "summary": "Add a DFC Admin Tracking Panel page to add/update shipment Tracking IDs with status and list/delete shipments",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-11",
-      "summary": "Add a public Track Shipment page where users enter a Tracking ID and see current shipment status or an invalid ID message",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-12",
-      "summary": "Add password protection gate for the Admin Tracking Panel (admin accessible only after entering password)",
-      "reqIds": [],
+      "summary": "Ensure backend client-account provisioning and lookup are consistent: accounts created via `createClientAccount(email, mobile, temporaryPassword, profile, adminToken)` must be discoverable by `authenticateClient(emailOrMobile, password)` using either the stored email or stored mobile (after trimming/normalizing), and successful authentication must create and persist a non-empty `ClientSession` token usable by subsequent client-authorized queries.",
+      "reqIds": [
+        "REQ-2"
+      ],
       "status": "pending"
     }
   ],
-  "gameProjectType": "none",
-  "projectName": "DFC - Deepanshu Freight Carrier",
+  "projectName": "Fix client login failure by adding identifier validation and consistent client-account lookup/session issuance",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

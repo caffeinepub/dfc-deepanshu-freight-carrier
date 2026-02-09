@@ -1,101 +1,76 @@
 {
   "kind": "build_request",
-  "title": "Update tracking status format, seed example tracking IDs, and add password gate for admin panel",
-  "priority": "normal",
+  "title": "Fix client login failure by adding identifier validation and consistent client-account lookup/session issuance",
+  "priority": "high",
   "requirements": [
     {
-      "id": "REQ-17",
-      "text": "Update the public “Track Your Shipment” section behavior to match the user-provided HTML/JS: normalize the entered Tracking ID to uppercase before lookup; when a matching shipment exists, display the stored status string exactly as-is (do not prefix it with \"Status: \"); when no match exists, display exactly: \"❌ Invalid Tracking ID. Please Contact DFC Office.\"",
+      "id": "REQ-1",
+      "text": "Update the Client Portal password-login UI to validate the identifier (email/mobile) before calling `actor.authenticateClient(...)`, and show clear English guidance when the input is malformed (e.g., an email missing '@' or a mobile number not 10 digits).",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "recent-messages"
         ],
         "quotes": [
-          "function trackShipment(){\n    var id = document.getElementById(\"trackingID\").value.toUpperCase();\n    var result = shipments[id];\n\n    if(result){\n        document.getElementById(\"trackingResult\").innerHTML = result;\n    } else {\n        document.getElementById(\"trackingResult\").innerHTML = \"❌ Invalid Tracking ID. Please Contact DFC Office.\";\n    }\n}"
+          "jatinsharmas336gmail.com\nPassword hai JATIN1234"
         ]
       },
       "acceptanceCriteria": [
-        "Entering \"dfc1001\" (lowercase) successfully finds the same record as \"DFC1001\" (uppercase).",
-        "If localStorage has a record for the entered ID with value \"✅ Load Confirmed - Truck Loaded from Kalamboli\", the UI displays exactly that string (including emoji) and does not add any extra prefix text.",
-        "If there is no record for the entered ID, the UI displays exactly: \"❌ Invalid Tracking ID. Please Contact DFC Office.\""
+        "If the user enters an email-like value without '@' (e.g., `jatinsharmas336gmail.com`) and clicks Login, the UI does not call the backend and instead shows an English message explaining that the email address is invalid and must include '@'.",
+        "If the user enters a mobile number, the UI enforces 10 digits (digits only) and shows an English message if invalid.",
+        "Existing OTP login tab behavior remains unchanged."
       ]
     },
     {
-      "id": "REQ-18",
-      "text": "Seed localStorage shipments with the exact example Tracking IDs and statuses provided by the user when shipments storage is empty (first run / no shipments yet), without overwriting any existing shipments data.",
-      "target": "frontend",
+      "id": "REQ-2",
+      "text": "Ensure backend client-account provisioning and lookup are consistent: accounts created via `createClientAccount(email, mobile, temporaryPassword, profile, adminToken)` must be discoverable by `authenticateClient(emailOrMobile, password)` using either the stored email or stored mobile (after trimming/normalizing), and successful authentication must create and persist a non-empty `ClientSession` token usable by subsequent client-authorized queries.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "project_state.json"
         ],
         "quotes": [
-          "var shipments = {\n    \"DFC1001\": \"✅ Load Confirmed - Truck Loaded from Kalamboli\",\n    \"DFC1002\": \"🚛 In Transit - Reached Gujarat Border\",\n    \"DFC1003\": \"📦 Arrived at Destination - Ready for Unloading\"\n};"
+          "Ensure backend client-account provisioning and lookup are consistent: accounts created via the admin provisioning flow (`actor.createClientAccount(...)`) must be discoverable by the same identifier(s) accepted by client login (`actor.authenticateClient(emailOrMobile, password)`), and the backend must issue and persist a valid `ClientSession` that can be used by subsequent client-authorized queries (e.g., `getClientAccountStatus`, `getShipmentsByClient`, `getInvoicesByClient`)."
         ]
       },
       "acceptanceCriteria": [
-        "On a fresh browser profile where localStorage key \"shipments\" is missing or is an empty object, the app initializes it to include DFC1001, DFC1002, and DFC1003 with the exact status strings provided (including emojis).",
-        "If localStorage \"shipments\" already contains any data, the app does not replace or remove existing entries during initialization."
+        "Given a client account provisioned with an email, `authenticateClient(email, password)` returns a non-empty session token and stores a corresponding session in backend state.",
+        "Given a client account provisioned with a mobile number, `authenticateClient(mobile, password)` returns a non-empty session token and stores a corresponding session in backend state.",
+        "After receiving a session token, client-authorized queries that accept `clientSessionToken` (e.g., `getClientAccountStatus`, `getShipmentsByClient`, `getInvoicesByClient`) accept the token without trapping for 'Invalid or expired client session token' (until timeout).",
+        "Failed authentication continues to return a clear error condition (trap or empty token) that the frontend maps to a user-friendly message (no sensitive details leaked)."
       ]
     },
     {
-      "id": "REQ-19",
-      "text": "Add a password protection gate for the Admin Tracking Panel so that shipment add/update/delete controls and the shipments table are hidden until the correct admin password is entered.",
+      "id": "REQ-3",
+      "text": "Improve client login error feedback so the UI distinguishes between (a) invalid input format (frontend validation), (b) account not found, and (c) wrong password, using consistent English messages via `getClientAuthErrorMessage(...)`.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "recent-messages"
         ],
         "quotes": [
-          "Maine tujhe do html bhej diye Hain ek admin ko password sehore rahega"
+          "Invalid email/mobile or password"
         ]
       },
       "acceptanceCriteria": [
-        "When the user navigates/scrolls to the Admin section, they see a password prompt instead of the admin management UI until authenticated.",
-        "If an incorrect password is entered, show an English error message and do not reveal the admin management UI.",
-        "After the correct password is entered, the full Admin Tracking Panel UI becomes visible and usable.",
-        "Reloading the page returns to the locked state unless the app explicitly persists an \"unlocked\" flag (if persisted, provide a visible Logout/Lock button to re-lock the admin panel)."
-      ]
-    },
-    {
-      "id": "REQ-20",
-      "text": "Update the Admin Tracking Panel shipment status input to support saving the full, custom status text (including emojis and additional details), rather than being limited to a fixed dropdown list.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-4"
-        ],
-        "quotes": [
-          "\"DFC1001\": \"✅ Load Confirmed - Truck Loaded from Kalamboli\""
-        ]
-      },
-      "acceptanceCriteria": [
-        "Admin can save a shipment status value containing emojis and detailed text (e.g., \"🚛 In Transit - Reached Gujarat Border\").",
-        "After saving, the public tracking lookup displays that exact saved status string for the same Tracking ID."
+        "When backend indicates account not found, the UI shows an English 'Account not found' message (and does not show a generic 'invalid credentials' message).",
+        "When backend indicates wrong password, the UI shows an English 'Invalid email/mobile or password' message.",
+        "When the identifier format is invalid (e.g., missing '@'), the UI shows the format-specific validation message without contacting the backend."
       ]
     }
   ],
   "constraints": [
-    "Frontend changes must not modify any files under frontend/src/components/ui or other paths listed in frontend.immutablePaths.",
-    "Do not introduce any backend dependency for tracking; shipment tracking data must remain stored in browser localStorage under the key \"shipments\"."
+    "Backend must remain a single Motoko actor in `backend/main.mo` (no additional backend services).",
+    "Do not modify any files under `frontend/src/hooks/useInternetIdentity.ts` / `.tsx`, `frontend/src/hooks/useActor.ts`, `frontend/src/main.tsx`, or anything in `frontend/src/components/ui` (compose existing components instead).",
+    "Use English for any user-facing UI text."
   ],
   "nonGoals": [
-    "Implementing secure, server-side authentication/authorization for the admin panel.",
-    "Adding a backend database or moving shipment tracking storage to the Motoko canister.",
-    "Changing the marketing-site sections (Hero/Services/Stats/About/Testimonials/Contact/Footer) beyond what is necessary to support the requested tracking/admin behavior updates."
+    "Implementing email-based 'Set Password' links or 'Forgot Password' email reset in this change set.",
+    "Adding third-party authentication providers or external databases.",
+    "Changing OTP provider/integration behavior beyond what is needed for session issuance consistency."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }
