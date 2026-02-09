@@ -1,0 +1,8 @@
+{
+  "frontend/src/App.tsx": "Single-page marketing website for DFC with fixed header navigation, hero, services, public tracking section (with uppercase normalization and exact error message display), password-protected admin panel section, stats, about, testimonials, contact form with WhatsApp integration, footer, and floating WhatsApp button.",
+  "frontend/src/index.css": "Global styles with Poppins font import, OKLCH color system for dark theme with custom gold accent color, smooth scrolling behavior, and scroll-margin-top for fixed header offset.",
+  "frontend/tailwind.config.js": "Tailwind configuration extended with Poppins font family, custom gold color token, and all existing shadcn/ui theme tokens.",
+  "frontend/src/hooks/useQueries.ts": "Empty placeholder file as no backend queries are needed for this static marketing website.",
+  "frontend/src/lib/shipmentsStorage.ts": "localStorage wrapper utility for managing shipments data with safe JSON parsing, auto-initialization with seed data (DFC1001-1003 with emoji statuses), and helper methods for CRUD operations on tracking IDs and statuses.",
+  "frontend/src/components/AdminTrackingPanel.tsx": "Password-protected admin panel component for DFC with unlock gate (password: dfc2026), form to add/update shipments using free-form text input for status (supporting emojis and detailed text), table displaying all shipments with delete functionality, styled with dark theme and gold accents."
+}

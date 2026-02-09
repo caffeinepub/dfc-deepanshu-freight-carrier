@@ -1,0 +1,17 @@
+{
+  "backend/main.mo": "Defines an empty Motoko actor with no backend logic.",
+  "feature_evidence.json": "Feature evidence report listing implemented features, affected files, related components, and test IDs.",
+  "frontend-file-summaries.txt": "Prewritten summaries of major frontend files including App, CSS, Tailwind config, hooks, storage, and admin panel.",
+  "frontend/index.css": "Tailwind base styles defining OKLCH color tokens, dark mode variables, and global element styling.",
+  "frontend/index.html": "Root HTML document loading the React app entry point.",
+  "frontend/src/App.tsx": "Main React page with navigation, quote form, tracking logic using uppercase IDs, admin panel inclusion, and WhatsApp integration.",
+  "frontend/src/components/AdminTrackingPanel.tsx": "Password-gated admin panel allowing CRUD operations on shipments with free‑form status text and localStorage persistence.",
+  "frontend/src/hooks/useActor.ts": "React hook creating and caching a backend actor based on Internet Identity state.",
+  "frontend/src/hooks/useInternetIdentity.ts": "Context provider and hooks for Internet Identity authentication, login, logout, and identity persistence.",
+  "frontend/src/hooks/useQueries.ts": "Empty placeholder file for backend query hooks.",
+  "frontend/src/index.css": "Defines Tailwind base styles, theme CSS variables, dark mode variants, and custom gold utilities for branding.",
+  "frontend/src/lib/shipmentsStorage.ts": "Provides a localStorage-backed CRUD wrapper for shipment statuses with seeded default data.",
+  "frontend/src/main.tsx": "Bootstraps the React app with React Query and Internet Identity providers and loads global styles.",
+  "frontend/tailwind.config.js": "Configures Tailwind with custom OKLCH color variables, typography and animation plugins, and extended theme settings.",
+  "project_state.json": "Stores project metadata describing the DFC site plus a client-side shipment tracking system with admin and public pages."
+}

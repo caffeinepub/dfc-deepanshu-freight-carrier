@@ -1,0 +1,85 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Update tracking lookup formatting, seed example IDs, and password-gate the admin tracking panel",
+  "requirements": [
+    {
+      "id": "REQ-17",
+      "summary": "Match the public tracking lookup behavior to the provided HTML/JS (uppercase normalization, exact status display, exact invalid-ID message).",
+      "acceptanceCriteria": [
+        "Entering \"dfc1001\" (lowercase) successfully finds the same record as \"DFC1001\" (uppercase).",
+        "If localStorage has a record for the entered ID with value \"✅ Load Confirmed - Truck Loaded from Kalamboli\", the UI displays exactly that string (including emoji) and does not add any extra prefix text.",
+        "If there is no record for the entered ID, the UI displays exactly: \"❌ Invalid Tracking ID. Please Contact DFC Office.\""
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Update the Track Your Shipment lookup handler to uppercase-normalize the entered Tracking ID before lookup, render the stored shipment status string exactly as stored (no \"Status: \" prefix), and render the exact invalid message string: \"❌ Invalid Tracking ID. Please Contact DFC Office.\". Continue using localStorage-backed shipmentsStorage for reads. (Uses shadcn-ui Input/Button/Card already present; verify the component's usage instructions before implementing.)"
+        }
+      ]
+    },
+    {
+      "id": "REQ-18",
+      "summary": "Seed localStorage shipments with the provided example tracking IDs/statuses only when storage is missing or empty, without overwriting existing data.",
+      "acceptanceCriteria": [
+        "On a fresh browser profile where localStorage key \"shipments\" is missing or is an empty object, the app initializes it to include DFC1001, DFC1002, and DFC1003 with the exact status strings provided (including emojis).",
+        "If localStorage \"shipments\" already contains any data, the app does not replace or remove existing entries during initialization."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/shipmentsStorage.ts",
+          "operation": "modify",
+          "description": "Enhance shipmentsStorage.initialize() to (1) detect missing storage or an empty object and seed localStorage key \"shipments\" with exactly: DFC1001→\"✅ Load Confirmed - Truck Loaded from Kalamboli\", DFC1002→\"🚛 In Transit - Reached Gujarat Border\", DFC1003→\"📦 Arrived at Destination - Ready for Unloading\"; (2) avoid overwriting when any existing shipment entries are present."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Ensure public tracking flow continues to call shipmentsStorage.initialize() before reading, so first-run seeding occurs for users who only use the public tracking section. (Uses shadcn-ui components already present; verify the component's usage instructions before implementing.)"
+        },
+        {
+          "path": "frontend/src/components/AdminTrackingPanel.tsx",
+          "operation": "modify",
+          "description": "Ensure admin panel load path continues to call shipmentsStorage.initialize() before listing shipments, so first-run seeding also occurs when visiting admin first. (Uses shadcn-ui Card/Table/Input/Button already present; verify the component's usage instructions before implementing.)"
+        }
+      ]
+    },
+    {
+      "id": "REQ-19",
+      "summary": "Add a password gate to hide the Admin Tracking Panel UI until the correct password is entered.",
+      "acceptanceCriteria": [
+        "When the user navigates/scrolls to the Admin section, they see a password prompt instead of the admin management UI until authenticated.",
+        "If an incorrect password is entered, show an English error message and do not reveal the admin management UI.",
+        "After the correct password is entered, the full Admin Tracking Panel UI becomes visible and usable.",
+        "Reloading the page returns to the locked state unless the app explicitly persists an \"unlocked\" flag (if persisted, provide a visible Logout/Lock button to re-lock the admin panel)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/AdminTrackingPanel.tsx",
+          "operation": "modify",
+          "description": "Wrap the existing admin management UI (add/update controls + shipments table) behind a locked/unlocked state. Add a password prompt UI (password Input + unlock Button) and show an English error message on incorrect password. Do not persist unlocked state so a reload returns to locked state. Keep all shipment CRUD wired to localStorage-only storage. (Use shadcn-ui Card/Input/Button components for the gate UI; verify the component's usage instructions before implementing.)"
+        }
+      ]
+    },
+    {
+      "id": "REQ-20",
+      "summary": "Replace the admin status dropdown with a free-form status text input that saves full custom text (including emojis).",
+      "acceptanceCriteria": [
+        "Admin can save a shipment status value containing emojis and detailed text (e.g., \"🚛 In Transit - Reached Gujarat Border\").",
+        "After saving, the public tracking lookup displays that exact saved status string for the same Tracking ID."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/AdminTrackingPanel.tsx",
+          "operation": "modify",
+          "description": "Replace the fixed STATUS_OPTIONS Select-based status input with a free-form text control (e.g., Input or Textarea) that allows saving arbitrary status strings (including emojis and extra details). Ensure save/update writes the exact entered string to localStorage via shipmentsStorage, and that the displayed table shows the exact stored string. (Uses shadcn-ui Input/Textarea/Button/Card/Table; verify the component's usage instructions before implementing.)"
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Confirm the public tracking result rendering continues to display the stored status string exactly as saved from the admin panel (including emojis and punctuation), with no added prefix text. (Uses shadcn-ui components already present; verify the component's usage instructions before implementing.)"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-update-the-public-track-your-shipment-section-behavior-to-match-the-user-provided-html-js-normalize-the-entered-tracking-id-to-uppercase-before-lookup-when-a-matching-shipment-exists-display-the-stored-status-string-exactly-as-is-do-not-prefix-it-with-status-when-no-match-exists-display-exactly-invalid-tracking-id-please-contact-dfc-office",
+      "featureTitle": "Update the public “Track Your Shipment” section behavior to match the user-provided HTML/JS: normalize the entered Tracking ID to uppercase before lookup; when a matching shipment exists, display the stored status string exactly as-is (do not prefix it with \"Status: \"); when no match exists, display exactly: \"❌ Invalid Tracking ID. Please Contact DFC Office.\"",
+      "files": [
+        "frontend/src/App.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-17"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-seed-localstorage-shipments-with-the-exact-example-tracking-ids-and-statuses-provided-by-the-user-when-shipments-storage-is-empty-first-run-no-shipments-yet-without-overwriting-any-existing-shipments-data",
+      "featureTitle": "Seed localStorage shipments with the exact example Tracking IDs and statuses provided by the user when shipments storage is empty (first run / no shipments yet), without overwriting any existing shipments data.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/AdminTrackingPanel.tsx",
+        "frontend/src/lib/shipmentsStorage.ts"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-18"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-password-protection-gate-for-the-admin-tracking-panel-so-that-shipment-add-update-delete-controls-and-the-shipments-table-are-hidden-until-the-correct-admin-password-is-entered",
+      "featureTitle": "Add a password protection gate for the Admin Tracking Panel so that shipment add/update/delete controls and the shipments table are hidden until the correct admin password is entered.",
+      "files": [
+        "frontend/src/components/AdminTrackingPanel.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-19"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-admin-tracking-panel-shipment-status-input-to-support-saving-the-full-custom-status-text-including-emojis-and-additional-details-rather-than-being-limited-to-a-fixed-dropdown-list",
+      "featureTitle": "Update the Admin Tracking Panel shipment status input to support saving the full, custom status text (including emojis and additional details), rather than being limited to a fixed dropdown list.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/AdminTrackingPanel.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-20"
+      ],
+      "confidence": "high"
+    }
+  ]
+}
