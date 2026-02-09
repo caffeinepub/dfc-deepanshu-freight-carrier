@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Toaster } from '@/components/ui/sonner';
 import { AdminLoginCard } from '@/components/auth/AdminLoginCard';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
-import { ClientPortalLoginCard } from '@/components/client/ClientPortalLoginCard';
+import { ClientPortalAuthCard } from '@/components/client/ClientPortalAuthCard';
 import { ClientDashboard } from '@/components/client/ClientDashboard';
 import { ClientPasswordChangeCard } from '@/components/client/ClientPasswordChangeCard';
 import { useAdminSession } from './hooks/useAdminSession';
@@ -94,7 +94,7 @@ function AppContent() {
   // Determine what to show in Client Portal section
   const renderClientPortalContent = () => {
     if (!isClientAuthenticated) {
-      return <ClientPortalLoginCard />;
+      return <ClientPortalAuthCard />;
     }
 
     // Show loading state while fetching account status
@@ -476,7 +476,7 @@ function AppContent() {
                       <MapPin className="w-6 h-6 text-gold" />
                     </div>
                     <div>
-                      <h3 className="text-gold font-semibold text-lg mb-2">Office</h3>
+                      <h3 className="text-gold font-semibold text-lg mb-2">Location</h3>
                       <p className="text-white/80">India</p>
                     </div>
                   </div>
@@ -491,9 +491,7 @@ function AppContent() {
       <footer className="bg-neutral-950 border-t border-neutral-800 py-8">
         <div className="container mx-auto px-4 sm:px-6 lg:px-12">
           <div className="text-center text-white/60">
-            <p className="mb-2">
-              © {new Date().getFullYear()} DFC. All rights reserved.
-            </p>
+            <p className="mb-2">© {new Date().getFullYear()} DFC. All rights reserved.</p>
             <p className="text-sm">
               Built with ❤️ using{' '}
               <a
@@ -511,15 +509,17 @@ function AppContent() {
         </div>
       </footer>
 
-      <Toaster />
+      <Toaster position="top-right" />
     </div>
   );
 }
 
-export default function App() {
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AppContent />
     </QueryClientProvider>
   );
 }
+
+export default App;

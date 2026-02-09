@@ -1,48 +1,64 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T16:20:36.487Z",
+  "generatedAt": "2026-02-09T16:39:15.791Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
+    "total": 4,
     "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Update the Client Portal password-login UI to validate the identifier (email/mobile) before calling `actor.authenticateClient(...)`, and show clear English guidance when the input is malformed (e.g., an email missing '@' or a mobile number not 10 digits).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/utils/clientIdentifier.ts",
-          "frontend/src/components/client/ClientPortalLoginCard.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/utils/clientIdentifier.ts",
-          "frontend/src/components/client/ClientPortalLoginCard.tsx"
-        ]
-      },
-      {
-        "id": "REQ-2",
-        "summary": "Ensure backend client-account provisioning and lookup are consistent: accounts created via `createClientAccount(email, mobile, temporaryPassword, profile, adminToken)` must be discoverable by `authenticateClient(emailOrMobile, password)` using either the stored email or stored mobile (after trimming/normalizing), and successful authentication must create and persist a non-empty `ClientSession` token usable by subsequent client-authorized queries.",
+        "summary": "Implement backend support for email/password client accounts with a unique email constraint, including: (1) signup that rejects duplicate emails, (2) login that verifies a hashed password and returns a client session token, (3) logout that invalidates the current client session token, and (4) a way to retrieve the currently-authenticated client account status using the session token (needed for protected dashboard access).",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
-        "id": "REQ-3",
-        "summary": "Improve client login error feedback so the UI distinguishes between (a) invalid input format (frontend validation), (b) account not found, and (c) wrong password, using consistent English messages via `getClientAuthErrorMessage(...)`.",
+        "id": "REQ-2",
+        "summary": "Add a client signup UI to the React app that matches the existing client portal flow: provide an email + password signup form, link it from the client login screen, show clear English success/error messages, and after successful signup guide the user to log in.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/clientAuthErrors.ts",
+          "frontend/src/components/client/ClientSignupCard.tsx",
+          "frontend/src/components/client/ClientPortalAuthCard.tsx",
+          "frontend/src/components/client/ClientPortalLoginCard.tsx",
           "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/client/ClientPortalLoginCard.tsx"
+          "frontend/src/utils/clientAuthErrors.ts",
+          "frontend/src/App.tsx"
         ],
         "matchedFiles": [
+          "frontend/src/components/client/ClientSignupCard.tsx",
+          "frontend/src/components/client/ClientPortalAuthCard.tsx",
+          "frontend/src/hooks/useQueries.ts",
           "frontend/src/utils/clientAuthErrors.ts",
-          "frontend/src/components/client/ClientPortalLoginCard.tsx"
+          "frontend/src/App.tsx"
         ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Ensure the client dashboard area remains protected by client authentication: if there is no valid client session token, the UI must not render the client dashboard and must prompt for login; if a session expires/is invalidated, the UI must return to the client login screen.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/client/ClientDashboard.tsx",
+          "frontend/src/hooks/useClientSession.ts",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/client/ClientDashboard.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Add basic role support for email/password accounts (client/admin) in backend user records, defaulting to \"client\" on signup, and persist the account creation timestamp.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       }
     ]
   },
@@ -53,9 +69,16 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/client/ClientPortalLoginCard.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/client/ClientDashboard.tsx",
+    "frontend/src/components/client/ClientPortalAuthCard.tsx",
+    "frontend/src/components/client/ClientSignupCard.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useQueries.ts",
     "frontend/src/utils/clientAuthErrors.ts",
-    "frontend/src/utils/clientIdentifier.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

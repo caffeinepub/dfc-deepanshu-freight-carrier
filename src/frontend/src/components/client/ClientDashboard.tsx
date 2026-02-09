@@ -3,27 +3,29 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ClientShipmentsTable } from './ClientShipmentsTable';
 import { ClientInvoicesTable } from './ClientInvoicesTable';
-import { useClientSession } from '../../hooks/useClientSession';
-import { useQueryClient } from '@tanstack/react-query';
-import { LogOut, Package, FileText } from 'lucide-react';
+import { useClientLogout } from '../../hooks/useQueries';
+import { LogOut, Package, FileText, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function ClientDashboard() {
-  const { clearClientToken } = useClientSession();
-  const queryClient = useQueryClient();
+  const clientLogout = useClientLogout();
 
-  const handleLogout = () => {
-    clearClientToken();
-    queryClient.clear();
-    toast.success('Logged out successfully');
-    
-    // Scroll to client portal section
-    const element = document.getElementById('client-portal');
-    if (element) {
-      const headerOffset = 80;
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-      window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+  const handleLogout = async () => {
+    try {
+      await clientLogout.mutateAsync();
+      toast.success('Logged out successfully');
+      
+      // Scroll to client portal section
+      const element = document.getElementById('client-portal');
+      if (element) {
+        const headerOffset = 80;
+        const elementPosition = element.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Logout failed. Please try again.');
     }
   };
 
@@ -35,11 +37,21 @@ export function ClientDashboard() {
             <CardTitle className="text-gold text-2xl">Welcome to Your Dashboard</CardTitle>
             <Button
               onClick={handleLogout}
+              disabled={clientLogout.isPending}
               variant="outline"
               className="border-gold text-gold hover:bg-gold/10"
             >
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
+              {clientLogout.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Logging out...
+                </>
+              ) : (
+                <>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </>
+              )}
             </Button>
           </div>
         </CardHeader>

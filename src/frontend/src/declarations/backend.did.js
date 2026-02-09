@@ -27,6 +27,10 @@ export const Client = IDL.Record({
   'companyName' : IDL.Text,
   'mobile' : IDL.Text,
 });
+export const ClientRole = IDL.Variant({
+  'client' : IDL.Null,
+  'admin' : IDL.Null,
+});
 export const InvoiceStatus = IDL.Variant({
   'pending' : IDL.Null,
   'paid' : IDL.Null,
@@ -91,6 +95,8 @@ export const idlService = IDL.Service({
       [IDL.Bool],
       [],
     ),
+  'clientLogout' : IDL.Func([IDL.Text], [IDL.Bool], []),
+  'clientSignup' : IDL.Func([IDL.Text, IDL.Text, UserProfile], [IDL.Text], []),
   'createClientAccount' : IDL.Func(
       [IDL.Opt(IDL.Text), IDL.Opt(IDL.Text), IDL.Text, UserProfile, IDL.Text],
       [IDL.Text],
@@ -117,7 +123,7 @@ export const idlService = IDL.Service({
     ),
   'getClientAccountStatus' : IDL.Func(
       [IDL.Text],
-      [IDL.Record({ 'isFirstLogin' : IDL.Bool })],
+      [IDL.Record({ 'role' : ClientRole, 'isFirstLogin' : IDL.Bool })],
       ['query'],
     ),
   'getInvoice' : IDL.Func(
@@ -152,6 +158,7 @@ export const idlService = IDL.Service({
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'isMsg91ApiKeyStored' : IDL.Func([], [IDL.Bool], ['query']),
   'pay' : IDL.Func([IDL.Record({ 'invoiceNo' : IDL.Nat })], [IDL.Bool], []),
+  'persistentUpgrade' : IDL.Func([IDL.Text], [IDL.Bool], []),
   'revokeAdmin' : IDL.Func([IDL.Principal, IDL.Text], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'sendOtp' : IDL.Func([IDL.Text], [IDL.Bool, IDL.Text, IDL.Nat], []),
@@ -201,6 +208,7 @@ export const idlFactory = ({ IDL }) => {
     'companyName' : IDL.Text,
     'mobile' : IDL.Text,
   });
+  const ClientRole = IDL.Variant({ 'client' : IDL.Null, 'admin' : IDL.Null });
   const InvoiceStatus = IDL.Variant({
     'pending' : IDL.Null,
     'paid' : IDL.Null,
@@ -262,6 +270,12 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Bool],
         [],
       ),
+    'clientLogout' : IDL.Func([IDL.Text], [IDL.Bool], []),
+    'clientSignup' : IDL.Func(
+        [IDL.Text, IDL.Text, UserProfile],
+        [IDL.Text],
+        [],
+      ),
     'createClientAccount' : IDL.Func(
         [IDL.Opt(IDL.Text), IDL.Opt(IDL.Text), IDL.Text, UserProfile, IDL.Text],
         [IDL.Text],
@@ -288,7 +302,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     'getClientAccountStatus' : IDL.Func(
         [IDL.Text],
-        [IDL.Record({ 'isFirstLogin' : IDL.Bool })],
+        [IDL.Record({ 'role' : ClientRole, 'isFirstLogin' : IDL.Bool })],
         ['query'],
       ),
     'getInvoice' : IDL.Func(
@@ -323,6 +337,7 @@ export const idlFactory = ({ IDL }) => {
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'isMsg91ApiKeyStored' : IDL.Func([], [IDL.Bool], ['query']),
     'pay' : IDL.Func([IDL.Record({ 'invoiceNo' : IDL.Nat })], [IDL.Bool], []),
+    'persistentUpgrade' : IDL.Func([IDL.Text], [IDL.Bool], []),
     'revokeAdmin' : IDL.Func([IDL.Principal, IDL.Text], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'sendOtp' : IDL.Func([IDL.Text], [IDL.Bool, IDL.Text, IDL.Nat], []),

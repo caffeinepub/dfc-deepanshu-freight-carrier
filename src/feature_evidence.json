@@ -2,11 +2,14 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-client-portal-password-login-ui-to-validate-the-identifier-email-mobile-before-calling-actor-authenticateclient-and-show-clear-english-guidance-when-the-input-is-malformed-e-g-an-email-missing-or-a-mobile-number-not-10-digits",
-      "featureTitle": "Update the Client Portal password-login UI to validate the identifier (email/mobile) before calling `actor.authenticateClient(...)`, and show clear English guidance when the input is malformed (e.g., an email missing '@' or a mobile number not 10 digits).",
+      "featureId": "feature-add-a-client-signup-ui-to-the-react-app-that-matches-the-existing-client-portal-flow-provide-an-email-password-signup-form-link-it-from-the-client-login-screen-show-clear-english-success-error-messages-and-after-successful-signup-guide-the-user-to-log-in",
+      "featureTitle": "Add a client signup UI to the React app that matches the existing client portal flow: provide an email + password signup form, link it from the client login screen, show clear English success/error messages, and after successful signup guide the user to log in.",
       "files": [
-        "frontend/src/components/client/ClientPortalLoginCard.tsx",
-        "frontend/src/utils/clientIdentifier.ts"
+        "frontend/src/App.tsx",
+        "frontend/src/components/client/ClientPortalAuthCard.tsx",
+        "frontend/src/components/client/ClientSignupCard.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/utils/clientAuthErrors.ts"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -18,16 +21,17 @@
         "http-outcalls@3.0.0"
       ],
       "testIds": [
-        "REQ-1"
+        "REQ-2"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-improve-client-login-error-feedback-so-the-ui-distinguishes-between-a-invalid-input-format-frontend-validation-b-account-not-found-and-c-wrong-password-using-consistent-english-messages-via-getclientautherrormessage",
-      "featureTitle": "Improve client login error feedback so the UI distinguishes between (a) invalid input format (frontend validation), (b) account not found, and (c) wrong password, using consistent English messages via `getClientAuthErrorMessage(...)`.",
+      "featureId": "feature-ensure-the-client-dashboard-area-remains-protected-by-client-authentication-if-there-is-no-valid-client-session-token-the-ui-must-not-render-the-client-dashboard-and-must-prompt-for-login-if-a-session-expires-is-invalidated-the-ui-must-return-to-the-client-login-screen",
+      "featureTitle": "Ensure the client dashboard area remains protected by client authentication: if there is no valid client session token, the UI must not render the client dashboard and must prompt for login; if a session expires/is invalidated, the UI must return to the client login screen.",
       "files": [
-        "frontend/src/components/client/ClientPortalLoginCard.tsx",
-        "frontend/src/utils/clientAuthErrors.ts"
+        "frontend/src/App.tsx",
+        "frontend/src/components/client/ClientDashboard.tsx",
+        "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
         "core-infrastructure@1.0.2",

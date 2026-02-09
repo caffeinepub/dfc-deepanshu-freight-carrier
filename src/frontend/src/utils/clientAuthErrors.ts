@@ -8,6 +8,19 @@ export function getClientAuthErrorMessage(error: unknown): string {
   
   // Map backend trap messages to user-friendly messages
   
+  // Signup-specific errors
+  if (errorMessage.includes('An account with this email already exists')) {
+    return 'Email already registered. Please use a different email or log in.';
+  }
+  
+  if (errorMessage.includes('account already exists')) {
+    return 'An account with this email or mobile already exists. Please log in instead.';
+  }
+  
+  if (errorMessage.includes('Password must be at least 8 characters')) {
+    return 'Password must be at least 8 characters long.';
+  }
+  
   // Account not found - specific message
   if (errorMessage.includes('account not found') || errorMessage.includes('Account not found')) {
     return 'Account not found. Please check your credentials or contact support.';

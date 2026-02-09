@@ -1,52 +1,78 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Client Portal login validation + improved client auth error messaging (frontend-only)",
+  "title": "Email/password client signup + protected client portal auth flow",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Add identifier (email/mobile) format validation to Client Portal password login and show clear English guidance without calling backend when malformed, while keeping OTP login unchanged.",
+      "id": "REQ-2",
+      "summary": "Add a React client signup screen (email + password) linked from client login, with validation and clear English success/error messaging.",
       "acceptanceCriteria": [
-        "If the user enters an email-like value without '@' (e.g., `jatinsharmas336gmail.com`) and clicks Login, the UI does not call the backend and instead shows an English message explaining that the email address is invalid and must include '@'.",
-        "If the user enters a mobile number, the UI enforces 10 digits (digits only) and shows an English message if invalid.",
-        "Existing OTP login tab behavior remains unchanged."
+        "Client Portal shows a way to navigate between \"Log in\" and \"Create account\" without page reloads (React flow).",
+        "Signup form validates required fields and prevents empty/invalid email input.",
+        "On successful signup, the UI shows an English confirmation (e.g., \"Signup successful. Please log in.\") and routes the user back to the login form.",
+        "On duplicate email, the UI shows an English error message (e.g., \"Email already registered\")."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/clientIdentifier.ts",
+          "path": "frontend/src/components/client/ClientSignupCard.tsx",
           "operation": "create",
-          "description": "Create a small utility to trim/normalize the client identifier and validate whether it is a valid email (must include '@') or a 10-digit mobile number (digits only), returning a validation result with a user-facing English message for invalid cases."
+          "description": "Create a client signup UI card with required email + password inputs, client-side validation, and success/error rendering. Use shadcn-ui (Card, Input, Button, Alert) to match existing styling. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/client/ClientPortalAuthCard.tsx",
+          "operation": "create",
+          "description": "Create a wrapper component that provides a no-reload React flow between login and signup (e.g., local state / tabs), rendering the existing ClientPortalLoginCard and the new ClientSignupCard, and coordinating navigation back to login after successful signup. Use shadcn-ui (Tabs) for the switching UI. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/components/client/ClientPortalLoginCard.tsx",
           "operation": "modify",
-          "description": "Update the password-login flow to validate/normalize the identifier (email/mobile) before calling the authenticate mutation; when invalid, show a clear English validation message inline (e.g., using shadcn-ui Alert) and do not invoke the backend. Use existing shadcn-ui components (Input, Alert, Tabs, Button) to present validation feedback; verify the component's usage instructions before implementing. Ensure OTP tab logic and behavior remain unchanged."
+          "description": "Add a clear \"Create account\" navigation affordance (link/button) that switches the Client Portal view to signup via a prop callback from ClientPortalAuthCard, while keeping existing password/OTP login behavior intact. Use existing shadcn-ui primitives for consistent styling. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add a clientSignup React Query mutation hook that calls the backend clientSignup capability and returns a success result suitable for UI messaging; ensure errors are surfaced so the UI can show duplicate email and other clear English messages."
+        },
+        {
+          "path": "frontend/src/utils/clientAuthErrors.ts",
+          "operation": "modify",
+          "description": "Extend client auth error mapping to include signup-specific messages (e.g., duplicate email -> \"Email already registered\") and any other backend auth/signup failures that should be shown in clear English."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire the new ClientPortalAuthCard into the Client Portal section so unauthenticated users see the combined login/signup flow instead of only the login card, without adding new top-level routes."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Improve client login error feedback so UI distinguishes invalid input format vs account not found vs wrong password with consistent English messages via getClientAuthErrorMessage(...).",
+      "summary": "Keep the client dashboard protected by session token; handle invalid/expired sessions by clearing token and returning to login; support logout that clears token and prevents further access.",
       "acceptanceCriteria": [
-        "When backend indicates account not found, the UI shows an English 'Account not found' message (and does not show a generic 'invalid credentials' message).",
-        "When backend indicates wrong password, the UI shows an English 'Invalid email/mobile or password' message.",
-        "When the identifier format is invalid (e.g., missing '@'), the UI shows the format-specific validation message without contacting the backend."
+        "When no client session token exists in storage, the client dashboard is not accessible and the client login UI is shown.",
+        "When an invalid/expired token is detected by backend calls, the frontend clears the stored token and returns the user to the client login UI.",
+        "After logout, the stored token is cleared and the dashboard is no longer accessible without logging in again."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/clientAuthErrors.ts",
-          "operation": "modify",
-          "description": "Refine error-to-message mapping so backend 'account not found' signals consistently map to 'Account not found.' and wrong-password/invalid-credentials signals map to 'Invalid email/mobile or password.' Keep messages concise, English-only, and avoid leaking sensitive details."
-        },
-        {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Adjust client authentication mutations to preserve backend-provided error signals (e.g., account-not-found traps) while treating only null/empty tokens as wrong-password/invalid-credentials. Avoid throwing overly-generic errors that would prevent the UI from distinguishing 'Account not found' vs 'Invalid email/mobile or password' via getClientAuthErrorMessage(...)."
+          "description": "Harden client-session invalidation behavior: (1) add a clientLogout mutation hook that calls the backend clientLogout capability using the stored client session token; (2) ensure key client queries/mutations that rely on clientSessionToken clear the stored token when backend indicates an invalid/expired token, so the UI naturally falls back to the login view."
         },
         {
-          "path": "frontend/src/components/client/ClientPortalLoginCard.tsx",
+          "path": "frontend/src/components/client/ClientDashboard.tsx",
           "operation": "modify",
-          "description": "Wire updated getClientAuthErrorMessage(...) behavior into password-login error presentation so backend-driven failures show the correct English message, while frontend identifier validation remains the first-line check (no backend call when invalid). Use existing shadcn-ui feedback patterns (e.g., Alert/toast) and verify the component's usage instructions before implementing."
+          "description": "Update logout flow to call the new clientLogout mutation (best-effort) before clearing local token and cached queries, then ensure the dashboard no longer renders once the token is cleared. Use existing shadcn-ui Button and toast messaging for consistent UX. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useClientSession.ts",
+          "operation": "modify",
+          "description": "Ensure session token handling remains robust for protection logic (e.g., keep trimming/empty-token guards) and add any needed helper(s) to support centralized clearing on invalid/expired token detection."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Ensure protected rendering remains correct: when the token is cleared (missing/invalid/expired), Client Portal shows the login/signup UI and does not render the dashboard; keep existing account-status loading/first-login flows working."
         }
       ]
     }

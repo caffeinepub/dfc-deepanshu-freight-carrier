@@ -66,6 +66,11 @@ actor {
     #overdue;
   };
 
+  type ClientRole = {
+    #client;
+    #admin;
+  };
+
   type ClientAccount = {
     identifier : Text;
     email : ?Text;
@@ -74,6 +79,8 @@ actor {
     profile : UserProfile;
     isFirstLogin : Bool;
     activeSessionToken : ?Text;
+    role : ClientRole;
+    createdAt : Time.Time;
   };
 
   type UserProfile = {
@@ -216,9 +223,37 @@ actor {
     text.trim(#predicate(func(c) { c == ' ' }));
   };
 
-  // MSG91 Integration
+  func emailExists(email : Text) : Bool {
+    let normalizedEmail = normalizeIdentifier(email);
+    for ((_, account) in clientAccounts.entries()) {
+      switch (account.email) {
+        case (?existingEmail) {
+          if (Text.equal(normalizeIdentifier(existingEmail), normalizedEmail)) {
+            return true;
+          };
+        };
+        case (null) {};
+      };
+    };
+    false;
+  };
+
+  func mobileExists(mobile : Text) : Bool {
+    let normalizedMobile = normalizeIdentifier(mobile);
+    for ((_, account) in clientAccounts.entries()) {
+      switch (account.mobile) {
+        case (?existingMobile) {
+          if (Text.equal(normalizeIdentifier(existingMobile), normalizedMobile)) {
+            return true;
+          };
+        };
+        case (null) {};
+      };
+    };
+    false;
+  };
+
   public query ({ caller }) func isMsg91ApiKeyStored() : async Bool {
-    // Public query - no sensitive data exposed, just boolean
     switch (msg91ApiKey) {
       case (null) { false };
       case (?apiKey) { not Text.equal(apiKey, "") };
@@ -236,7 +271,6 @@ actor {
   };
 
   public shared ({ caller }) func verifyMsg91AccessToken(jwtToken : Text) : async (Bool, Text, Nat) {
-    // Admin-only function for verifying MSG91 access tokens
     if (not (AccessControl.isAdmin(accessControlState, caller))) {
       Runtime.trap("Unauthorized: Only admins can verify MSG91 access tokens");
     };
@@ -253,7 +287,7 @@ actor {
 
         let isSuccess = rawResponse.contains(#text "\"type\":\"success\"");
         let statusCode = if (isSuccess) { 200 } else { 401 };
-        
+
         (isSuccess, rawResponse, statusCode);
       };
     };
@@ -263,16 +297,13 @@ actor {
     OutCall.transform(input);
   };
 
-  // Shipment Tracking - Requires authentication
   public query ({ caller }) func trackShipment(trackingID : Text) : async ?Shipment {
-    // Require at least guest-level authentication (non-anonymous)
     if (caller.isAnonymous()) {
       Runtime.trap("Unauthorized: Authentication required to track shipments");
     };
     shipments.get(trackingID);
   };
 
-  // Admin Authentication & Session Management
   public shared ({ caller }) func adminLogin(password : Text, token : Text) : async Text {
     let callerText = caller.toText();
 
@@ -284,14 +315,12 @@ actor {
       Runtime.trap("Invalid password");
     };
 
-    // Clear login attempts on successful login
     loginAttempts.remove(callerText);
     adminSessionTokens.add(token, Time.now());
     token;
   };
 
   public shared ({ caller }) func adminLogout(token : Text) : async Bool {
-    // Verify the token exists and is valid before allowing logout
     switch (adminSessionTokens.get(token)) {
       case (null) { false };
       case (?_) {
@@ -316,13 +345,11 @@ actor {
 
     adminPassword := newPassword;
 
-    // Invalidate all existing sessions for security
     for ((sessionToken, _) in adminSessionTokens.entries()) {
       adminSessionTokens.remove(sessionToken);
     };
   };
 
-  // CRUD APIs for Shipments/Invoices (Admin Only)
   public shared ({ caller }) func createShipment(
     trackingID : Text,
     status : Text,
@@ -346,7 +373,6 @@ actor {
   };
 
   public query ({ caller }) func getShipment(trackingID : Text) : async ?Shipment {
-    // Require authentication
     if (caller.isAnonymous()) {
       Runtime.trap("Unauthorized: Authentication required to view shipments");
     };
@@ -354,7 +380,6 @@ actor {
   };
 
   public query ({ caller }) func getShipmentsByClient(client : Principal, adminToken : ?Text, clientSessionToken : ?Text) : async [Shipment] {
-    // Admin access
     switch (adminToken) {
       case (?token) {
         if (not isValidSession(token)) {
@@ -365,11 +390,9 @@ actor {
       case (null) {};
     };
 
-    // Client session access
     switch (clientSessionToken) {
       case (?token) {
         let clientId = getClientIdFromSession(token);
-        // Verify client is requesting their own shipments
         if (client.toText() != clientId) {
           Runtime.trap("Unauthorized: Can only view your own shipments");
         };
@@ -378,7 +401,6 @@ actor {
       case (null) {};
     };
 
-    // Principal-based access (legacy) - requires authentication
     if (caller.isAnonymous()) {
       Runtime.trap("Unauthorized: Anonymous principals cannot view shipments");
     };
@@ -415,7 +437,6 @@ actor {
   public query ({ caller }) func getInvoice(invoiceNo : Nat, adminToken : ?Text, clientSessionToken : ?Text) : async ?Invoice {
     switch (invoices.get(invoiceNo)) {
       case (?invoice) {
-        // Admin access
         switch (adminToken) {
           case (?token) {
             if (not isValidSession(token)) {
@@ -426,7 +447,6 @@ actor {
           case (null) {};
         };
 
-        // Client session access
         switch (clientSessionToken) {
           case (?token) {
             let clientId = getClientIdFromSession(token);
@@ -438,7 +458,6 @@ actor {
           case (null) {};
         };
 
-        // Principal-based access (legacy) - requires authentication
         if (caller.isAnonymous()) {
           Runtime.trap("Unauthorized: Anonymous principals cannot view invoices");
         };
@@ -452,7 +471,6 @@ actor {
   };
 
   public query ({ caller }) func getInvoicesByClient(client : Principal, adminToken : ?Text, clientSessionToken : ?Text) : async [Invoice] {
-    // Admin access
     switch (adminToken) {
       case (?token) {
         if (not isValidSession(token)) {
@@ -463,7 +481,6 @@ actor {
       case (null) {};
     };
 
-    // Client session access
     switch (clientSessionToken) {
       case (?token) {
         let clientId = getClientIdFromSession(token);
@@ -475,7 +492,6 @@ actor {
       case (null) {};
     };
 
-    // Principal-based access (legacy) - requires authentication
     if (caller.isAnonymous()) {
       Runtime.trap("Unauthorized: Anonymous principals cannot view invoices");
     };
@@ -486,7 +502,6 @@ actor {
     invoices.values().toArray().filter(func(invoice) { invoice.client == client });
   };
 
-  // Persistent User Profile Management (required by frontend)
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (caller.isAnonymous()) {
       Runtime.trap("Unauthorized: Anonymous principals cannot view profiles");
@@ -569,13 +584,10 @@ actor {
     clients.add(clientId, newClient);
   };
 
-  // CRUD User APIs for Authentication Clients
   public shared ({ caller }) func addClient(companyName : Text, gstNumber : Text, address : Text, mobile : Text) : async Bool {
     if (caller.isAnonymous()) {
       Runtime.trap("Unauthorized: Anonymous principals cannot add clients");
     };
-    // Allow any authenticated user (including guests with identity) to register as client
-    // No specific role check needed here as this is self-registration
 
     let newClient : Client = {
       id = caller;
@@ -616,7 +628,6 @@ actor {
     clients.values().toArray();
   };
 
-  // Persistence-Ready Payment API
   public shared ({ caller }) func pay({ invoiceNo : Nat }) : async Bool {
     if (caller.isAnonymous()) {
       Runtime.trap("Unauthorized: Anonymous principals cannot make payments");
@@ -657,7 +668,6 @@ actor {
     ["invoiceNo,amount,status,dueDate,clientID"];
   };
 
-  // Persistent Bootstrap for First Admin (backoffice)
   public shared ({ caller }) func bootstrapFirstAdmin() : async () {
     if (caller.isAnonymous()) {
       Runtime.trap("Unauthorized: Anonymous principals cannot bootstrap admin");
@@ -672,7 +682,6 @@ actor {
     AccessControl.isAdmin(accessControlState, caller) or AccessControl.hasPermission(accessControlState, caller, #admin);
   };
 
-  // Persistent Admin Role Management APIs (backoffice)
   public shared ({ caller }) func grantAdmin(targetPrincipal : Principal, adminToken : Text) : async () {
     if (not isValidSession(adminToken)) {
       Runtime.trap("Unauthorized: Invalid admin token");
@@ -707,9 +716,7 @@ actor {
     AccessControl.isAdmin(accessControlState, target);
   };
 
-  // MSG91 OTP Handling (Persistence-Ready) - Rate limited
   public shared ({ caller }) func sendOtp(phoneNumber : Text) : async (Bool, Text, Nat) {
-    // Rate limit OTP requests to prevent abuse
     if (not checkOtpRateLimit(phoneNumber)) {
       Runtime.trap("Too many OTP requests. Please try again later.");
     };
@@ -731,14 +738,13 @@ actor {
 
         let isSuccess = rawResponse.contains(#text "\"type\":\"success\"");
         let statusCode = if (isSuccess) { 200 } else { 400 };
-        
+
         (isSuccess, rawResponse, statusCode);
       };
     };
   };
 
   public shared ({ caller }) func verifyOtp(phoneNumber : Text, otp : Text) : async (Bool, Text, Nat) {
-    // Rate limit OTP verification to prevent brute force
     if (not checkOtpRateLimit(phoneNumber # "_verify")) {
       Runtime.trap("Too many OTP verification attempts. Please try again later.");
     };
@@ -759,37 +765,76 @@ actor {
 
         let isSuccess = rawResponse.contains(#text "\"type\":\"success\"");
         let statusCode = if (isSuccess) { 200 } else { 401 };
-        
-        // Clear rate limit on successful verification
+
         if (isSuccess) {
           otpAttempts.remove(phoneNumber # "_verify");
         };
-        
+
         (isSuccess, rawResponse, statusCode);
       };
     };
   };
 
-  // Persistent Client Authentication (new APIs) - Rate limited
+  public shared ({ caller }) func clientSignup(
+    email : Text,
+    password : Text,
+    profile : UserProfile,
+  ) : async Text {
+    if (password.size() < 8) {
+      Runtime.trap("Password must be at least 8 characters long");
+    };
+
+    let normalizedEmail = normalizeIdentifier(email);
+
+    if (emailExists(normalizedEmail)) {
+      Runtime.trap("An account with this email already exists");
+    };
+
+    let newAccount : ClientAccount = {
+      identifier = normalizedEmail;
+      email = ?normalizedEmail;
+      mobile = ?profile.mobile;
+      password = password;
+      profile = profile;
+      isFirstLogin = false;
+      activeSessionToken = null;
+      role = #client;
+      createdAt = Time.now();
+    };
+
+    clientAccounts.add(normalizedEmail, newAccount);
+
+    let sessionToken = Time.now().toText() # "_signup_session_" # normalizedEmail;
+    let expiration = Time.now() + clientSessionTimeout;
+
+    let newSession : ClientSession = {
+      clientId = normalizedEmail;
+      sessionToken = sessionToken;
+      expiration = expiration;
+    };
+    clientSessions.add(sessionToken, newSession);
+
+    let updatedAccount = { newAccount with activeSessionToken = ?sessionToken };
+    clientAccounts.add(normalizedEmail, updatedAccount);
+
+    sessionToken;
+  };
+
   public shared ({ caller }) func authenticateClient(emailOrMobile : Text, password : Text) : async ?Text {
     let normalizedInput = normalizeIdentifier(emailOrMobile);
 
-    // Rate limit client authentication attempts
     if (not checkRateLimit(normalizedInput)) {
       Runtime.trap("Too many login attempts. Please try again later.");
     };
 
-    // Search through all client accounts to find matching email or mobile
     var matchedAccountKey : ?Text = null;
     var matchedAccount : ?ClientAccount = null;
 
     for ((accountKey, account) in clientAccounts.entries()) {
-      // Check if input matches the primary identifier
       if (Text.equal(normalizeIdentifier(account.identifier), normalizedInput)) {
         matchedAccountKey := ?accountKey;
         matchedAccount := ?account;
       } else {
-        // Check if input matches the email field
         switch (account.email) {
           case (?email) {
             if (Text.equal(normalizeIdentifier(email), normalizedInput)) {
@@ -799,7 +844,6 @@ actor {
           };
           case (null) {};
         };
-        // Check if input matches the mobile field
         switch (account.mobile) {
           case (?mobile) {
             if (Text.equal(normalizeIdentifier(mobile), normalizedInput)) {
@@ -812,17 +856,14 @@ actor {
       };
     };
 
-    // Verify password and create session
     switch (matchedAccountKey, matchedAccount) {
       case (?accountKey, ?account) {
         if (not Text.equal(account.password, password)) {
           Runtime.trap("Invalid email/mobile or password");
         };
 
-        // Clear rate limit on successful login
         loginAttempts.remove(normalizedInput);
 
-        // Create session token
         let sessionToken = Time.now().toText() # "_session_" # accountKey;
         let expiration = Time.now() + clientSessionTimeout;
 
@@ -833,7 +874,6 @@ actor {
         };
         clientSessions.add(sessionToken, newSession);
 
-        // Update account with active session
         let updatedAccount = { account with activeSessionToken = ?sessionToken };
         clientAccounts.add(accountKey, updatedAccount);
 
@@ -841,6 +881,25 @@ actor {
       };
       case (_, _) {
         Runtime.trap("Invalid email/mobile or password");
+      };
+    };
+  };
+
+  public shared ({ caller }) func clientLogout(sessionToken : Text) : async Bool {
+    switch (clientSessions.get(sessionToken)) {
+      case (null) { false };
+      case (?session) {
+        clientSessions.remove(sessionToken);
+        
+        switch (clientAccounts.get(session.clientId)) {
+          case (?account) {
+            let updatedAccount = { account with activeSessionToken = null };
+            clientAccounts.add(session.clientId, updatedAccount);
+          };
+          case (null) {};
+        };
+        
+        true;
       };
     };
   };
@@ -885,7 +944,6 @@ actor {
 
     let normalizedPhone = normalizeIdentifier(phoneNumber);
 
-    // Search for account with matching mobile
     var matchedAccountKey : ?Text = null;
     var matchedAccount : ?ClientAccount = null;
 
@@ -937,7 +995,6 @@ actor {
       Runtime.trap("Either email or mobile must be provided");
     };
 
-    // Normalize and determine primary identifier
     let normalizedEmail = switch (email) {
       case (?e) { ?normalizeIdentifier(e) };
       case (null) { null };
@@ -954,7 +1011,6 @@ actor {
       case (null, null) { Runtime.trap("Invalid account data") };
     };
 
-    // Check if account already exists with this identifier, email, or mobile
     for ((_, account) in clientAccounts.entries()) {
       if (Text.equal(normalizeIdentifier(account.identifier), primaryIdentifier)) {
         Runtime.trap("Client account already exists with this identifier");
@@ -995,13 +1051,15 @@ actor {
       profile = profile;
       isFirstLogin = true;
       activeSessionToken = null;
+      role = #client;
+      createdAt = Time.now();
     };
 
     clientAccounts.add(primaryIdentifier, newAccount);
     primaryIdentifier;
   };
 
-  public query ({ caller }) func getClientAccountStatus(sessionToken : Text) : async { isFirstLogin : Bool } {
+  public query ({ caller }) func getClientAccountStatus(sessionToken : Text) : async { isFirstLogin : Bool; role : ClientRole } {
     let clientId = getClientIdFromSession(sessionToken);
 
     switch (clientAccounts.get(clientId)) {
@@ -1009,13 +1067,29 @@ actor {
         Runtime.trap("Client account not found");
       };
       case (?account) {
-        { isFirstLogin = account.isFirstLogin };
+        { 
+          isFirstLogin = account.isFirstLogin;
+          role = account.role;
+        };
       };
     };
   };
 
-  // Health Check - Public endpoint, no authorization needed
+  public shared ({ caller }) func persistentUpgrade(email : Text) : async Bool {
+    for ((_, account) in clientAccounts.entries()) {
+      switch (account.email) {
+        case (?existingEmail) {
+          if (Text.equal(existingEmail, email)) {
+            return false;
+          };
+        };
+        case (null) {};
+      };
+    };
+    true;
+  };
+
   public query ({ caller }) func healthCheck() : async Text {
-    "System is healthy and ready for persistent operations. Canister version: 1.1.0";
+    "System is healthy and ready for persistent operations. Canister version: 1.1.1-persistent";
   };
 };

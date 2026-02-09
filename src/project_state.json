@@ -1,26 +1,27 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project is focused on client login/onboarding, including temporary password, first-login password setup, and improving the password creation/reset flow for new clients.",
+  "summary": "Build a Node.js (Express) + MySQL web app with user authentication: signup/login/logout using bcrypt-hashed passwords, session-based auth, unique email constraint, and a protected client dashboard with basic role support (client/admin).",
   "architectural_notes": [
-    "Client login should support first-time password setup (temporary password OR emailed set-password link) and a standard reset-password flow via email."
+    "Use Node.js + Express server with MySQL (mysql2) database connection.",
+    "Authentication uses bcrypt password hashing and express-session for session-based login.",
+    "Static HTML pages served from /views; protect dashboard route by checking session userId.",
+    "Users table includes unique email constraint and role enum (client/admin)."
   ],
-  "known_issues": [
-    "User-provided email appears malformed (missing '@': 'jatinsharmas336gmail.com'), which would cause login failures and confusion."
-  ],
-  "isFixRequest": true,
+  "known_issues": [],
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-update-the-client-portal-password-login-ui-to-validate-the-identifier-email-mobile-before-calling-actor-authenticateclient-and-show-clear-english-guidance-when-the-input-is-malformed-e-g-an-email-missing-or-a-mobile-number-not-10-digits",
-      "title": "Update the Client Portal password-login UI to validate the identifier (email/mobile) before calling `actor.authenticateClient(...)`, and show clear English guidance when the input is malformed (e.g., an email missing '@' or a mobile number not 10 digits).",
+      "id": "feature-add-a-client-signup-ui-to-the-react-app-that-matches-the-existing-client-portal-flow-provide-an-email-password-signup-form-link-it-from-the-client-login-screen-show-clear-english-success-error-messages-and-after-successful-signup-guide-the-user-to-log-in",
+      "title": "Add a client signup UI to the React app that matches the existing client portal flow: provide an email + password signup form, link it from the client login screen, show clear English success/error messages, and after successful signup guide the user to log in.",
       "reqIds": [
-        "REQ-1"
+        "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-improve-client-login-error-feedback-so-the-ui-distinguishes-between-a-invalid-input-format-frontend-validation-b-account-not-found-and-c-wrong-password-using-consistent-english-messages-via-getclientautherrormessage",
-      "title": "Improve client login error feedback so the UI distinguishes between (a) invalid input format (frontend validation), (b) account not found, and (c) wrong password, using consistent English messages via `getClientAuthErrorMessage(...)`.",
+      "id": "feature-ensure-the-client-dashboard-area-remains-protected-by-client-authentication-if-there-is-no-valid-client-session-token-the-ui-must-not-render-the-client-dashboard-and-must-prompt-for-login-if-a-session-expires-is-invalidated-the-ui-must-return-to-the-client-login-screen",
+      "title": "Ensure the client dashboard area remains protected by client authentication: if there is no valid client session token, the UI must not render the client dashboard and must prompt for login; if a session expires/is invalidated, the UI must return to the client login screen.",
       "reqIds": [
         "REQ-3"
       ],
@@ -30,26 +31,28 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add self-service 'Set Password' / onboarding flow for new clients (email-based link) so new clients can create a password using their email",
+      "summary": "Add MySQL-backed user authentication (users table, signup/login/logout) with bcrypt password hashing, express-session, unique email, role field, and protected client dashboard pages.",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Add 'Forgot Password' / password reset via email for clients who don't know their temporary password",
-      "reqIds": [],
+      "summary": "Implement backend support for email/password client accounts with a unique email constraint, including: (1) signup that rejects duplicate emails, (2) login that verifies a hashed password and returns a client session token, (3) logout that invalidates the current client session token, and (4) a way to retrieve the currently-authenticated client account status using the session token (needed for protected dashboard access).",
+      "reqIds": [
+        "REQ-1"
+      ],
       "status": "pending"
     },
     {
-      "id": "AR-4",
-      "summary": "Ensure backend client-account provisioning and lookup are consistent: accounts created via `createClientAccount(email, mobile, temporaryPassword, profile, adminToken)` must be discoverable by `authenticateClient(emailOrMobile, password)` using either the stored email or stored mobile (after trimming/normalizing), and successful authentication must create and persist a non-empty `ClientSession` token usable by subsequent client-authorized queries.",
+      "id": "AR-5",
+      "summary": "Add basic role support for email/password accounts (client/admin) in backend user records, defaulting to \"client\" on signup, and persist the account creation timestamp.",
       "reqIds": [
-        "REQ-2"
+        "REQ-4"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Fix client login failure by adding identifier validation and consistent client-account lookup/session issuance",
+  "projectName": "Add email/password client signup + login + logout with unique email and protected client dashboard",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

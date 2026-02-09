@@ -52,6 +52,10 @@ export interface http_header {
     value: string;
     name: string;
 }
+export enum ClientRole {
+    client = "client",
+    admin = "admin"
+}
 export enum InvoiceStatus {
     pending = "pending",
     paid = "paid",
@@ -72,6 +76,8 @@ export interface backendInterface {
     bootstrapFirstAdmin(): Promise<void>;
     changeAdminPassword(token: string, oldPassword: string, newPassword: string): Promise<void>;
     changeClientPassword(sessionToken: string, currentPassword: string, newPassword: string): Promise<boolean>;
+    clientLogout(sessionToken: string): Promise<boolean>;
+    clientSignup(email: string, password: string, profile: UserProfile): Promise<string>;
     createClientAccount(email: string | null, mobile: string | null, temporaryPassword: string, profile: UserProfile, adminToken: string): Promise<string>;
     createInvoice(invoiceNo: bigint, amount: bigint, dueDate: Time, client: Principal, adminToken: string): Promise<boolean>;
     createShipment(trackingID: string, status: string, location: string, client: Principal, adminToken: string): Promise<boolean>;
@@ -81,6 +87,7 @@ export interface backendInterface {
     getCallerUserRole(): Promise<UserRole>;
     getClient(id: Principal, adminToken: string | null): Promise<Client | null>;
     getClientAccountStatus(sessionToken: string): Promise<{
+        role: ClientRole;
         isFirstLogin: boolean;
     }>;
     getInvoice(invoiceNo: bigint, adminToken: string | null, clientSessionToken: string | null): Promise<Invoice | null>;
@@ -97,6 +104,7 @@ export interface backendInterface {
     pay(arg0: {
         invoiceNo: bigint;
     }): Promise<boolean>;
+    persistentUpgrade(email: string): Promise<boolean>;
     revokeAdmin(targetPrincipal: Principal, adminToken: string): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     sendOtp(phoneNumber: string): Promise<[boolean, string, bigint]>;

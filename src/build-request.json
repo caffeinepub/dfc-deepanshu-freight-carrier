@@ -1,76 +1,113 @@
 {
   "kind": "build_request",
-  "title": "Fix client login failure by adding identifier validation and consistent client-account lookup/session issuance",
-  "priority": "high",
+  "title": "Add email/password client signup + login + logout with unique email and protected client dashboard",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Update the Client Portal password-login UI to validate the identifier (email/mobile) before calling `actor.authenticateClient(...)`, and show clear English guidance when the input is malformed (e.g., an email missing '@' or a mobile number not 10 digits).",
-      "target": "frontend",
+      "text": "Implement backend support for email/password client accounts with a unique email constraint, including: (1) signup that rejects duplicate emails, (2) login that verifies a hashed password and returns a client session token, (3) logout that invalidates the current client session token, and (4) a way to retrieve the currently-authenticated client account status using the session token (needed for protected dashboard access).",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-4"
         ],
         "quotes": [
-          "jatinsharmas336gmail.com\nPassword hai JATIN1234"
+          "Is add kar do"
         ]
       },
       "acceptanceCriteria": [
-        "If the user enters an email-like value without '@' (e.g., `jatinsharmas336gmail.com`) and clicks Login, the UI does not call the backend and instead shows an English message explaining that the email address is invalid and must include '@'.",
-        "If the user enters a mobile number, the UI enforces 10 digits (digits only) and shows an English message if invalid.",
-        "Existing OTP login tab behavior remains unchanged."
+        "Signing up with a new email creates exactly one account for that email and stores the password as a hash (never plaintext).",
+        "Signing up again with the same email fails with a clear error (e.g., \"Email already registered\").",
+        "Logging in with (email, password) for an existing account returns a non-empty session token and creates/refreshes a server-side session record with an expiration time.",
+        "Logging in with an unknown email fails with a clear error (e.g., \"User not found\").",
+        "Logging in with a wrong password fails with a clear error (e.g., \"Wrong password\").",
+        "Calling logout invalidates the session token so it can no longer be used to access protected client data."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Ensure backend client-account provisioning and lookup are consistent: accounts created via `createClientAccount(email, mobile, temporaryPassword, profile, adminToken)` must be discoverable by `authenticateClient(emailOrMobile, password)` using either the stored email or stored mobile (after trimming/normalizing), and successful authentication must create and persist a non-empty `ClientSession` token usable by subsequent client-authorized queries.",
-      "target": "backend",
+      "text": "Add a client signup UI to the React app that matches the existing client portal flow: provide an email + password signup form, link it from the client login screen, show clear English success/error messages, and after successful signup guide the user to log in.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "project_state.json"
+          "msg-4"
         ],
         "quotes": [
-          "Ensure backend client-account provisioning and lookup are consistent: accounts created via the admin provisioning flow (`actor.createClientAccount(...)`) must be discoverable by the same identifier(s) accepted by client login (`actor.authenticateClient(emailOrMobile, password)`), and the backend must issue and persist a valid `ClientSession` that can be used by subsequent client-authorized queries (e.g., `getClientAccountStatus`, `getShipmentsByClient`, `getInvoicesByClient`)."
+          "📄 views/signup.html",
+          "📄 views/login.html"
         ]
       },
       "acceptanceCriteria": [
-        "Given a client account provisioned with an email, `authenticateClient(email, password)` returns a non-empty session token and stores a corresponding session in backend state.",
-        "Given a client account provisioned with a mobile number, `authenticateClient(mobile, password)` returns a non-empty session token and stores a corresponding session in backend state.",
-        "After receiving a session token, client-authorized queries that accept `clientSessionToken` (e.g., `getClientAccountStatus`, `getShipmentsByClient`, `getInvoicesByClient`) accept the token without trapping for 'Invalid or expired client session token' (until timeout).",
-        "Failed authentication continues to return a clear error condition (trap or empty token) that the frontend maps to a user-friendly message (no sensitive details leaked)."
+        "Client Portal shows a way to navigate between \"Log in\" and \"Create account\" without page reloads (React flow).",
+        "Signup form validates required fields and prevents empty/invalid email input.",
+        "On successful signup, the UI shows an English confirmation (e.g., \"Signup successful. Please log in.\") and routes the user back to the login form.",
+        "On duplicate email, the UI shows an English error message (e.g., \"Email already registered\")."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Improve client login error feedback so the UI distinguishes between (a) invalid input format (frontend validation), (b) account not found, and (c) wrong password, using consistent English messages via `getClientAuthErrorMessage(...)`.",
-      "target": "frontend",
+      "text": "Ensure the client dashboard area remains protected by client authentication: if there is no valid client session token, the UI must not render the client dashboard and must prompt for login; if a session expires/is invalidated, the UI must return to the client login screen.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-4"
         ],
         "quotes": [
-          "Invalid email/mobile or password"
+          "Protected dashboard",
+          "Session login"
         ]
       },
       "acceptanceCriteria": [
-        "When backend indicates account not found, the UI shows an English 'Account not found' message (and does not show a generic 'invalid credentials' message).",
-        "When backend indicates wrong password, the UI shows an English 'Invalid email/mobile or password' message.",
-        "When the identifier format is invalid (e.g., missing '@'), the UI shows the format-specific validation message without contacting the backend."
+        "When no client session token exists in storage, the client dashboard is not accessible and the client login UI is shown.",
+        "When an invalid/expired token is detected by backend calls, the frontend clears the stored token and returns the user to the client login UI.",
+        "After logout, the stored token is cleared and the dashboard is no longer accessible without logging in again."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Add basic role support for email/password accounts (client/admin) in backend user records, defaulting to \"client\" on signup, and persist the account creation timestamp.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "role ENUM('client','admin') DEFAULT 'client',",
+          "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Newly created email/password accounts have role set to \"client\" by default.",
+        "Each created account stores a creation timestamp.",
+        "Existing persisted data remains readable after upgrade; if stored user/account records exist already, they receive safe defaults for any newly-added fields."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in `backend/main.mo` (no additional backend services).",
-    "Do not modify any files under `frontend/src/hooks/useInternetIdentity.ts` / `.tsx`, `frontend/src/hooks/useActor.ts`, `frontend/src/main.tsx`, or anything in `frontend/src/components/ui` (compose existing components instead).",
-    "Use English for any user-facing UI text."
+    "Do not add Node.js/Express/MySQL code; implement the requested behavior using the existing Internet Computer (Motoko) backend and React frontend.",
+    "Backend must remain a single Motoko actor in backend/main.mo; only add backend/migration.mo changes if required to preserve existing stable state.",
+    "Do not edit files under frontend/immutablePaths (compose existing UI components instead).",
+    "Use English for all user-facing UI text and error messages."
   ],
   "nonGoals": [
-    "Implementing email-based 'Set Password' links or 'Forgot Password' email reset in this change set.",
-    "Adding third-party authentication providers or external databases.",
-    "Changing OTP provider/integration behavior beyond what is needed for session issuance consistency."
+    "Do not implement third-party authentication providers (only the app’s built-in auth patterns).",
+    "Do not add external databases (e.g., MySQL) or server-side Express sessions; use canister-based persistence/session handling.",
+    "Do not add real-time features (WebSockets) or email/SMS delivery integrations beyond what already exists."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [
+      "Use English for all user-facing text"
+    ],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

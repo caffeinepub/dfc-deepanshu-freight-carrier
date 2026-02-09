@@ -225,7 +225,7 @@ export function useStoreMsg91ApiKey() {
       return actor.storeMsg91ApiKey(apiKey);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['msg91KeyStored'] });
+      queryClient.invalidateQueries({ queryKey: ['msg91ApiKeyStored'] });
     },
   });
 }
@@ -234,7 +234,7 @@ export function useIsMsg91ApiKeyStored() {
   const { actor, isFetching } = useActor();
 
   return useQuery<boolean>({
-    queryKey: ['msg91KeyStored'],
+    queryKey: ['msg91ApiKeyStored'],
     queryFn: async () => {
       if (!actor) return false;
       return actor.isMsg91ApiKeyStored();
@@ -247,32 +247,9 @@ export function useVerifyMsg91AccessToken() {
   const { actor } = useActor();
 
   return useMutation({
-    mutationFn: async (jwtToken: string) => {
+    mutationFn: async (jwtToken: string): Promise<[boolean, string, bigint]> => {
       if (!actor) throw new Error('Actor not available');
       return actor.verifyMsg91AccessToken(jwtToken);
-    },
-  });
-}
-
-// MSG91 OTP
-export function useSendOtp() {
-  const { actor } = useActor();
-
-  return useMutation({
-    mutationFn: async (phoneNumber: string) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.sendOtp(phoneNumber);
-    },
-  });
-}
-
-export function useVerifyOtp() {
-  const { actor } = useActor();
-
-  return useMutation({
-    mutationFn: async ({ phoneNumber, otp }: { phoneNumber: string; otp: string }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.verifyOtp(phoneNumber, otp);
     },
   });
 }
@@ -289,26 +266,77 @@ export function useAuthenticateClient() {
       
       const sessionToken = await actor.authenticateClient(emailOrMobile, password);
       
-      // Backend returns null for invalid credentials
       if (!sessionToken || sessionToken.trim() === '') {
-        console.error('Authentication failed: empty or null token received');
-        throw new Error('Invalid credentials');
+        throw new Error('Invalid email/mobile or password');
       }
       
       return sessionToken;
     },
     onSuccess: (sessionToken) => {
-      // Only set token if it's non-empty
-      if (sessionToken && sessionToken.trim()) {
-        setClientToken(sessionToken);
-        // Invalidate and refetch client account status
-        queryClient.invalidateQueries({ queryKey: ['clientAccountStatus'] });
-      } else {
-        console.error('Received empty session token on success');
+      setClientToken(sessionToken);
+      queryClient.invalidateQueries({ queryKey: ['clientAccountStatus'] });
+    },
+  });
+}
+
+export function useClientSignup() {
+  const { actor } = useActor();
+
+  return useMutation({
+    mutationFn: async ({ 
+      email, 
+      password, 
+      profile 
+    }: { 
+      email: string; 
+      password: string; 
+      profile: UserProfile;
+    }) => {
+      if (!actor) throw new Error('Actor not available');
+      
+      const sessionToken = await actor.clientSignup(email, password, profile);
+      
+      if (!sessionToken || sessionToken.trim() === '') {
+        throw new Error('Signup failed. Please try again.');
+      }
+      
+      return sessionToken;
+    },
+  });
+}
+
+export function useClientLogout() {
+  const { actor } = useActor();
+  const { sessionToken, clearClientToken } = useClientSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor || !sessionToken) {
+        return false;
+      }
+      
+      try {
+        return await actor.clientLogout(sessionToken);
+      } catch (error) {
+        console.error('Logout error:', error);
+        return false;
       }
     },
-    onError: (error) => {
-      console.error('Client authentication error:', error);
+    onSettled: () => {
+      clearClientToken();
+      queryClient.clear();
+    },
+  });
+}
+
+export function useSendOtp() {
+  const { actor } = useActor();
+
+  return useMutation({
+    mutationFn: async (phoneNumber: string): Promise<[boolean, string, bigint]> => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.sendOtp(phoneNumber);
     },
   });
 }
@@ -324,77 +352,20 @@ export function useVerifyOtpAndAuthenticate() {
       
       const sessionToken = await actor.verifyOtpAndAuthenticate(phoneNumber, otp);
       
-      // Backend returns null for invalid OTP or account not found
       if (!sessionToken || sessionToken.trim() === '') {
-        console.error('OTP authentication failed: empty or null token received');
-        throw new Error('OTP verification failed or account not found');
+        throw new Error('OTP verification failed');
       }
       
       return sessionToken;
     },
     onSuccess: (sessionToken) => {
-      // Only set token if it's non-empty
-      if (sessionToken && sessionToken.trim()) {
-        setClientToken(sessionToken);
-        // Invalidate and refetch client account status
-        queryClient.invalidateQueries({ queryKey: ['clientAccountStatus'] });
-      } else {
-        console.error('Received empty session token on success');
-      }
-    },
-    onError: (error) => {
-      console.error('OTP authentication error:', error);
-    },
-  });
-}
-
-export function useGetClientAccountStatus() {
-  const { actor, isFetching } = useActor();
-  const { sessionToken, clearClientToken } = useClientSession();
-
-  return useQuery<{ isFirstLogin: boolean } | null>({
-    queryKey: ['clientAccountStatus', sessionToken],
-    queryFn: async () => {
-      if (!actor || !sessionToken) return null;
-      
-      try {
-        return await actor.getClientAccountStatus(sessionToken);
-      } catch (error) {
-        console.error('Failed to get client account status:', error);
-        // If session is invalid, clear it
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        if (errorMessage.includes('Invalid or expired')) {
-          clearClientToken();
-        }
-        throw error;
-      }
-    },
-    enabled: !!actor && !!sessionToken && !isFetching,
-    retry: false,
-  });
-}
-
-export function useChangeClientPassword() {
-  const { actor } = useActor();
-  const { sessionToken } = useClientSession();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }) => {
-      if (!actor || !sessionToken) throw new Error('Not authenticated');
-      return actor.changeClientPassword(sessionToken, currentPassword, newPassword);
-    },
-    onSuccess: () => {
-      // Invalidate and refetch to get updated isFirstLogin status
+      setClientToken(sessionToken);
       queryClient.invalidateQueries({ queryKey: ['clientAccountStatus'] });
-      toast.success('Password changed successfully');
-    },
-    onError: (error) => {
-      console.error('Password change error:', error);
     },
   });
 }
 
+// Client Account Management
 export function useCreateClientAccount() {
   const { actor } = useActor();
   const { adminToken } = useAdminSession();
@@ -421,6 +392,51 @@ export function useCreateClientAccount() {
   });
 }
 
+export function useGetClientAccountStatus() {
+  const { actor, isFetching } = useActor();
+  const { sessionToken, clearClientToken } = useClientSession();
+
+  return useQuery({
+    queryKey: ['clientAccountStatus', sessionToken],
+    queryFn: async () => {
+      if (!actor || !sessionToken) return null;
+      
+      try {
+        return await actor.getClientAccountStatus(sessionToken);
+      } catch (error: any) {
+        if (error.message?.includes('Invalid or expired client session token')) {
+          clearClientToken();
+        }
+        throw error;
+      }
+    },
+    enabled: !!actor && !!sessionToken && !isFetching,
+    retry: false,
+  });
+}
+
+export function useChangeClientPassword() {
+  const { actor } = useActor();
+  const { sessionToken } = useClientSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      currentPassword,
+      newPassword,
+    }: {
+      currentPassword: string;
+      newPassword: string;
+    }) => {
+      if (!actor || !sessionToken) throw new Error('Not authenticated');
+      return actor.changeClientPassword(sessionToken, currentPassword, newPassword);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientAccountStatus'] });
+    },
+  });
+}
+
 // Admin Role Management
 export function useGrantAdmin() {
   const { actor } = useActor();
@@ -433,7 +449,7 @@ export function useGrantAdmin() {
       return actor.grantAdmin(targetPrincipal, adminToken);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adminRoles'] });
+      queryClient.invalidateQueries({ queryKey: ['adminRole'] });
     },
   });
 }
@@ -449,7 +465,21 @@ export function useRevokeAdmin() {
       return actor.revokeAdmin(targetPrincipal, adminToken);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adminRoles'] });
+      queryClient.invalidateQueries({ queryKey: ['adminRole'] });
     },
+  });
+}
+
+export function useHasAdminRole(target: Principal | undefined) {
+  const { actor, isFetching } = useActor();
+  const { adminToken } = useAdminSession();
+
+  return useQuery<boolean>({
+    queryKey: ['adminRole', target?.toString()],
+    queryFn: async () => {
+      if (!actor || !target) return false;
+      return actor.hasAdminRole(target, adminToken || null);
+    },
+    enabled: !!actor && !!target && !isFetching,
   });
 }

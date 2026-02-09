@@ -134,6 +134,10 @@ export interface http_header {
     value: string;
     name: string;
 }
+export enum ClientRole {
+    client = "client",
+    admin = "admin"
+}
 export enum InvoiceStatus {
     pending = "pending",
     paid = "paid",
@@ -155,6 +159,8 @@ export interface backendInterface {
     bootstrapFirstAdmin(): Promise<void>;
     changeAdminPassword(token: string, oldPassword: string, newPassword: string): Promise<void>;
     changeClientPassword(sessionToken: string, currentPassword: string, newPassword: string): Promise<boolean>;
+    clientLogout(sessionToken: string): Promise<boolean>;
+    clientSignup(email: string, password: string, profile: UserProfile): Promise<string>;
     createClientAccount(email: string | null, mobile: string | null, temporaryPassword: string, profile: UserProfile, adminToken: string): Promise<string>;
     createInvoice(invoiceNo: bigint, amount: bigint, dueDate: Time, client: Principal, adminToken: string): Promise<boolean>;
     createShipment(trackingID: string, status: string, location: string, client: Principal, adminToken: string): Promise<boolean>;
@@ -164,6 +170,7 @@ export interface backendInterface {
     getCallerUserRole(): Promise<UserRole>;
     getClient(id: Principal, adminToken: string | null): Promise<Client | null>;
     getClientAccountStatus(sessionToken: string): Promise<{
+        role: ClientRole;
         isFirstLogin: boolean;
     }>;
     getInvoice(invoiceNo: bigint, adminToken: string | null, clientSessionToken: string | null): Promise<Invoice | null>;
@@ -180,6 +187,7 @@ export interface backendInterface {
     pay(arg0: {
         invoiceNo: bigint;
     }): Promise<boolean>;
+    persistentUpgrade(email: string): Promise<boolean>;
     revokeAdmin(targetPrincipal: Principal, adminToken: string): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     sendOtp(phoneNumber: string): Promise<[boolean, string, bigint]>;
@@ -190,7 +198,7 @@ export interface backendInterface {
     verifyOtp(phoneNumber: string, otp: string): Promise<[boolean, string, bigint]>;
     verifyOtpAndAuthenticate(phoneNumber: string, otp: string): Promise<string | null>;
 }
-import type { Client as _Client, Invoice as _Invoice, InvoiceStatus as _InvoiceStatus, Shipment as _Shipment, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
+import type { Client as _Client, ClientRole as _ClientRole, Invoice as _Invoice, InvoiceStatus as _InvoiceStatus, Shipment as _Shipment, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _initializeAccessControlWithSecret(arg0: string): Promise<void> {
@@ -333,6 +341,34 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async clientLogout(arg0: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.clientLogout(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.clientLogout(arg0);
+            return result;
+        }
+    }
+    async clientSignup(arg0: string, arg1: string, arg2: UserProfile): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.clientSignup(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.clientSignup(arg0, arg1, arg2);
+            return result;
+        }
+    }
     async createClientAccount(arg0: string | null, arg1: string | null, arg2: string, arg3: UserProfile, arg4: string): Promise<string> {
         if (this.processError) {
             try {
@@ -446,61 +482,62 @@ export class Backend implements backendInterface {
         }
     }
     async getClientAccountStatus(arg0: string): Promise<{
+        role: ClientRole;
         isFirstLogin: boolean;
     }> {
         if (this.processError) {
             try {
                 const result = await this.actor.getClientAccountStatus(arg0);
-                return result;
+                return from_candid_record_n9(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getClientAccountStatus(arg0);
-            return result;
+            return from_candid_record_n9(this._uploadFile, this._downloadFile, result);
         }
     }
     async getInvoice(arg0: bigint, arg1: string | null, arg2: string | null): Promise<Invoice | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getInvoice(arg0, to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n4(this._uploadFile, this._downloadFile, arg2));
-                return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n12(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getInvoice(arg0, to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n4(this._uploadFile, this._downloadFile, arg2));
-            return from_candid_opt_n9(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n12(this._uploadFile, this._downloadFile, result);
         }
     }
     async getInvoicesByClient(arg0: Principal, arg1: string | null, arg2: string | null): Promise<Array<Invoice>> {
         if (this.processError) {
             try {
                 const result = await this.actor.getInvoicesByClient(arg0, to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n4(this._uploadFile, this._downloadFile, arg2));
-                return from_candid_vec_n14(this._uploadFile, this._downloadFile, result);
+                return from_candid_vec_n17(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getInvoicesByClient(arg0, to_candid_opt_n4(this._uploadFile, this._downloadFile, arg1), to_candid_opt_n4(this._uploadFile, this._downloadFile, arg2));
-            return from_candid_vec_n14(this._uploadFile, this._downloadFile, result);
+            return from_candid_vec_n17(this._uploadFile, this._downloadFile, result);
         }
     }
     async getShipment(arg0: string): Promise<Shipment | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getShipment(arg0);
-                return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getShipment(arg0);
-            return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
         }
     }
     async getShipmentsByClient(arg0: Principal, arg1: string | null, arg2: string | null): Promise<Array<Shipment>> {
@@ -631,6 +668,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async persistentUpgrade(arg0: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.persistentUpgrade(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.persistentUpgrade(arg0);
+            return result;
+        }
+    }
     async revokeAdmin(arg0: Principal, arg1: string): Promise<void> {
         if (this.processError) {
             try {
@@ -699,14 +750,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.trackShipment(arg0);
-                return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.trackShipment(arg0);
-            return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
         }
     }
     async transform(arg0: TransformationInput): Promise<TransformationOutput> {
@@ -782,16 +833,22 @@ export class Backend implements backendInterface {
         }
     }
 }
-function from_candid_InvoiceStatus_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _InvoiceStatus): InvoiceStatus {
-    return from_candid_variant_n13(_uploadFile, _downloadFile, value);
+function from_candid_ClientRole_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ClientRole): ClientRole {
+    return from_candid_variant_n11(_uploadFile, _downloadFile, value);
 }
-function from_candid_Invoice_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Invoice): Invoice {
-    return from_candid_record_n11(_uploadFile, _downloadFile, value);
+function from_candid_InvoiceStatus_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _InvoiceStatus): InvoiceStatus {
+    return from_candid_variant_n16(_uploadFile, _downloadFile, value);
+}
+function from_candid_Invoice_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Invoice): Invoice {
+    return from_candid_record_n14(_uploadFile, _downloadFile, value);
 }
 function from_candid_UserRole_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
     return from_candid_variant_n7(_uploadFile, _downloadFile, value);
 }
-function from_candid_opt_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Shipment]): Shipment | null {
+function from_candid_opt_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Invoice]): Invoice | null {
+    return value.length === 0 ? null : from_candid_Invoice_n13(_uploadFile, _downloadFile, value[0]);
+}
+function from_candid_opt_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Shipment]): Shipment | null {
     return value.length === 0 ? null : value[0];
 }
 function from_candid_opt_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [string]): string | null {
@@ -803,10 +860,7 @@ function from_candid_opt_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Ar
 function from_candid_opt_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Client]): Client | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Invoice]): Invoice | null {
-    return value.length === 0 ? null : from_candid_Invoice_n10(_uploadFile, _downloadFile, value[0]);
-}
-function from_candid_record_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     status: _InvoiceStatus;
     client: Principal;
     dueDate: _Time;
@@ -820,14 +874,33 @@ function from_candid_record_n11(_uploadFile: (file: ExternalBlob) => Promise<Uin
     amount: bigint;
 } {
     return {
-        status: from_candid_InvoiceStatus_n12(_uploadFile, _downloadFile, value.status),
+        status: from_candid_InvoiceStatus_n15(_uploadFile, _downloadFile, value.status),
         client: value.client,
         dueDate: value.dueDate,
         invoiceNo: value.invoiceNo,
         amount: value.amount
     };
 }
-function from_candid_variant_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    role: _ClientRole;
+    isFirstLogin: boolean;
+}): {
+    role: ClientRole;
+    isFirstLogin: boolean;
+} {
+    return {
+        role: from_candid_ClientRole_n10(_uploadFile, _downloadFile, value.role),
+        isFirstLogin: value.isFirstLogin
+    };
+}
+function from_candid_variant_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    client: null;
+} | {
+    admin: null;
+}): ClientRole {
+    return "client" in value ? ClientRole.client : "admin" in value ? ClientRole.admin : value;
+}
+function from_candid_variant_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     pending: null;
 } | {
     paid: null;
@@ -845,8 +918,8 @@ function from_candid_variant_n7(_uploadFile: (file: ExternalBlob) => Promise<Uin
 }): UserRole {
     return "admin" in value ? UserRole.admin : "user" in value ? UserRole.user : "guest" in value ? UserRole.guest : value;
 }
-function from_candid_vec_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Invoice>): Array<Invoice> {
-    return value.map((x)=>from_candid_Invoice_n10(_uploadFile, _downloadFile, x));
+function from_candid_vec_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Invoice>): Array<Invoice> {
+    return value.map((x)=>from_candid_Invoice_n13(_uploadFile, _downloadFile, x));
 }
 function to_candid_UserRole_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole): _UserRole {
     return to_candid_variant_n2(_uploadFile, _downloadFile, value);

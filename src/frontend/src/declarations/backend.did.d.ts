@@ -17,6 +17,8 @@ export interface Client {
   'companyName' : string,
   'mobile' : string,
 }
+export type ClientRole = { 'client' : null } |
+  { 'admin' : null };
 export interface Invoice {
   'status' : InvoiceStatus,
   'client' : Principal,
@@ -72,6 +74,8 @@ export interface _SERVICE {
   'bootstrapFirstAdmin' : ActorMethod<[], undefined>,
   'changeAdminPassword' : ActorMethod<[string, string, string], undefined>,
   'changeClientPassword' : ActorMethod<[string, string, string], boolean>,
+  'clientLogout' : ActorMethod<[string], boolean>,
+  'clientSignup' : ActorMethod<[string, string, UserProfile], string>,
   'createClientAccount' : ActorMethod<
     [[] | [string], [] | [string], string, UserProfile, string],
     string
@@ -91,7 +95,7 @@ export interface _SERVICE {
   'getClient' : ActorMethod<[Principal, [] | [string]], [] | [Client]>,
   'getClientAccountStatus' : ActorMethod<
     [string],
-    { 'isFirstLogin' : boolean }
+    { 'role' : ClientRole, 'isFirstLogin' : boolean }
   >,
   'getInvoice' : ActorMethod<
     [bigint, [] | [string], [] | [string]],
@@ -117,6 +121,7 @@ export interface _SERVICE {
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'isMsg91ApiKeyStored' : ActorMethod<[], boolean>,
   'pay' : ActorMethod<[{ 'invoiceNo' : bigint }], boolean>,
+  'persistentUpgrade' : ActorMethod<[string], boolean>,
   'revokeAdmin' : ActorMethod<[Principal, string], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'sendOtp' : ActorMethod<[string], [boolean, string, bigint]>,
