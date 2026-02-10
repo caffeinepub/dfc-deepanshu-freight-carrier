@@ -1,70 +1,61 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-10T04:24:48.630Z",
+  "generatedAt": "2026-02-10T03:56:21.430Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 6,
-    "implemented": 1,
+    "total": 5,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Implement a persistent client signup API in the Motoko backend that creates a new client account record (not just frontend-only), enforces unique email, generates a unique client code in the format \"DFC\" + 5 digits (e.g., DFC12345), and stores the hashed password along with profile fields (companyName, gstNumber, address, mobile) and createdAt timestamp.",
+        "summary": "Backend: Add persistent storage for a login history log that records each successful client login with fields: client identifier (email or mobile as entered), resolved client_id (client principal/text ID used by the session), login_time (server timestamp), and ip_address (optional text).",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Implement a secure client password login API in the Motoko backend that (1) finds the account by email (and/or mobile if supported), (2) rejects login if the account is locked, (3) verifies password against the stored hash, (4) increments per-account failed-attempt counters on wrong password, (5) resets failed-attempt counters on successful login, and (6) returns the same session token format currently expected by the frontend.",
+        "summary": "Backend: When a client login succeeds (both password login and OTP login flows, if both exist), append a new login history entry capturing identifier/email/mobile, client_id, current timestamp, and an ip_address value provided by the frontend (best-effort). Do not record entries for failed logins.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-3",
-        "summary": "Record login history on every successful client authentication in the backend, capturing at minimum: identifier used, client principal text, login timestamp, and best-effort IP address (if supplied by the frontend; otherwise store null).",
+        "summary": "Backend: Expose an admin-only query method to fetch login history entries ordered by most recent first. The method must require a valid admin session token and trap on unauthorized access.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-4",
-        "summary": "Add/extend admin backend APIs to support client monitoring and management: (a) list all client accounts including client code (DFCxxxxx), name/companyName, email, and createdAt; and (b) delete a client account by its generated client code (DFCxxxxx). Both operations must require a valid admin session token.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Update the frontend data flow to use the new/updated backend behaviors for signup, login, and admin client list/delete, while keeping all user-facing messages in English and maintaining compatibility with the existing client session token handling and admin login history panel.",
+        "summary": "Frontend: Add a new \"Login History\" section in the Admin Dashboard tabs and render a table showing: Client Email/Identifier, Login Time, IP Address. All user-facing text must be in English.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/admin/AdminClientsTable.tsx",
-          "frontend/src/components/admin/AdminDashboard.tsx",
-          "frontend/src/components/client/ClientPortalLoginCard.tsx",
-          "frontend/src/components/client/ClientSignupCard.tsx",
-          "frontend/src/utils/clientAuthErrors.ts"
+          "frontend/src/components/admin/AdminLoginHistoryPanel.tsx",
+          "frontend/src/components/admin/AdminDashboard.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/admin/AdminClientsTable.tsx",
-          "frontend/src/components/admin/AdminDashboard.tsx",
-          "frontend/src/components/client/ClientPortalLoginCard.tsx",
-          "frontend/src/components/client/ClientSignupCard.tsx",
-          "frontend/src/utils/clientAuthErrors.ts"
+          "frontend/src/components/admin/AdminLoginHistoryPanel.tsx",
+          "frontend/src/components/admin/AdminDashboard.tsx"
         ]
       },
       {
-        "id": "REQ-6",
-        "summary": "If the backend state schema must change to add per-account failed-attempt counters, locked status, and generated client code, implement a conditional Motoko upgrade migration that preserves existing persisted data and initializes new fields with safe defaults.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
+        "id": "REQ-5",
+        "summary": "Frontend: Add React Query wiring (hook/query key) to fetch login history from the backend using the current adminToken, and ensure the query is disabled when no actor or no adminToken is available.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/admin/AdminLoginHistoryPanel.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/admin/AdminLoginHistoryPanel.tsx"
+        ]
       }
     ]
   },
@@ -75,34 +66,13 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
     "frontend/src/backend.d.ts",
     "frontend/src/backend.ts",
-    "frontend/src/components/AdminTrackingPanel.tsx",
-    "frontend/src/components/admin/AdminClientDetail.tsx",
-    "frontend/src/components/admin/AdminClientForm.tsx",
-    "frontend/src/components/admin/AdminClientProvisionDialog.tsx",
-    "frontend/src/components/admin/AdminClientsTable.tsx",
     "frontend/src/components/admin/AdminDashboard.tsx",
-    "frontend/src/components/admin/AdminGoogleGeocodingPanel.tsx",
-    "frontend/src/components/admin/AdminInvoiceExportButton.tsx",
-    "frontend/src/components/admin/AdminInvoicesTable.tsx",
-    "frontend/src/components/admin/AdminMsg91Panel.tsx",
-    "frontend/src/components/admin/AdminRevenuePanel.tsx",
-    "frontend/src/components/admin/AdminShipmentsTable.tsx",
-    "frontend/src/components/auth/AdminLoginCard.tsx",
-    "frontend/src/components/client/ClientDashboard.tsx",
-    "frontend/src/components/client/ClientInvoicesTable.tsx",
-    "frontend/src/components/client/ClientPasswordChangeCard.tsx",
-    "frontend/src/components/client/ClientPortalLoginCard.tsx",
-    "frontend/src/components/client/ClientShipmentsTable.tsx",
-    "frontend/src/components/client/ClientSignupCard.tsx",
+    "frontend/src/components/admin/AdminLoginHistoryPanel.tsx",
     "frontend/src/declarations/backend.did.d.ts",
     "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useAdminBootstrap.ts",
-    "frontend/src/hooks/useAdminSession.ts",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/utils/clientAuthErrors.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

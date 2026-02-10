@@ -74,7 +74,7 @@ export function ClientSignupCard({ onSuccess }: ClientSignupCardProps) {
         },
       });
 
-      setSuccessMessage('Account created successfully! Please log in with your credentials.');
+      setSuccessMessage('Signup successful. Please log in.');
       
       // Clear form
       setEmail('');

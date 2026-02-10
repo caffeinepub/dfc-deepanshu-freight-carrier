@@ -1,108 +1,37 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-10T04:24:48.627Z",
-  "summary": "The diff adds new backend data fields (failedAttempts, isLocked, clientCode) and introduces a migration module, plus frontend UI for admin client listing/deletion. However, the diff summary does not provide evidence that the required backend signup/login/admin APIs and behaviors (unique DFC code generation, password hashing/verification, lockout logic, login history persistence/retrieval, admin-token enforcement) are implemented. The migration shown also appears incomplete and sets clientCode incorrectly.",
+  "generatedAt": "2026-02-10T03:56:21.427Z",
+  "summary": "Diff adds a LoginHistoryEntry type and loginHistory storage in backend/main.mo, includes a migration module to add loginHistory on upgrade, and adds an Admin Login History tab + panel in the admin dashboard. React Query wiring appears to include a new useGetLoginHistory hook per file summary, but the diff excerpt does not show the backend method that serves this data nor the logic that appends entries on successful client login.",
   "missing_requirements": [
     {
-      "id": "REQ-1",
-      "requirement": "Persistent client signup API that enforces unique email, generates unique client code in format \"DFC\" + 5 digits, stores one-way hashed password, and persists profile fields + createdAt.",
-      "reason": "The diff summary shows the ClientAccount type includes new fields, but does not show any signup method implementation, unique email enforcement, DFC+5-digit client code generation, or password hashing logic. The migration sets clientCode = identifier (not DFCxxxxx).",
-      "evidence": [
-        "backend/main.mo (truncated)",
-        "backend/migration.mo"
-      ]
-    },
-    {
       "id": "REQ-2",
-      "requirement": "Secure password login API: find by email/mobile, reject locked, verify password vs stored hash, increment/reset per-account failedAttempts, and return the same session token format expected by the frontend.",
-      "reason": "While failedAttempts and isLocked fields were added to the ClientAccount model, the diff summary does not show the login API implementation that checks lock status, verifies hashed passwords, updates failedAttempts, resets on success, or returns the required session token format.",
+      "requirement": "When a client login succeeds (password and OTP flows if both exist), append exactly one login history entry with identifier, client_id, Time.now() login_time, and best-effort ip_address; do not record failed logins.",
+      "reason": "backend/main.mo excerpt shows the LoginHistoryEntry type and loginHistory map, but no evidence in the provided diff summary that any successful client login path appends entries (or that failed logins do not).",
       "evidence": [
         "backend/main.mo (truncated)"
       ]
     },
     {
       "id": "REQ-3",
-      "requirement": "Record login history on every successful client authentication with identifier, client principal text, timestamp, and nullable ipAddress; entry must be visible via existing admin login history retrieval method.",
-      "reason": "A LoginHistoryEntry type and loginHistory map are present, but the diff summary does not show any backend logic that appends entries on successful login, handles nullable IP, or exposes/keeps compatibility with the admin login history retrieval method.",
-      "evidence": [
-        "backend/main.mo (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "requirement": "Admin backend APIs to (a) list all clients (clientCode, companyName/name, email, createdAt) and (b) delete a client by clientCode; both require valid admin session token.",
-      "reason": "Frontend adds an admin clients table that calls hooks for listing and deleting, but the diff summary does not show backend endpoints implementing list/delete by clientCode, nor evidence that these operations validate an admin session token and reject when invalid/missing.",
+      "requirement": "Expose an admin-only query method to fetch login history entries ordered by most recent first; must require a valid admin session token and trap on unauthorized access.",
+      "reason": "No new backend admin-only query method is shown in the backend/main.mo excerpt or elsewhere in the diff summary; only the frontend hook/panel references fetching login history.",
       "evidence": [
         "backend/main.mo (truncated)",
-        "frontend/src/components/admin/AdminClientsTable.tsx"
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "requirement": "Frontend data flow updates to use new/updated backend behaviors for signup/login and admin list/delete, with all user-facing messages in English and compatibility with existing client session token handling and admin login history panel.",
-      "reason": "Admin client list/delete UI was updated to use clientCode, but the diff summary does not show the updated signup flow, nor confirm client session token compatibility. Also, App.tsx includes user-facing strings with a \"❌\" symbol, which may conflict with the requirement to keep messages in English (the diff does not demonstrate the required English-only messaging across all auth flows).",
-      "evidence": [
-        "frontend/src/components/admin/AdminClientsTable.tsx",
-        "frontend/src/components/client/ClientPortalLoginCard.tsx",
-        "frontend/src/App.tsx (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "requirement": "Conditional Motoko upgrade migration preserving existing persisted data (client accounts, sessions, shipments, invoices, login history) and initializing new fields with safe defaults (failedAttempts=0, accountLocked=false, clientCode generated if missing).",
-      "reason": "The added migration only maps old clientAccounts to new clientAccounts and returns a NewActor containing only clientAccounts, with no evidence it preserves sessions, shipments, invoices, or login history. It also initializes clientCode to identifier rather than generating a DFC+5-digit code when missing.",
-      "evidence": [
-        "backend/migration.mo",
-        "backend/main.mo (truncated)"
+        "frontend/src/hooks/useQueries.ts (truncated)",
+        "frontend/src/components/admin/AdminLoginHistoryPanel.tsx"
       ]
     }
   ],
-  "hallucinated_features": [
-    {
-      "description": "Client tracking UI behavior that explicitly states tracking is unavailable (including \"❌\"-prefixed messages) and WhatsApp quote request message composition/launch from App.tsx.",
-      "reason": "The BuildRequest focuses on persistent signup/login, admin client management, and login history. Tracking/quote-request UX changes are not requested in the requirements.",
-      "evidence": [
-        "frontend/src/App.tsx (truncated)"
-      ]
-    },
-    {
-      "description": "Backend rate-limiting system for login attempts (loginAttempts map, maxLoginAttempts, loginAttemptWindow, checkRateLimit).",
-      "reason": "Rate limiting is not part of the BuildRequest requirements; only per-account failed-attempt counters and locking behavior were requested.",
-      "evidence": [
-        "backend/main.mo (truncated)"
-      ]
-    }
-  ],
-  "confidence": 0.64,
+  "hallucinated_features": [],
+  "confidence": 0.62,
   "changed_files": [
     "backend/main.mo",
     "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
-    "frontend/src/components/AdminTrackingPanel.tsx",
-    "frontend/src/components/admin/AdminClientDetail.tsx",
-    "frontend/src/components/admin/AdminClientForm.tsx",
-    "frontend/src/components/admin/AdminClientProvisionDialog.tsx",
-    "frontend/src/components/admin/AdminClientsTable.tsx",
     "frontend/src/components/admin/AdminDashboard.tsx",
-    "frontend/src/components/admin/AdminGoogleGeocodingPanel.tsx",
-    "frontend/src/components/admin/AdminInvoiceExportButton.tsx",
-    "frontend/src/components/admin/AdminInvoicesTable.tsx",
-    "frontend/src/components/admin/AdminMsg91Panel.tsx",
-    "frontend/src/components/admin/AdminRevenuePanel.tsx",
-    "frontend/src/components/admin/AdminShipmentsTable.tsx",
-    "frontend/src/components/auth/AdminLoginCard.tsx",
-    "frontend/src/components/client/ClientDashboard.tsx",
-    "frontend/src/components/client/ClientInvoicesTable.tsx",
-    "frontend/src/components/client/ClientPasswordChangeCard.tsx",
-    "frontend/src/components/client/ClientPortalLoginCard.tsx",
-    "frontend/src/components/client/ClientShipmentsTable.tsx",
-    "frontend/src/components/client/ClientSignupCard.tsx",
-    "frontend/src/hooks/useAdminBootstrap.ts",
-    "frontend/src/hooks/useAdminSession.ts",
+    "frontend/src/components/admin/AdminLoginHistoryPanel.tsx",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/utils/clientAuthErrors.ts",
     "project_state.json"
   ]
 }

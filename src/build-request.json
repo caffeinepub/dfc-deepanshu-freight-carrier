@@ -1,131 +1,107 @@
 {
   "kind": "build_request",
-  "title": "Implement persistent client signup/login with generated client codes, admin client list/delete, and login history",
+  "title": "Add client login history tracking and admin view",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Implement a persistent client signup API in the Motoko backend that creates a new client account record (not just frontend-only), enforces unique email, generates a unique client code in the format \"DFC\" + 5 digits (e.g., DFC12345), and stores the hashed password along with profile fields (companyName, gstNumber, address, mobile) and createdAt timestamp.",
+      "text": "Backend: Add persistent storage for a login history log that records each successful client login with fields: client identifier (email or mobile as entered), resolved client_id (client principal/text ID used by the session), login_time (server timestamp), and ip_address (optional text).",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "recent-messages:user-1"
         ],
         "quotes": [
-          "\"Ensure ye table hai\" ... \"Signup karega → clients table me record add hoga\" ... \"Client ID auto generate hoga\""
+          "Solution: Login History System Add Karna Hoga ... store each successful client login (time, email, client_id, IP)"
         ]
       },
       "acceptanceCriteria": [
-        "Signing up with a new email persists a new client account in canister state and does not rely on any frontend-only state.",
-        "Signing up with an already-registered email fails with a clear error message in English (e.g., \"Email already registered\").",
-        "A client code like DFC12345 is generated during signup and is unique across all client accounts.",
-        "Client password is not stored in plaintext; the stored value is a one-way hash.",
-        "The stored client profile includes company name, GST number (optional), address, and mobile number, plus createdAt."
+        "A new LoginHistoryEntry data type exists in backend/main.mo with fields that can represent: client_id, identifier/email, login_time, ip_address.",
+        "Login history entries are stored in canister state so they persist across calls (and across upgrades if the app already supports stable upgrades).",
+        "If ip_address is not provided by the caller, the stored value is empty or a clearly defined placeholder (e.g., null/\"Unknown\")."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Implement a secure client password login API in the Motoko backend that (1) finds the account by email (and/or mobile if supported), (2) rejects login if the account is locked, (3) verifies password against the stored hash, (4) increments per-account failed-attempt counters on wrong password, (5) resets failed-attempt counters on successful login, and (6) returns the same session token format currently expected by the frontend.",
+      "text": "Backend: When a client login succeeds (both password login and OTP login flows, if both exist), append a new login history entry capturing identifier/email/mobile, client_id, current timestamp, and an ip_address value provided by the frontend (best-effort). Do not record entries for failed logins.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "recent-messages:user-1"
         ],
         "quotes": [
-          "\"🔥 STEP 3 – Secure Login Route\" ... \"failed_attempts\" ... \"account_locked\""
+          "Step 2: Login Route Me Record Save Karo Jab client successfully login kare ... Login History Save ..."
         ]
       },
       "acceptanceCriteria": [
-        "Logging in with an unknown email returns an English error (e.g., \"User not found\").",
-        "Logging in with a wrong password increments the account's failed-attempt counter and returns an English error (e.g., \"Wrong password\").",
-        "Logging in to a locked account returns an English error (e.g., \"Account locked. Contact admin\").",
-        "Successful login resets failed-attempt counter and returns a non-empty session token usable by existing client portal flows.",
-        "Session tokens continue to work with existing authorization checks that compare shipments/invoices to the client principal text stored in the session."
+        "Successful client password login results in exactly one new login history entry.",
+        "Successful client OTP login (if supported) results in exactly one new login history entry.",
+        "Failed login attempts (wrong password/invalid OTP/user not found/rate limited) do not create login history entries.",
+        "The login_time stored is based on the backend canister time (Time.now())."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Record login history on every successful client authentication in the backend, capturing at minimum: identifier used, client principal text, login timestamp, and best-effort IP address (if supplied by the frontend; otherwise store null).",
+      "text": "Backend: Expose an admin-only query method to fetch login history entries ordered by most recent first. The method must require a valid admin session token and trap on unauthorized access.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "recent-messages:user-1"
         ],
         "quotes": [
-          "\"✔ Login history alag se store hogi\" ... \"Save Login History\""
+          "✅ Step 3: Admin Panel Me Login History Show Karna ... app.get(\"/admin/login-history\" ... ORDER BY login_time DESC"
         ]
       },
       "acceptanceCriteria": [
-        "After a successful client login, a new login history entry is persisted and visible via the existing admin login history retrieval method used by the admin UI.",
-        "Each login history entry includes identifier, clientId, loginTime, and ipAddress (nullable).",
-        "If IP is not provided by the frontend, login history still records the event with ipAddress = null."
+        "A new backend method (admin-only) returns an array of login history entries sorted descending by login_time.",
+        "Calling the method with an invalid/expired admin token traps with an unauthorized error (following existing patterns like other admin-only queries)."
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Add/extend admin backend APIs to support client monitoring and management: (a) list all client accounts including client code (DFCxxxxx), name/companyName, email, and createdAt; and (b) delete a client account by its generated client code (DFCxxxxx). Both operations must require a valid admin session token.",
-      "target": "backend",
+      "text": "Frontend: Add a new \"Login History\" section in the Admin Dashboard tabs and render a table showing: Client Email/Identifier, Login Time, IP Address. All user-facing text must be in English.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "recent-messages:user-1"
         ],
         "quotes": [
-          "\"app.get(\\\"/admin/clients\\\"\" ... \"app.delete(\\\"/admin/delete-client/:id\\\"\""
+          "Admin Dashboard me ek section add karo ... Frontend table: Client Email, Login Time, IP Address"
         ]
       },
       "acceptanceCriteria": [
-        "Admin client list call returns all clients with fields: clientCode, companyName/name, email, createdAt.",
-        "Admin delete call removes the client account associated with the provided client code.",
-        "Both endpoints trap/reject when admin token is missing or invalid.",
-        "Deleting a client prevents subsequent login for that account."
+        "AdminDashboard includes a new tab labeled \"Login History\" visible only when the admin is authenticated (consistent with existing dashboard behavior).",
+        "The Login History view shows a table with columns: Client Email/Identifier, Login Time, IP Address.",
+        "Login Time is displayed in a readable format (e.g., local date/time string) and the table is ordered newest-first.",
+        "The UI includes loading and empty states consistent with the rest of the admin panels (skeleton/loading indicator and an empty message like \"No login history yet\")."
       ]
     },
     {
       "id": "REQ-5",
-      "text": "Update the frontend data flow to use the new/updated backend behaviors for signup, login, and admin client list/delete, while keeping all user-facing messages in English and maintaining compatibility with the existing client session token handling and admin login history panel.",
+      "text": "Frontend: Add React Query wiring (hook/query key) to fetch login history from the backend using the current adminToken, and ensure the query is disabled when no actor or no adminToken is available.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "\"Yah code donon add karo\""
+          "recent-messages:user-1"
         ]
       },
       "acceptanceCriteria": [
-        "Client signup results in a persisted backend account; after refresh, admin can still see the newly created client in the admin client list UI.",
-        "Client login continues to work with existing client portal pages (shipments/invoices) using the returned session token.",
-        "Admin client list UI shows the generated client code for each client (DFCxxxxx) and can delete by that code.",
-        "All surfaced error/success strings for these flows are in English (e.g., email already registered, signup failed, wrong password, account locked, client deleted)."
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "If the backend state schema must change to add per-account failed-attempt counters, locked status, and generated client code, implement a conditional Motoko upgrade migration that preserves existing persisted data and initializes new fields with safe defaults.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "\"failed_attempts\" ... \"account_locked\" ... \"Client ID auto generate\""
-        ]
-      },
-      "acceptanceCriteria": [
-        "Upgrading the canister does not erase existing client accounts, sessions, shipments, invoices, or login history.",
-        "New fields introduced for existing accounts are initialized consistently (e.g., failedAttempts=0, accountLocked=false, clientCode generated if missing)."
+        "A new React Query hook exists in frontend/src/hooks/useQueries.ts to fetch login history using actor + adminToken.",
+        "The query key is stable and includes adminToken similarly to existing admin queries (e.g., ['loginHistory', adminToken]).",
+        "The Login History admin UI uses the hook and correctly handles loading/error/empty states."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
-    "Do not edit frontend files under frontend/src/components/ui or any paths listed as immutable in SYSTEM_CONTEXT.",
-    "Do not implement or reference Express/server.js, MySQL tables, or npm packages like bcrypt on the backend; implement equivalent behavior in Motoko canister state."
+    "Use English for all user-facing text.",
+    "Backend must remain a single Motoko actor (all logic in backend/main.mo).",
+    "Do not edit files under frontend/src/components/ui or any paths listed in frontend.immutablePaths.",
+    "Do not assume the backend can access the client IP address directly; store IP only if provided by the frontend as best-effort input."
   ],
   "nonGoals": [
-    "Adding third-party authentication providers (only existing auth mechanisms remain).",
-    "Implementing external database persistence (MySQL/Postgres/etc.).",
-    "Adding real-time/WebSocket functionality."
+    "Do not implement third-party auth providers or external databases (no SQL tables).",
+    "Do not record admin login history unless explicitly requested.",
+    "Do not add real-time updates/streaming for login history; fetch-on-view is sufficient."
   ],
   "imageRequirements": {
     "required": [],

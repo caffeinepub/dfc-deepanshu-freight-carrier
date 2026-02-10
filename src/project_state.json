@@ -1,21 +1,26 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Backend authentication + admin management system: MySQL clients table, signup/login APIs with bcrypt password hashing, login history logging, and admin endpoints to list/delete clients.",
+  "summary": "Project to add a Login History System: store each successful client login (time, email, client_id, IP) and expose it in the admin panel.",
   "architectural_notes": [
-    "Use MySQL database with `clients` table (unique email, unique client_id, failed_attempts, account_locked, created_at).",
-    "Use bcrypt for password hashing and comparison in signup/login routes.",
-    "Capture IP address on login using `x-forwarded-for` header fallback to socket remoteAddress.",
-    "Login history persisted via `login_history` table (client_id, email, ip_address)."
+    "Add `login_history` DB table with fields: id, client_id, email, login_time (default CURRENT_TIMESTAMP), ip_address.",
+    "On successful `/login`, insert a login_history record (capture IP from `x-forwarded-for` or socket remoteAddress).",
+    "Provide admin endpoint `/admin/login-history` returning login_history ordered by login_time DESC; admin UI displays Email, Login Time, IP Address."
   ],
-  "known_issues": [
-    "Signup may currently be frontend-only (no backend insert into `clients`), causing users not to be persisted in database."
-  ],
-  "isFixRequest": true,
+  "known_issues": [],
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-update-the-frontend-data-flow-to-use-the-new-updated-backend-behaviors-for-signup-login-and-admin-client-list-delete-while-keeping-all-user-facing-messages-in-english-and-maintaining-compatibility-with-the-existing-client-session-token-handling-and-admin-login-history-panel",
-      "title": "Update the frontend data flow to use the new/updated backend behaviors for signup, login, and admin client list/delete, while keeping all user-facing messages in English and maintaining compatibility with the existing client session token handling and admin login history panel.",
+      "id": "feature-frontend-add-a-new-login-history-section-in-the-admin-dashboard-tabs-and-render-a-table-showing-client-email-identifier-login-time-ip-address-all-user-facing-text-must-be-in-english",
+      "title": "Frontend: Add a new \"Login History\" section in the Admin Dashboard tabs and render a table showing: Client Email/Identifier, Login Time, IP Address. All user-facing text must be in English.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-frontend-add-react-query-wiring-hook-query-key-to-fetch-login-history-from-the-backend-using-the-current-admintoken-and-ensure-the-query-is-disabled-when-no-actor-or-no-admintoken-is-available",
+      "title": "Frontend: Add React Query wiring (hook/query key) to fetch login history from the backend using the current adminToken, and ensure the query is disabled when no actor or no adminToken is available.",
       "reqIds": [
         "REQ-5"
       ],
@@ -25,82 +30,36 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Create/ensure MySQL `clients` table with unique email and generated client_id plus lockout fields",
+      "summary": "Implement Login History System (DB table + record on login + admin view/API)",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Implement `/signup` backend route to validate unique email, bcrypt-hash password, generate client_id, and insert into `clients`",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Implement `/login` backend route to verify password, track failed_attempts/reset on success, respect account_locked, and return client info",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-4",
-      "summary": "Store login history on successful login (requires `login_history` table) including client_id, email, and IP address",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-5",
-      "summary": "Admin API: GET `/admin/clients` to list clients (client_id, name, email, created_at)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-6",
-      "summary": "Admin API: DELETE `/admin/delete-client/:id` to delete client by client_id",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-7",
-      "summary": "Implement a persistent client signup API in the Motoko backend that creates a new client account record (not just frontend-only), enforces unique email, generates a unique client code in the format \"DFC\" + 5 digits (e.g., DFC12345), and stores the hashed password along with profile fields (companyName, gstNumber, address, mobile) and createdAt timestamp.",
+      "summary": "Backend: Add persistent storage for a login history log that records each successful client login with fields: client identifier (email or mobile as entered), resolved client_id (client principal/text ID used by the session), login_time (server timestamp), and ip_address (optional text).",
       "reqIds": [
         "REQ-1"
       ],
       "status": "pending"
     },
     {
-      "id": "AR-8",
-      "summary": "Implement a secure client password login API in the Motoko backend that (1) finds the account by email (and/or mobile if supported), (2) rejects login if the account is locked, (3) verifies password against the stored hash, (4) increments per-account failed-attempt counters on wrong password, (5) resets failed-attempt counters on successful login, and (6) returns the same session token format currently expected by the frontend.",
+      "id": "AR-3",
+      "summary": "Backend: When a client login succeeds (both password login and OTP login flows, if both exist), append a new login history entry capturing identifier/email/mobile, client_id, current timestamp, and an ip_address value provided by the frontend (best-effort). Do not record entries for failed logins.",
       "reqIds": [
         "REQ-2"
       ],
       "status": "pending"
     },
     {
-      "id": "AR-9",
-      "summary": "Record login history on every successful client authentication in the backend, capturing at minimum: identifier used, client principal text, login timestamp, and best-effort IP address (if supplied by the frontend; otherwise store null).",
+      "id": "AR-4",
+      "summary": "Backend: Expose an admin-only query method to fetch login history entries ordered by most recent first. The method must require a valid admin session token and trap on unauthorized access.",
       "reqIds": [
         "REQ-3"
       ],
       "status": "pending"
-    },
-    {
-      "id": "AR-10",
-      "summary": "Add/extend admin backend APIs to support client monitoring and management: (a) list all client accounts including client code (DFCxxxxx), name/companyName, email, and createdAt; and (b) delete a client account by its generated client code (DFCxxxxx). Both operations must require a valid admin session token.",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-12",
-      "summary": "If the backend state schema must change to add per-account failed-attempt counters, locked status, and generated client code, implement a conditional Motoko upgrade migration that preserves existing persisted data and initializes new fields with safe defaults.",
-      "reqIds": [
-        "REQ-6"
-      ],
-      "status": "pending"
     }
   ],
-  "projectName": "Implement persistent client signup/login with generated client codes, admin client list/delete, and login history",
+  "projectName": "Add client login history tracking and admin view",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
