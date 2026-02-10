@@ -1,78 +1,101 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Email/password client signup + protected client portal auth flow",
+  "title": "Admin live tracking map, revenue chart, and client WhatsApp support",
   "requirements": [
     {
-      "id": "REQ-2",
-      "summary": "Add a React client signup screen (email + password) linked from client login, with validation and clear English success/error messaging.",
+      "id": "REQ-1",
+      "summary": "Add an Admin “Live Tracking” tab that loads Google Maps via a Vite env API key and renders shipment markers from backend-provided coordinates.",
       "acceptanceCriteria": [
-        "Client Portal shows a way to navigate between \"Log in\" and \"Create account\" without page reloads (React flow).",
-        "Signup form validates required fields and prevents empty/invalid email input.",
-        "On successful signup, the UI shows an English confirmation (e.g., \"Signup successful. Please log in.\") and routes the user back to the login form.",
-        "On duplicate email, the UI shows an English error message (e.g., \"Email already registered\")."
+        "Admin Dashboard includes a new tab/route labeled “Live Tracking”.",
+        "When the API key is present, the map loads without console errors and displays shipment markers based on backend shipment data.",
+        "When the API key is missing/empty, the UI shows a clear English message explaining that the Google Maps API key is not configured and the map is disabled.",
+        "Shipment markers are derived from shipment location coordinates stored on shipments (not hard-coded)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/client/ClientSignupCard.tsx",
-          "operation": "create",
-          "description": "Create a client signup UI card with required email + password inputs, client-side validation, and success/error rendering. Use shadcn-ui (Card, Input, Button, Alert) to match existing styling. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/client/ClientPortalAuthCard.tsx",
-          "operation": "create",
-          "description": "Create a wrapper component that provides a no-reload React flow between login and signup (e.g., local state / tabs), rendering the existing ClientPortalLoginCard and the new ClientSignupCard, and coordinating navigation back to login after successful signup. Use shadcn-ui (Tabs) for the switching UI. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/client/ClientPortalLoginCard.tsx",
+          "path": "frontend/src/components/admin/AdminDashboard.tsx",
           "operation": "modify",
-          "description": "Add a clear \"Create account\" navigation affordance (link/button) that switches the Client Portal view to signup via a prop callback from ClientPortalAuthCard, while keeping existing password/OTP login behavior intact. Use existing shadcn-ui primitives for consistent styling. Verify the component's usage instructions before implementing."
+          "description": "Add a new TabsTrigger/TabsContent pair for “Live Tracking” in the existing AdminDashboard tab layout, and render the AdminTrackingPanel inside it (ensuring it remains behind existing admin-session auth behavior). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/AdminTrackingPanel.tsx",
+          "operation": "modify",
+          "description": "Implement the Google Maps live-tracking panel: read the API key from import.meta.env.VITE_GOOGLE_MAPS_API_KEY, show an English disabled message when missing, dynamically load the Google Maps JavaScript API script when present, and render markers for shipments that include coordinates from backend data (ignore shipments without coordinates). Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Add a clientSignup React Query mutation hook that calls the backend clientSignup capability and returns a success result suitable for UI messaging; ensure errors are surfaced so the UI can show duplicate email and other clear English messages."
-        },
-        {
-          "path": "frontend/src/utils/clientAuthErrors.ts",
-          "operation": "modify",
-          "description": "Extend client auth error mapping to include signup-specific messages (e.g., duplicate email -> \"Email already registered\") and any other backend auth/signup failures that should be shown in clear English."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Wire the new ClientPortalAuthCard into the Client Portal section so unauthenticated users see the combined login/signup flow instead of only the login card, without adding new top-level routes."
+          "description": "Add an admin-only React Query hook to fetch all shipments for the tracking map using the existing backend capability (requires adminToken), returning a stable empty array when unauthenticated and surfacing errors for the panel to display. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
       "id": "REQ-3",
-      "summary": "Keep the client dashboard protected by session token; handle invalid/expired sessions by clearing token and returning to login; support logout that clears token and prevents further access.",
+      "summary": "Implement the missing AdminTrackingPanel with loading, empty, and error UI consistent with the existing AdminDashboard theme.",
       "acceptanceCriteria": [
-        "When no client session token exists in storage, the client dashboard is not accessible and the client login UI is shown.",
-        "When an invalid/expired token is detected by backend calls, the frontend clears the stored token and returns the user to the client login UI.",
-        "After logout, the stored token is cleared and the dashboard is no longer accessible without logging in again."
+        "The previously empty AdminTrackingPanel is implemented and is used by AdminDashboard.",
+        "The panel shows a loading state while shipments load, an empty state when there are no shipments, and an error state on failure.",
+        "User-facing text in the panel is in English and matches the existing neutral/gold theme used in AdminDashboard."
       ],
       "file_operations": [
         {
+          "path": "frontend/src/components/AdminTrackingPanel.tsx",
+          "operation": "modify",
+          "description": "Add loading/empty/error states using existing shadcn/ui building blocks already used elsewhere (Card/Skeleton/etc.) and the neutral/gold styling conventions from AdminDashboard; ensure all new user-facing strings are English. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminDashboard.tsx",
+          "operation": "modify",
+          "description": "Wire AdminTrackingPanel into the “Live Tracking” tab content so it is not an orphan component and is reachable from the AdminDashboard UI. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Add an Admin “Revenue” tab that renders a line chart computed from real stored invoice revenue data, with an empty-state when no data is available.",
+      "acceptanceCriteria": [
+        "Admin Dashboard includes a Revenue section/tab with a visible line chart.",
+        "Chart data is computed from real invoice records (e.g., grouped by month) rather than hard-coded sample values.",
+        "If there are no invoices, the chart area shows an English empty-state message instead of rendering a broken chart.",
+        "The Revenue section is accessible only when admin session is authenticated (consistent with existing AdminDashboard auth behavior)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/admin/AdminDashboard.tsx",
+          "operation": "modify",
+          "description": "Add a new “Revenue” tab in AdminDashboard (TabsTrigger/TabsContent) and render a new AdminRevenuePanel component within it, keeping it under the existing admin authenticated guard. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminRevenuePanel.tsx",
+          "operation": "create",
+          "description": "Create an admin revenue panel that fetches revenue data from the backend (admin-authenticated), computes chart series (e.g., grouped by month on the frontend if needed), and renders a line chart (without hard-coded demo values). Include English loading/empty/error states and match the neutral/gold styling. Verify the component's usage instructions before implementing."
+        },
+        {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Harden client-session invalidation behavior: (1) add a clientLogout mutation hook that calls the backend clientLogout capability using the stored client session token; (2) ensure key client queries/mutations that rely on clientSessionToken clear the stored token when backend indicates an invalid/expired token, so the UI naturally falls back to the login view."
+          "description": "Add an admin-only React Query hook to fetch revenue data via the existing backend capability and expose it to AdminRevenuePanel; ensure proper enabled conditions based on actor availability and adminToken, and that errors can be rendered as an English error state. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Add a persistent client dashboard WhatsApp support action that opens a prefilled English message to the support number.",
+      "acceptanceCriteria": [
+        "ClientDashboard shows a clearly visible WhatsApp support action (button/link) on desktop and mobile.",
+        "Clicking the action opens a WhatsApp deep link to 9817783604 with a prefilled English message.",
+        "The button does not interfere with existing client dashboard tabs (Shipments/Invoices) and remains usable while data is loading."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/lib/whatsapp.ts",
+          "operation": "modify",
+          "description": "Add a dedicated helper to generate a WhatsApp support deep link for the support number 9817783604 with a prefilled English support message (URL-encoded), separate from invoice reminder messaging. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/components/client/ClientDashboard.tsx",
           "operation": "modify",
-          "description": "Update logout flow to call the new clientLogout mutation (best-effort) before clearing local token and cached queries, then ensure the dashboard no longer renders once the token is cleared. Use existing shadcn-ui Button and toast messaging for consistent UX. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/hooks/useClientSession.ts",
-          "operation": "modify",
-          "description": "Ensure session token handling remains robust for protection logic (e.g., keep trimming/empty-token guards) and add any needed helper(s) to support centralized clearing on invalid/expired token detection."
-        },
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Ensure protected rendering remains correct: when the token is cleared (missing/invalid/expired), Client Portal shows the login/signup UI and does not render the dashboard; keep existing account-status loading/first-login flows working."
+          "description": "Add a persistent “Contact Support via WhatsApp” Button/link in the client dashboard header area (next to/near Logout) that opens the support deep link in a new tab; ensure it remains visible and usable across the Shipments/Invoices tabs and while client data is loading. Verify the component's usage instructions before implementing."
         }
       ]
     }

@@ -1,45 +1,72 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
 import { useAdminSession } from './useAdminSession';
-import { useClientSession } from './useClientSession';
+import { useClientSession } from './ClientSessionProvider';
 import { Principal } from '@dfinity/principal';
-import type { UserProfile, Shipment, Invoice, Client } from '../backend';
+import type { Client, Invoice, Shipment, UserProfile } from '../backend';
 import { toast } from 'sonner';
 
-// Admin Session Validation
-export function useValidateAdminSession() {
+// Admin Bootstrap Queries
+export function useIsAdminBootstrapped() {
   const { actor, isFetching } = useActor();
-  const { adminToken } = useAdminSession();
 
-  return useQuery({
-    queryKey: ['adminSessionValid', adminToken],
+  return useQuery<boolean>({
+    queryKey: ['isAdminBootstrapped'],
     queryFn: async () => {
-      if (!actor || !adminToken) return false;
-      try {
-        await actor.getAllClients(adminToken);
-        return true;
-      } catch (error) {
-        return false;
-      }
+      if (!actor) return false;
+      return actor.isAdminBootstrapped();
     },
-    enabled: !!actor && !!adminToken && !isFetching,
-    retry: false,
-    staleTime: 5 * 60 * 1000,
+    enabled: !!actor && !isFetching,
   });
 }
 
-// Client Management
+export function useBootstrapFirstAdmin() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.bootstrapFirstAdmin();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['isAdminBootstrapped'] });
+      toast.success('Admin access granted successfully');
+    },
+    onError: (error: any) => {
+      console.error('Bootstrap error:', error);
+      toast.error(error.message || 'Failed to bootstrap admin');
+    },
+  });
+}
+
+// Client Management Queries
 export function useGetAllClients() {
   const { actor, isFetching } = useActor();
   const { adminToken } = useAdminSession();
 
   return useQuery<Client[]>({
-    queryKey: ['clients'],
+    queryKey: ['clients', adminToken],
     queryFn: async () => {
       if (!actor || !adminToken) return [];
       return actor.getAllClients(adminToken);
     },
-    enabled: !!actor && !!adminToken && !isFetching,
+    enabled: !!actor && !isFetching && !!adminToken,
+  });
+}
+
+export function useGetClient(clientId: string | null) {
+  const { actor, isFetching } = useActor();
+  const { adminToken } = useAdminSession();
+
+  return useQuery<Client | null>({
+    queryKey: ['client', clientId, adminToken],
+    queryFn: async () => {
+      if (!actor || !adminToken || !clientId) return null;
+      const principal = Principal.fromText(clientId);
+      return actor.getClient(principal, adminToken);
+    },
+    enabled: !!actor && !isFetching && !!adminToken && !!clientId,
   });
 }
 
@@ -49,17 +76,64 @@ export function useAdminAddOrUpdateClient() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ clientId, profile }: { clientId: Principal; profile: UserProfile }) => {
+    mutationFn: async ({
+      clientId,
+      profile,
+    }: {
+      clientId: string;
+      profile: UserProfile;
+    }) => {
       if (!actor || !adminToken) throw new Error('Not authenticated');
-      return actor.adminAddOrUpdateClient(clientId, profile, adminToken);
+      const principal = Principal.fromText(clientId);
+      return actor.adminAddOrUpdateClient(principal, profile, adminToken);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['client'] });
+      toast.success('Client profile updated successfully');
+    },
+    onError: (error: any) => {
+      console.error('Update client error:', error);
+      toast.error(error.message || 'Failed to update client');
     },
   });
 }
 
-// Shipments
+// Shipment Queries
+export function useGetShipmentsByClient(clientId: string | null) {
+  const { actor, isFetching } = useActor();
+  const { adminToken } = useAdminSession();
+  const { sessionToken: clientToken } = useClientSession();
+
+  return useQuery<Shipment[]>({
+    queryKey: ['shipments', clientId, adminToken, clientToken],
+    queryFn: async () => {
+      if (!actor || !clientId) return [];
+      const principal = Principal.fromText(clientId);
+      return actor.getShipmentsByClient(
+        principal,
+        adminToken || null,
+        clientToken || null
+      );
+    },
+    enabled: !!actor && !isFetching && !!clientId && (!!adminToken || !!clientToken),
+  });
+}
+
+export function useGetAllShipmentsForMap() {
+  const { actor, isFetching } = useActor();
+  const { adminToken } = useAdminSession();
+
+  return useQuery<Shipment[]>({
+    queryKey: ['shipmentsForMap', adminToken],
+    queryFn: async () => {
+      if (!actor || !adminToken) return [];
+      return actor.getAllShipmentsForMap(adminToken);
+    },
+    enabled: !!actor && !isFetching && !!adminToken,
+  });
+}
+
 export function useCreateShipment() {
   const { actor } = useActor();
   const { adminToken } = useAdminSession();
@@ -70,42 +144,73 @@ export function useCreateShipment() {
       trackingID,
       status,
       location,
+      coordinates,
       client,
     }: {
       trackingID: string;
       status: string;
       location: string;
-      client: Principal;
+      coordinates?: { latitude: number; longitude: number } | null;
+      client: string;
     }) => {
       if (!actor || !adminToken) throw new Error('Not authenticated');
-      return actor.createShipment(trackingID, status, location, client, adminToken);
+      const principal = Principal.fromText(client);
+      return actor.createShipment(
+        trackingID,
+        status,
+        location,
+        coordinates || null,
+        principal,
+        adminToken
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['shipments'] });
+      queryClient.invalidateQueries({ queryKey: ['shipmentsForMap'] });
+      toast.success('Shipment created successfully');
+    },
+    onError: (error: any) => {
+      console.error('Create shipment error:', error);
+      toast.error(error.message || 'Failed to create shipment');
     },
   });
 }
 
-export function useGetShipmentsByClient(client: Principal | undefined) {
+// Invoice Queries
+export function useGetInvoicesByClient(clientId: string | null) {
   const { actor, isFetching } = useActor();
   const { adminToken } = useAdminSession();
-  const { sessionToken: clientSessionToken } = useClientSession();
+  const { sessionToken: clientToken } = useClientSession();
 
-  return useQuery<Shipment[]>({
-    queryKey: ['shipments', client?.toString()],
+  return useQuery<Invoice[]>({
+    queryKey: ['invoices', clientId, adminToken, clientToken],
     queryFn: async () => {
-      if (!actor || !client) return [];
-      return actor.getShipmentsByClient(
-        client,
+      if (!actor || !clientId) return [];
+      const principal = Principal.fromText(clientId);
+      return actor.getInvoicesByClient(
+        principal,
         adminToken || null,
-        clientSessionToken || null
+        clientToken || null
       );
     },
-    enabled: !!actor && !!client && !isFetching,
+    enabled: !!actor && !isFetching && !!clientId && (!!adminToken || !!clientToken),
   });
 }
 
-// Invoices
+export function useGetRevenueData() {
+  const { actor, isFetching } = useActor();
+  const { adminToken } = useAdminSession();
+
+  return useQuery<Array<[bigint, bigint]>>({
+    queryKey: ['revenueData', adminToken],
+    queryFn: async () => {
+      if (!actor || !adminToken) return [];
+      return actor.getRevenueData(adminToken);
+    },
+    enabled: !!actor && !isFetching && !!adminToken,
+  });
+}
+
 export function useCreateInvoice() {
   const { actor } = useActor();
   const { adminToken } = useAdminSession();
@@ -118,123 +223,58 @@ export function useCreateInvoice() {
       dueDate,
       client,
     }: {
-      invoiceNo: bigint;
-      amount: bigint;
+      invoiceNo: number;
+      amount: number;
       dueDate: bigint;
-      client: Principal;
+      client: string;
     }) => {
       if (!actor || !adminToken) throw new Error('Not authenticated');
-      return actor.createInvoice(invoiceNo, amount, dueDate, client, adminToken);
+      const principal = Principal.fromText(client);
+      return actor.createInvoice(
+        BigInt(invoiceNo),
+        BigInt(amount),
+        dueDate,
+        principal,
+        adminToken
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['revenueData'] });
+      toast.success('Invoice created successfully');
+    },
+    onError: (error: any) => {
+      console.error('Create invoice error:', error);
+      toast.error(error.message || 'Failed to create invoice');
     },
   });
 }
 
-export function useGetInvoicesByClient(client: Principal | undefined) {
-  const { actor, isFetching } = useActor();
-  const { adminToken } = useAdminSession();
-  const { sessionToken: clientSessionToken } = useClientSession();
-
-  return useQuery<Invoice[]>({
-    queryKey: ['invoices', client?.toString()],
-    queryFn: async () => {
-      if (!actor || !client) return [];
-      return actor.getInvoicesByClient(
-        client,
-        adminToken || null,
-        clientSessionToken || null
-      );
-    },
-    enabled: !!actor && !!client && !isFetching,
-  });
-}
-
-// User Profile
-export function useGetCallerUserProfile() {
-  const { actor, isFetching: actorFetching } = useActor();
-
-  const query = useQuery<UserProfile | null>({
-    queryKey: ['currentUserProfile'],
-    queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.getCallerUserProfile();
-    },
-    enabled: !!actor && !actorFetching,
-    retry: false,
-  });
-
-  return {
-    ...query,
-    isLoading: actorFetching || query.isLoading,
-    isFetched: !!actor && query.isFetched,
-  };
-}
-
-export function useSaveCallerUserProfile() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (profile: UserProfile) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.saveCallerUserProfile(profile);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['currentUserProfile'] });
-    },
-  });
-}
-
-export function useGetUserProfile(user: Principal | undefined) {
-  const { actor, isFetching } = useActor();
-  const { adminToken } = useAdminSession();
-
-  return useQuery<UserProfile | null>({
-    queryKey: ['userProfile', user?.toString()],
-    queryFn: async () => {
-      if (!actor || !user) return null;
-      return actor.getUserProfile(user, adminToken || null);
-    },
-    enabled: !!actor && !!user && !isFetching,
-  });
-}
-
-// Export Invoices
 export function useExportInvoices() {
   const { actor } = useActor();
   const { adminToken } = useAdminSession();
 
   return useMutation({
-    mutationFn: async (): Promise<string[]> => {
+    mutationFn: async () => {
       if (!actor || !adminToken) throw new Error('Not authenticated');
       return actor.exportInvoices(adminToken);
     },
-  });
-}
-
-// MSG91 Configuration
-export function useStoreMsg91ApiKey() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (apiKey: string) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.storeMsg91ApiKey(apiKey);
-    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['msg91ApiKeyStored'] });
+      toast.success('Invoices exported successfully');
+    },
+    onError: (error: any) => {
+      console.error('Export invoices error:', error);
+      toast.error(error.message || 'Failed to export invoices');
     },
   });
 }
 
+// MSG91 Queries
 export function useIsMsg91ApiKeyStored() {
   const { actor, isFetching } = useActor();
 
   return useQuery<boolean>({
-    queryKey: ['msg91ApiKeyStored'],
+    queryKey: ['isMsg91ApiKeyStored'],
     queryFn: async () => {
       if (!actor) return false;
       return actor.isMsg91ApiKeyStored();
@@ -243,64 +283,159 @@ export function useIsMsg91ApiKeyStored() {
   });
 }
 
-export function useVerifyMsg91AccessToken() {
+export function useStoreMsg91ApiKey() {
   const { actor } = useActor();
+  const { adminToken } = useAdminSession();
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (jwtToken: string): Promise<[boolean, string, bigint]> => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.verifyMsg91AccessToken(jwtToken);
+    mutationFn: async (apiKey: string) => {
+      if (!actor || !adminToken) throw new Error('Not authenticated');
+      return actor.storeMsg91ApiKey(apiKey, adminToken);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['isMsg91ApiKeyStored'] });
+      toast.success('MSG91 API key saved successfully');
+    },
+    onError: (error: any) => {
+      console.error('Store MSG91 API key error:', error);
+      toast.error(error.message || 'Failed to save MSG91 API key');
     },
   });
 }
 
-// Client Authentication
-export function useAuthenticateClient() {
+export function useVerifyMsg91AccessToken() {
+  const { actor } = useActor();
+  const { adminToken } = useAdminSession();
+
+  return useMutation({
+    mutationFn: async (jwtToken: string) => {
+      if (!actor || !adminToken) throw new Error('Not authenticated');
+      return actor.verifyMsg91AccessToken(jwtToken, adminToken);
+    },
+    onError: (error: any) => {
+      console.error('Verify MSG91 access token error:', error);
+      toast.error(error.message || 'Failed to verify MSG91 access token');
+    },
+  });
+}
+
+// Client Authentication Queries
+export function useClientLogin() {
   const { actor } = useActor();
   const { setClientToken } = useClientSession();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ emailOrMobile, password }: { emailOrMobile: string; password: string }) => {
+    mutationFn: async ({
+      identifier,
+      password,
+    }: {
+      identifier: string;
+      password: string;
+    }) => {
       if (!actor) throw new Error('Actor not available');
-      
-      const sessionToken = await actor.authenticateClient(emailOrMobile, password);
-      
-      if (!sessionToken || sessionToken.trim() === '') {
-        throw new Error('Invalid email/mobile or password');
-      }
-      
-      return sessionToken;
+      console.log('[ClientLogin] Attempting login...');
+      const token = await actor.authenticateClient(identifier, password);
+      console.log('[ClientLogin] Backend response received, token:', token ? 'present' : 'null');
+      return token;
     },
-    onSuccess: (sessionToken) => {
-      setClientToken(sessionToken);
+    onSuccess: (token) => {
+      if (!token || !token.trim()) {
+        console.error('[ClientLogin] Backend returned empty/null token');
+        toast.error('Login failed: Invalid session token received');
+        return;
+      }
+      console.log('[ClientLogin] Setting token in global state');
+      setClientToken(token);
+      // Invalidate and refetch account status immediately
       queryClient.invalidateQueries({ queryKey: ['clientAccountStatus'] });
+      console.log('[ClientLogin] Token set, queries invalidated');
+      toast.success('Login successful');
+    },
+    onError: (error: any) => {
+      console.error('[ClientLogin] Login error:', error);
+      toast.error(error.message || 'Login failed');
+    },
+  });
+}
+
+export function useClientOtpLogin() {
+  const { actor } = useActor();
+  const { setClientToken } = useClientSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      phoneNumber,
+      otp,
+    }: {
+      phoneNumber: string;
+      otp: string;
+    }) => {
+      if (!actor) throw new Error('Actor not available');
+      console.log('[ClientOtpLogin] Attempting OTP login...');
+      const token = await actor.verifyOtpAndAuthenticate(phoneNumber, otp);
+      console.log('[ClientOtpLogin] Backend response received, token:', token ? 'present' : 'null');
+      return token;
+    },
+    onSuccess: (token) => {
+      if (!token || !token.trim()) {
+        console.error('[ClientOtpLogin] Backend returned empty/null token');
+        toast.error('OTP verification failed: Invalid session token received');
+        return;
+      }
+      console.log('[ClientOtpLogin] Setting token in global state');
+      setClientToken(token);
+      // Invalidate and refetch account status immediately
+      queryClient.invalidateQueries({ queryKey: ['clientAccountStatus'] });
+      console.log('[ClientOtpLogin] Token set, queries invalidated');
+      toast.success('Login successful');
+    },
+    onError: (error: any) => {
+      console.error('[ClientOtpLogin] OTP login error:', error);
+      toast.error(error.message || 'OTP verification failed');
     },
   });
 }
 
 export function useClientSignup() {
   const { actor } = useActor();
+  const { setClientToken } = useClientSession();
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ 
-      email, 
-      password, 
-      profile 
-    }: { 
-      email: string; 
-      password: string; 
+    mutationFn: async ({
+      email,
+      password,
+      profile,
+    }: {
+      email: string;
+      password: string;
       profile: UserProfile;
     }) => {
       if (!actor) throw new Error('Actor not available');
-      
-      const sessionToken = await actor.clientSignup(email, password, profile);
-      
-      if (!sessionToken || sessionToken.trim() === '') {
-        throw new Error('Signup failed. Please try again.');
+      console.log('[ClientSignup] Attempting signup...');
+      const token = await actor.clientSignup(email, password, profile);
+      console.log('[ClientSignup] Backend response received, token:', token ? 'present' : 'null');
+      return token;
+    },
+    onSuccess: (token) => {
+      if (!token || !token.trim()) {
+        console.error('[ClientSignup] Backend returned empty/null token');
+        toast.error('Signup failed: Invalid session token received');
+        return;
       }
-      
-      return sessionToken;
+      console.log('[ClientSignup] Setting token in global state');
+      setClientToken(token);
+      // Invalidate and refetch account status immediately
+      queryClient.invalidateQueries({ queryKey: ['clientAccountStatus'] });
+      console.log('[ClientSignup] Token set, queries invalidated');
+      toast.success('Account created successfully');
+    },
+    onError: (error: any) => {
+      console.error('[ClientSignup] Signup error:', error);
+      toast.error(error.message || 'Signup failed');
     },
   });
 }
@@ -312,20 +447,81 @@ export function useClientLogout() {
 
   return useMutation({
     mutationFn: async () => {
-      if (!actor || !sessionToken) {
-        return false;
-      }
-      
-      try {
-        return await actor.clientLogout(sessionToken);
-      } catch (error) {
-        console.error('Logout error:', error);
-        return false;
-      }
+      if (!actor || !sessionToken) throw new Error('Not authenticated');
+      return actor.clientLogout(sessionToken);
     },
-    onSettled: () => {
+    onSuccess: () => {
       clearClientToken();
       queryClient.clear();
+      toast.success('Logged out successfully');
+    },
+    onError: (error: any) => {
+      console.error('Logout error:', error);
+      clearClientToken();
+      queryClient.clear();
+      toast.error('Logged out (with errors)');
+    },
+  });
+}
+
+export function useGetClientAccountStatus() {
+  const { actor, isFetching: actorFetching } = useActor();
+  const { sessionToken, clearClientToken } = useClientSession();
+
+  const query = useQuery<{ isFirstLogin: boolean; role: string; clientId: string } | null>({
+    queryKey: ['clientAccountStatus', sessionToken],
+    queryFn: async () => {
+      if (!actor || !sessionToken) return null;
+      try {
+        const status = await actor.getClientAccountStatus(sessionToken);
+        const clientId = sessionToken.split('_session_')[1] || sessionToken.split('_otp_session_')[1] || sessionToken.split('_signup_session_')[1] || '';
+        return {
+          isFirstLogin: status.isFirstLogin,
+          role: status.role,
+          clientId,
+        };
+      } catch (error: any) {
+        console.error('[ClientAccountStatus] Error fetching status:', error);
+        if (error.message?.includes('Invalid or expired')) {
+          clearClientToken();
+        }
+        throw error;
+      }
+    },
+    enabled: !!actor && !actorFetching && !!sessionToken,
+    retry: false,
+  });
+
+  return {
+    ...query,
+    isLoading: actorFetching || query.isLoading,
+    isFetched: !!actor && query.isFetched,
+  };
+}
+
+export function useChangeClientPassword() {
+  const { actor } = useActor();
+  const { sessionToken } = useClientSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      currentPassword,
+      newPassword,
+    }: {
+      currentPassword: string;
+      newPassword: string;
+    }) => {
+      if (!actor || !sessionToken) throw new Error('Not authenticated');
+      return actor.changeClientPassword(sessionToken, currentPassword, newPassword);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientAccountStatus'] });
+      toast.success('Password changed successfully');
+    },
+    onError: (error: any) => {
+      console.error('Change password error:', error);
+      toast.error(error.message || 'Failed to change password');
     },
   });
 }
@@ -334,38 +530,24 @@ export function useSendOtp() {
   const { actor } = useActor();
 
   return useMutation({
-    mutationFn: async (phoneNumber: string): Promise<[boolean, string, bigint]> => {
+    mutationFn: async (phoneNumber: string) => {
       if (!actor) throw new Error('Actor not available');
       return actor.sendOtp(phoneNumber);
     },
-  });
-}
-
-export function useVerifyOtpAndAuthenticate() {
-  const { actor } = useActor();
-  const { setClientToken } = useClientSession();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ phoneNumber, otp }: { phoneNumber: string; otp: string }) => {
-      if (!actor) throw new Error('Actor not available');
-      
-      const sessionToken = await actor.verifyOtpAndAuthenticate(phoneNumber, otp);
-      
-      if (!sessionToken || sessionToken.trim() === '') {
-        throw new Error('OTP verification failed');
+    onSuccess: ([success]) => {
+      if (success) {
+        toast.success('OTP sent successfully');
+      } else {
+        toast.error('Failed to send OTP');
       }
-      
-      return sessionToken;
     },
-    onSuccess: (sessionToken) => {
-      setClientToken(sessionToken);
-      queryClient.invalidateQueries({ queryKey: ['clientAccountStatus'] });
+    onError: (error: any) => {
+      console.error('Send OTP error:', error);
+      toast.error(error.message || 'Failed to send OTP');
     },
   });
 }
 
-// Client Account Management
 export function useCreateClientAccount() {
   const { actor } = useActor();
   const { adminToken } = useAdminSession();
@@ -388,98 +570,11 @@ export function useCreateClientAccount() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      toast.success('Client account created successfully');
     },
-  });
-}
-
-export function useGetClientAccountStatus() {
-  const { actor, isFetching } = useActor();
-  const { sessionToken, clearClientToken } = useClientSession();
-
-  return useQuery({
-    queryKey: ['clientAccountStatus', sessionToken],
-    queryFn: async () => {
-      if (!actor || !sessionToken) return null;
-      
-      try {
-        return await actor.getClientAccountStatus(sessionToken);
-      } catch (error: any) {
-        if (error.message?.includes('Invalid or expired client session token')) {
-          clearClientToken();
-        }
-        throw error;
-      }
+    onError: (error: any) => {
+      console.error('Create client account error:', error);
+      toast.error(error.message || 'Failed to create client account');
     },
-    enabled: !!actor && !!sessionToken && !isFetching,
-    retry: false,
-  });
-}
-
-export function useChangeClientPassword() {
-  const { actor } = useActor();
-  const { sessionToken } = useClientSession();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      currentPassword,
-      newPassword,
-    }: {
-      currentPassword: string;
-      newPassword: string;
-    }) => {
-      if (!actor || !sessionToken) throw new Error('Not authenticated');
-      return actor.changeClientPassword(sessionToken, currentPassword, newPassword);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clientAccountStatus'] });
-    },
-  });
-}
-
-// Admin Role Management
-export function useGrantAdmin() {
-  const { actor } = useActor();
-  const { adminToken } = useAdminSession();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (targetPrincipal: Principal) => {
-      if (!actor || !adminToken) throw new Error('Not authenticated');
-      return actor.grantAdmin(targetPrincipal, adminToken);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adminRole'] });
-    },
-  });
-}
-
-export function useRevokeAdmin() {
-  const { actor } = useActor();
-  const { adminToken } = useAdminSession();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (targetPrincipal: Principal) => {
-      if (!actor || !adminToken) throw new Error('Not authenticated');
-      return actor.revokeAdmin(targetPrincipal, adminToken);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adminRole'] });
-    },
-  });
-}
-
-export function useHasAdminRole(target: Principal | undefined) {
-  const { actor, isFetching } = useActor();
-  const { adminToken } = useAdminSession();
-
-  return useQuery<boolean>({
-    queryKey: ['adminRole', target?.toString()],
-    queryFn: async () => {
-      if (!actor || !target) return false;
-      return actor.hasAdminRole(target, adminToken || null);
-    },
-    enabled: !!actor && !!target && !isFetching,
   });
 }

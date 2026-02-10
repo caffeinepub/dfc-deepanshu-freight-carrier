@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { ClientShipmentsTable } from './ClientShipmentsTable';
 import { ClientInvoicesTable } from './ClientInvoicesTable';
 import { useClientLogout } from '../../hooks/useQueries';
-import { LogOut, Package, FileText, Loader2 } from 'lucide-react';
+import { LogOut, Package, FileText, Loader2, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { generateWhatsAppSupportLink } from '@/lib/whatsapp';
 
 export function ClientDashboard() {
   const clientLogout = useClientLogout();
@@ -29,30 +30,45 @@ export function ClientDashboard() {
     }
   };
 
+  const handleWhatsAppSupport = () => {
+    const supportLink = generateWhatsAppSupportLink();
+    window.open(supportLink, '_blank');
+  };
+
   return (
     <div className="space-y-6">
       <Card className="bg-neutral-900 border-neutral-800">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <CardTitle className="text-gold text-2xl">Welcome to Your Dashboard</CardTitle>
-            <Button
-              onClick={handleLogout}
-              disabled={clientLogout.isPending}
-              variant="outline"
-              className="border-gold text-gold hover:bg-gold/10"
-            >
-              {clientLogout.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Logging out...
-                </>
-              ) : (
-                <>
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Logout
-                </>
-              )}
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleWhatsAppSupport}
+                variant="outline"
+                className="border-green-600 text-green-600 hover:bg-green-600/10"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Contact Support
+              </Button>
+              <Button
+                onClick={handleLogout}
+                disabled={clientLogout.isPending}
+                variant="outline"
+                className="border-gold text-gold hover:bg-gold/10"
+              >
+                {clientLogout.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Logging out...
+                  </>
+                ) : (
+                  <>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

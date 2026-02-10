@@ -1,64 +1,77 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T16:39:15.791Z",
+  "generatedAt": "2026-02-10T01:35:40.736Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 2,
+    "total": 5,
+    "implemented": 4,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Implement backend support for email/password client accounts with a unique email constraint, including: (1) signup that rejects duplicate emails, (2) login that verifies a hashed password and returns a client session token, (3) logout that invalidates the current client session token, and (4) a way to retrieve the currently-authenticated client account status using the session token (needed for protected dashboard access).",
+        "summary": "Add an Admin Dashboard tab/section for “Live Tracking” that renders a Google Maps view showing all shipments with markers, using a Google Maps JavaScript API key provided via a frontend environment variable (e.g., VITE_GOOGLE_MAPS_API_KEY).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/admin/AdminDashboard.tsx",
+          "frontend/src/components/AdminTrackingPanel.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/admin/AdminDashboard.tsx",
+          "frontend/src/components/AdminTrackingPanel.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Extend the backend shipment model and APIs to support map rendering by storing coordinates per shipment (latitude/longitude) and exposing an admin-authorized query to fetch all shipments for the tracking map.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
-        "id": "REQ-2",
-        "summary": "Add a client signup UI to the React app that matches the existing client portal flow: provide an email + password signup form, link it from the client login screen, show clear English success/error messages, and after successful signup guide the user to log in.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/client/ClientSignupCard.tsx",
-          "frontend/src/components/client/ClientPortalAuthCard.tsx",
-          "frontend/src/components/client/ClientPortalLoginCard.tsx",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/utils/clientAuthErrors.ts",
-          "frontend/src/App.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/client/ClientSignupCard.tsx",
-          "frontend/src/components/client/ClientPortalAuthCard.tsx",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/utils/clientAuthErrors.ts",
-          "frontend/src/App.tsx"
-        ]
-      },
-      {
         "id": "REQ-3",
-        "summary": "Ensure the client dashboard area remains protected by client authentication: if there is no valid client session token, the UI must not render the client dashboard and must prompt for login; if a session expires/is invalidated, the UI must return to the client login screen.",
+        "summary": "Implement the missing React admin tracking component (currently empty) to power the new “Live Tracking” tab, including loading, empty state, and error UI consistent with the existing admin design.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/client/ClientDashboard.tsx",
-          "frontend/src/hooks/useClientSession.ts",
-          "frontend/src/App.tsx"
+          "frontend/src/components/AdminTrackingPanel.tsx",
+          "frontend/src/components/admin/AdminDashboard.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/components/client/ClientDashboard.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/components/AdminTrackingPanel.tsx",
+          "frontend/src/components/admin/AdminDashboard.tsx"
         ]
       },
       {
         "id": "REQ-4",
-        "summary": "Add basic role support for email/password accounts (client/admin) in backend user records, defaulting to \"client\" on signup, and persist the account creation timestamp.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
+        "summary": "Add an Admin Dashboard “Revenue” view that renders a line chart of revenue using invoice data already managed in the app, replacing static demo data with computed totals from stored invoices.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/admin/AdminDashboard.tsx",
+          "frontend/src/components/admin/AdminRevenuePanel.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/admin/AdminDashboard.tsx",
+          "frontend/src/components/admin/AdminRevenuePanel.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Add a persistent “Contact Support via WhatsApp” button/link in the client dashboard UI that opens WhatsApp to the support number 9817783604 with a prefilled English support message.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/lib/whatsapp.ts",
+          "frontend/src/components/client/ClientDashboard.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/lib/whatsapp.ts",
+          "frontend/src/components/client/ClientDashboard.tsx"
+        ]
       }
     ]
   },
@@ -72,13 +85,15 @@
     "frontend/src/App.tsx",
     "frontend/src/backend.d.ts",
     "frontend/src/backend.ts",
+    "frontend/src/components/AdminTrackingPanel.tsx",
+    "frontend/src/components/admin/AdminDashboard.tsx",
+    "frontend/src/components/admin/AdminRevenuePanel.tsx",
+    "frontend/src/components/admin/AdminRoleManagement.tsx",
     "frontend/src/components/client/ClientDashboard.tsx",
-    "frontend/src/components/client/ClientPortalAuthCard.tsx",
-    "frontend/src/components/client/ClientSignupCard.tsx",
     "frontend/src/declarations/backend.did.d.ts",
     "frontend/src/declarations/backend.did.js",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/utils/clientAuthErrors.ts",
+    "frontend/src/lib/whatsapp.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

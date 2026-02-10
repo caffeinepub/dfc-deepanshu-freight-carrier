@@ -1,5 +1,4 @@
-import { useState, FormEvent } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useState, FormEvent, useEffect, useRef } from 'react';
 import { MessageCircle, Truck, Package, FileText, MapPin, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,12 +11,12 @@ import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { ClientPortalAuthCard } from '@/components/client/ClientPortalAuthCard';
 import { ClientDashboard } from '@/components/client/ClientDashboard';
 import { ClientPasswordChangeCard } from '@/components/client/ClientPasswordChangeCard';
+import { AppErrorBoundary } from '@/components/app/AppErrorBoundary';
 import { useAdminSession } from './hooks/useAdminSession';
-import { useClientSession } from './hooks/useClientSession';
+import { useClientSession, ClientSessionProvider } from './hooks/ClientSessionProvider';
 import { useGetClientAccountStatus } from './hooks/useQueries';
 import { useActor } from './hooks/useActor';
-
-const queryClient = new QueryClient();
+import { scrollToSection } from './utils/scrollToSection';
 
 function AppContent() {
   const { isAuthenticated: isAdminAuthenticated, isValidating: isAdminValidating } = useAdminSession();
@@ -37,19 +36,20 @@ function AppContent() {
   const [trackingResult, setTrackingResult] = useState('');
   const [isTracking, setIsTracking] = useState(false);
 
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      const headerOffset = 80;
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-      
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
+  // Track previous authentication state to detect login transitions
+  const prevAuthRef = useRef(isClientAuthenticated);
+
+  useEffect(() => {
+    // Detect transition from unauthenticated to authenticated
+    if (!prevAuthRef.current && isClientAuthenticated && isClientStatusFetched) {
+      console.log('[App] Client login detected, scrolling to portal');
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        scrollToSection('client-portal');
+      }, 100);
     }
-  };
+    prevAuthRef.current = isClientAuthenticated;
+  }, [isClientAuthenticated, isClientStatusFetched]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -76,7 +76,7 @@ function AppContent() {
         return;
       }
 
-      const shipment = await actor.trackShipment(id);
+      const shipment = await actor.trackShipment(id, null, null);
       
       if (shipment) {
         setTrackingResult(shipment.status);
@@ -431,7 +431,7 @@ function AppContent() {
                   />
                   <Button 
                     type="submit"
-                    className="w-full bg-gold hover:bg-gold/90 text-black font-bold text-lg h-12"
+                    className="w-full bg-gold hover:bg-gold/90 text-black font-bold text-lg h-12 rounded-lg"
                   >
                     <MessageCircle className="w-5 h-5 mr-2" />
                     Send via WhatsApp
@@ -477,7 +477,7 @@ function AppContent() {
                     </div>
                     <div>
                       <h3 className="text-gold font-semibold text-lg mb-2">Location</h3>
-                      <p className="text-white/80">India</p>
+                      <p className="text-white/80">Serving All India</p>
                     </div>
                   </div>
                 </CardContent>
@@ -491,9 +491,11 @@ function AppContent() {
       <footer className="bg-neutral-950 border-t border-neutral-800 py-8">
         <div className="container mx-auto px-4 sm:px-6 lg:px-12">
           <div className="text-center text-white/60">
-            <p className="mb-2">© {new Date().getFullYear()} DFC. All rights reserved.</p>
+            <p className="mb-2">
+              © {new Date().getFullYear()} Deepanshu Freight Carrier. All rights reserved.
+            </p>
             <p className="text-sm">
-              Built with ❤️ using{' '}
+              Built with love using{' '}
               <a
                 href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(
                   typeof window !== 'undefined' ? window.location.hostname : 'dfc-app'
@@ -509,17 +511,17 @@ function AppContent() {
         </div>
       </footer>
 
-      <Toaster position="top-right" />
+      <Toaster />
     </div>
   );
 }
 
-function App() {
+export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AppContent />
-    </QueryClientProvider>
+    <AppErrorBoundary>
+      <ClientSessionProvider>
+        <AppContent />
+      </ClientSessionProvider>
+    </AppErrorBoundary>
   );
 }
-
-export default App;

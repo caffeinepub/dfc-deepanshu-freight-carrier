@@ -32,3 +32,15 @@ Thank you!`;
   // Return WhatsApp deep link
   return `https://wa.me/${formattedMobile}?text=${encodedMessage}`;
 }
+
+export function generateWhatsAppSupportLink(): string {
+  const supportNumber = '9817783604';
+  const message = `Hello DFC Support,
+
+I need assistance with my account. Please help me with my query.
+
+Thank you!`;
+
+  const encodedMessage = encodeURIComponent(message);
+  return `https://wa.me/${supportNumber}?text=${encodedMessage}`;
+}

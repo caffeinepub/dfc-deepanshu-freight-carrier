@@ -1,43 +1,43 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-09T16:39:15.789Z",
-  "summary": "The diff adds a React client signup UI (tabbed login/signup), client logout wiring in the dashboard, and introduces backend data model fields plus a migration for role/createdAt. However, the diff summary does not provide evidence that the Motoko backend implements the required email/password signup/login/logout/session-token mechanics (unique email, password hashing, session expiry, token-based account status), nor that the frontend clears tokens and returns to login on invalid/expired sessions.",
+  "generatedAt": "2026-02-10T01:35:40.733Z",
+  "summary": "Diff implements AdminDashboard tabs for Live Tracking and Revenue, adds a Google Maps-based AdminTrackingPanel driven by VITE_GOOGLE_MAPS_API_KEY, adds shipment coordinates + a migration module, and adds a client WhatsApp support button plus WhatsApp link helpers. However, the diff summary does not provide clear evidence that the backend exposes the required new admin-authorized APIs for fetching all shipments for the map and for computed revenue data from invoices (only frontend hooks/panels are shown).",
   "missing_requirements": [
     {
-      "id": "REQ-1",
-      "requirement": "Backend email/password accounts with unique email constraint, hashed password storage/verification, session token issuance with server-side session record + expiration, logout invalidation, and a session-token-based \"current account status\" endpoint.",
-      "reason": "backend/main.mo is truncated and shows only type/storage additions (ClientAccount, ClientSession, maps, timeout variables). The diff summary does not show any concrete signup/login/logout/account-status functions, nor any password hashing/verification logic or unique-email enforcement.",
+      "id": "REQ-2",
+      "requirement": "Expose an admin-authorized backend query to fetch all shipments (including coordinates) in one call for map rendering, while preserving existing shipment flows and providing upgrade/migration if needed.",
+      "reason": "The diff shows the Shipment model updated with coordinates and adds a migration module, but does not show any new/updated backend function that fetches all shipments for the map with admin authorization, nor evidence that existing shipment endpoints were updated accordingly (create/list/track).",
       "evidence": [
-        "backend/main.mo"
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "requirement": "Frontend must clear stored client session token and return to client login when backend detects invalid/expired token; dashboard must not render without a valid token.",
-      "reason": "App.tsx shows conditional rendering based on useClientSession and fetching account status, but the diff summary does not show the invalid/expired-token handling path that clears storage and forces return to login. Similarly, useQueries.ts is truncated and does not show explicit logic to clear the token on 401/trap/session-expired responses.",
-      "evidence": [
-        "frontend/src/App.tsx",
+        "backend/main.mo",
         "frontend/src/hooks/useQueries.ts",
-        "frontend/src/utils/clientAuthErrors.ts"
+        "backend/migration.mo"
       ]
     },
     {
       "id": "REQ-4",
-      "requirement": "Default role=\"client\" and persist account creation timestamp on signup (for newly created accounts), while keeping existing persisted data readable after upgrade with safe defaults for new fields.",
-      "reason": "A migration is added that sets role to #client and createdAt to Time.now() for existing records, but the diff summary does not show backend signup logic that sets these fields for newly-created accounts.",
+      "requirement": "Compute Revenue chart data from stored invoice records (e.g., grouped by month) and expose it to the admin Revenue view (not hard-coded).",
+      "reason": "The new AdminRevenuePanel and hook usage are shown, but the backend API that computes revenue from invoices is not shown in the diff summary, so there is no direct evidence that revenue is actually computed from stored invoices (vs. placeholder data).",
       "evidence": [
-        "backend/migration.mo",
+        "frontend/src/components/admin/AdminRevenuePanel.tsx",
+        "frontend/src/hooks/useQueries.ts",
         "backend/main.mo"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Client signup requires additional fields (companyName, gstNumber, address, mobile) and enforces mobile=10 digits plus confirm-password matching and password-length validation.",
-      "reason": "REQ-2 asks for an email + password signup form; adding mandatory profile fields and mobile validation goes beyond the requested signup UI scope as written.",
+      "description": "Added an AdminRoleManagement panel stating role management is disabled in password-only authentication mode.",
+      "reason": "Not requested by any BuildRequest requirement (REQ-1..REQ-5).",
       "evidence": [
-        "frontend/src/components/client/ClientSignupCard.tsx"
+        "frontend/src/components/admin/AdminRoleManagement.tsx"
+      ]
+    },
+    {
+      "description": "Added WhatsApp payment reminder link generator (generateWhatsAppReminderLink) with templated reminder message.",
+      "reason": "REQ-5 only requested a client-dashboard WhatsApp support action; payment reminder link generation is not part of the request.",
+      "evidence": [
+        "frontend/src/lib/whatsapp.ts"
       ]
     }
   ],
@@ -47,11 +47,13 @@
     "backend/migration.mo",
     "frontend-file-summaries.txt",
     "frontend/src/App.tsx",
+    "frontend/src/components/AdminTrackingPanel.tsx",
+    "frontend/src/components/admin/AdminDashboard.tsx",
+    "frontend/src/components/admin/AdminRevenuePanel.tsx",
+    "frontend/src/components/admin/AdminRoleManagement.tsx",
     "frontend/src/components/client/ClientDashboard.tsx",
-    "frontend/src/components/client/ClientPortalAuthCard.tsx",
-    "frontend/src/components/client/ClientSignupCard.tsx",
     "frontend/src/hooks/useQueries.ts",
-    "frontend/src/utils/clientAuthErrors.ts",
+    "frontend/src/lib/whatsapp.ts",
     "project_state.json"
   ]
 }

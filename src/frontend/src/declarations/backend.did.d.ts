@@ -19,6 +19,7 @@ export interface Client {
 }
 export type ClientRole = { 'client' : null } |
   { 'admin' : null };
+export interface Coordinates { 'latitude' : number, 'longitude' : number }
 export interface Invoice {
   'status' : InvoiceStatus,
   'client' : Principal,
@@ -34,6 +35,7 @@ export interface Shipment {
   'client' : Principal,
   'trackingID' : string,
   'location' : string,
+  'coordinates' : [] | [Coordinates],
 }
 export type Time = bigint;
 export interface TransformationInput {
@@ -85,11 +87,12 @@ export interface _SERVICE {
     boolean
   >,
   'createShipment' : ActorMethod<
-    [string, string, string, Principal, string],
+    [string, string, string, [] | [Coordinates], Principal, string],
     boolean
   >,
   'exportInvoices' : ActorMethod<[string], Array<string>>,
   'getAllClients' : ActorMethod<[string], Array<Client>>,
+  'getAllShipmentsForMap' : ActorMethod<[string], Array<Shipment>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getClient' : ActorMethod<[Principal, [] | [string]], [] | [Client]>,
@@ -105,7 +108,11 @@ export interface _SERVICE {
     [Principal, [] | [string], [] | [string]],
     Array<Invoice>
   >,
-  'getShipment' : ActorMethod<[string], [] | [Shipment]>,
+  'getRevenueData' : ActorMethod<[string], Array<[Time, bigint]>>,
+  'getShipment' : ActorMethod<
+    [string, [] | [string], [] | [string]],
+    [] | [Shipment]
+  >,
   'getShipmentsByClient' : ActorMethod<
     [Principal, [] | [string], [] | [string]],
     Array<Shipment>
@@ -125,10 +132,16 @@ export interface _SERVICE {
   'revokeAdmin' : ActorMethod<[Principal, string], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'sendOtp' : ActorMethod<[string], [boolean, string, bigint]>,
-  'storeMsg91ApiKey' : ActorMethod<[string], undefined>,
-  'trackShipment' : ActorMethod<[string], [] | [Shipment]>,
+  'storeMsg91ApiKey' : ActorMethod<[string, string], undefined>,
+  'trackShipment' : ActorMethod<
+    [string, [] | [string], [] | [string]],
+    [] | [Shipment]
+  >,
   'transform' : ActorMethod<[TransformationInput], TransformationOutput>,
-  'verifyMsg91AccessToken' : ActorMethod<[string], [boolean, string, bigint]>,
+  'verifyMsg91AccessToken' : ActorMethod<
+    [string, string],
+    [boolean, string, bigint]
+  >,
   'verifyOtp' : ActorMethod<[string, string], [boolean, string, bigint]>,
   'verifyOtpAndAuthenticate' : ActorMethod<[string, string], [] | [string]>,
 }

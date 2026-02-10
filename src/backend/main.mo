@@ -14,11 +14,17 @@ import Migration "migration";
 (with migration = Migration.run)
 actor {
   // Data Models
+  type Coordinates = {
+    latitude : Float;
+    longitude : Float;
+  };
+
   type Shipment = {
     trackingID : Text;
     status : Text;
     location : Text;
     client : Principal;
+    coordinates : ?Coordinates;
   };
 
   type Invoice = {
@@ -260,9 +266,9 @@ actor {
     };
   };
 
-  public shared ({ caller }) func storeMsg91ApiKey(apiKey : Text) : async () {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
-      Runtime.trap("Unauthorized: Only admins can store the MSG91 API key");
+  public shared ({ caller }) func storeMsg91ApiKey(apiKey : Text, adminToken : Text) : async () {
+    if (not isValidSession(adminToken)) {
+      Runtime.trap("Unauthorized: Invalid admin token");
     };
     if (Text.equal(apiKey, "")) {
       Runtime.trap("Invalid API key: API key cannot be empty");
@@ -270,9 +276,9 @@ actor {
     msg91ApiKey := ?apiKey;
   };
 
-  public shared ({ caller }) func verifyMsg91AccessToken(jwtToken : Text) : async (Bool, Text, Nat) {
-    if (not (AccessControl.isAdmin(accessControlState, caller))) {
-      Runtime.trap("Unauthorized: Only admins can verify MSG91 access tokens");
+  public shared ({ caller }) func verifyMsg91AccessToken(jwtToken : Text, adminToken : Text) : async (Bool, Text, Nat) {
+    if (not isValidSession(adminToken)) {
+      Runtime.trap("Unauthorized: Invalid admin token");
     };
 
     switch (msg91ApiKey) {
@@ -297,11 +303,43 @@ actor {
     OutCall.transform(input);
   };
 
-  public query ({ caller }) func trackShipment(trackingID : Text) : async ?Shipment {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Authentication required to track shipments");
+  public query ({ caller }) func trackShipment(trackingID : Text, adminToken : ?Text, clientSessionToken : ?Text) : async ?Shipment {
+    switch (shipments.get(trackingID)) {
+      case (?shipment) {
+        // Admin can view any shipment
+        switch (adminToken) {
+          case (?token) {
+            if (not isValidSession(token)) {
+              Runtime.trap("Unauthorized: Invalid admin token");
+            };
+            return ?shipment;
+          };
+          case (null) {};
+        };
+
+        // Client can view their own shipment via session token
+        switch (clientSessionToken) {
+          case (?token) {
+            let clientId = getClientIdFromSession(token);
+            if (shipment.client.toText() != clientId) {
+              Runtime.trap("Unauthorized: Can only track your own shipments");
+            };
+            return ?shipment;
+          };
+          case (null) {};
+        };
+
+        // Fallback to caller-based authorization
+        if (caller.isAnonymous()) {
+          Runtime.trap("Unauthorized: Authentication required to track shipments");
+        };
+        if (caller != shipment.client) {
+          Runtime.trap("Unauthorized: Can only track your own shipments");
+        };
+        ?shipment;
+      };
+      case (null) { null };
     };
-    shipments.get(trackingID);
   };
 
   public shared ({ caller }) func adminLogin(password : Text, token : Text) : async Text {
@@ -354,6 +392,7 @@ actor {
     trackingID : Text,
     status : Text,
     location : Text,
+    coordinates : ?Coordinates,
     client : Principal,
     adminToken : Text,
   ) : async Bool {
@@ -365,6 +404,7 @@ actor {
       trackingID;
       status;
       location;
+      coordinates;
       client;
     };
 
@@ -372,11 +412,43 @@ actor {
     true;
   };
 
-  public query ({ caller }) func getShipment(trackingID : Text) : async ?Shipment {
-    if (caller.isAnonymous()) {
-      Runtime.trap("Unauthorized: Authentication required to view shipments");
+  public query ({ caller }) func getShipment(trackingID : Text, adminToken : ?Text, clientSessionToken : ?Text) : async ?Shipment {
+    switch (shipments.get(trackingID)) {
+      case (?shipment) {
+        // Admin can view any shipment
+        switch (adminToken) {
+          case (?token) {
+            if (not isValidSession(token)) {
+              Runtime.trap("Unauthorized: Invalid admin token");
+            };
+            return ?shipment;
+          };
+          case (null) {};
+        };
+
+        // Client can view their own shipment via session token
+        switch (clientSessionToken) {
+          case (?token) {
+            let clientId = getClientIdFromSession(token);
+            if (shipment.client.toText() != clientId) {
+              Runtime.trap("Unauthorized: Can only view your own shipments");
+            };
+            return ?shipment;
+          };
+          case (null) {};
+        };
+
+        // Fallback to caller-based authorization
+        if (caller.isAnonymous()) {
+          Runtime.trap("Unauthorized: Authentication required to view shipments");
+        };
+        if (caller != shipment.client) {
+          Runtime.trap("Unauthorized: Can only view your own shipments");
+        };
+        ?shipment;
+      };
+      case (null) { null };
     };
-    shipments.get(trackingID);
   };
 
   public query ({ caller }) func getShipmentsByClient(client : Principal, adminToken : ?Text, clientSessionToken : ?Text) : async [Shipment] {
@@ -409,6 +481,14 @@ actor {
     };
 
     shipments.values().toArray().filter(func(shipment) { shipment.client == client });
+  };
+
+  // New function to fetch all shipments for map display
+  public query ({ caller }) func getAllShipmentsForMap(adminToken : Text) : async [Shipment] {
+    if (not isValidSession(adminToken)) {
+      Runtime.trap("Unauthorized: Invalid admin token");
+    };
+    shipments.values().toArray();
   };
 
   public shared ({ caller }) func createInvoice(
@@ -500,6 +580,32 @@ actor {
     };
 
     invoices.values().toArray().filter(func(invoice) { invoice.client == client });
+  };
+
+  // New function to fetch revenue data for chart
+  public query ({ caller }) func getRevenueData(adminToken : Text) : async [(Time.Time, Nat)] {
+    if (not isValidSession(adminToken)) {
+      Runtime.trap("Unauthorized: Invalid admin token");
+    };
+
+    var revenueData = Map.empty<Time.Time, Nat>();
+
+    for ((_, invoice) in invoices.entries()) {
+      let amount = switch (invoice.status) {
+        case (#paid) { invoice.amount };
+        case (#pending) { 0 };
+        case (#overdue) { 0 };
+      };
+
+      let existingAmount = switch (revenueData.get(invoice.dueDate)) {
+        case (null) { 0 };
+        case (?value) { value };
+      };
+
+      revenueData.add(invoice.dueDate, existingAmount + amount);
+    };
+
+    revenueData.toArray();
   };
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {

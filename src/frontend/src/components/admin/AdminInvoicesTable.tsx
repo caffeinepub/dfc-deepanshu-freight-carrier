@@ -17,7 +17,7 @@ interface AdminInvoicesTableProps {
 }
 
 export function AdminInvoicesTable({ client }: AdminInvoicesTableProps) {
-  const { data: invoices, isLoading } = useGetInvoicesByClient(client.id);
+  const { data: invoices, isLoading } = useGetInvoicesByClient(client.id.toText());
   const createInvoice = useCreateInvoice();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -31,10 +31,10 @@ export function AdminInvoicesTable({ client }: AdminInvoicesTableProps) {
     try {
       const dueDateTimestamp = BigInt(new Date(formData.dueDate).getTime() * 1000000);
       await createInvoice.mutateAsync({
-        invoiceNo: BigInt(formData.invoiceNo),
-        amount: BigInt(formData.amount),
+        invoiceNo: parseInt(formData.invoiceNo),
+        amount: parseInt(formData.amount),
         dueDate: dueDateTimestamp,
-        client: client.id,
+        client: client.id.toText(),
       });
       setFormData({ invoiceNo: '', amount: '', dueDate: '' });
       setIsDialogOpen(false);
@@ -163,37 +163,40 @@ export function AdminInvoicesTable({ client }: AdminInvoicesTableProps) {
                   <TableHead className="text-gold">Amount</TableHead>
                   <TableHead className="text-gold">Due Date</TableHead>
                   <TableHead className="text-gold">Status</TableHead>
-                  <TableHead className="text-gold text-right">Actions</TableHead>
+                  <TableHead className="text-gold">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {invoices.map((invoice) => (
                   <TableRow key={invoice.invoiceNo.toString()} className="border-neutral-800">
-                    <TableCell className="text-white font-medium">#{invoice.invoiceNo.toString()}</TableCell>
-                    <TableCell className="text-white/90">₹{invoice.amount.toString()}</TableCell>
+                    <TableCell className="text-white font-medium">INV{invoice.invoiceNo.toString()}</TableCell>
+                    <TableCell className="text-white/90">₹{Number(invoice.amount).toLocaleString()}</TableCell>
                     <TableCell className="text-white/70">
                       {new Date(Number(invoice.dueDate) / 1000000).toLocaleDateString()}
                     </TableCell>
                     <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                    <TableCell className="text-right space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDownloadPDF(invoice)}
-                        className="text-gold hover:text-gold hover:bg-gold/10"
-                      >
-                        <Download className="w-4 h-4" />
-                      </Button>
-                      {invoice.status === 'pending' && (
+                    <TableCell>
+                      <div className="flex items-center gap-2">
                         <Button
-                          variant="ghost"
                           size="sm"
-                          onClick={() => handleWhatsAppReminder(invoice)}
-                          className="text-green-500 hover:text-green-500 hover:bg-green-500/10"
+                          variant="outline"
+                          onClick={() => handleDownloadPDF(invoice)}
+                          className="border-gold text-gold hover:bg-gold/10"
                         >
-                          <MessageCircle className="w-4 h-4" />
+                          <Download className="w-4 h-4 mr-1" />
+                          PDF
                         </Button>
-                      )}
+                        {invoice.status === 'pending' && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleWhatsAppReminder(invoice)}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <MessageCircle className="w-4 h-4 mr-1" />
+                            Remind
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -203,7 +206,7 @@ export function AdminInvoicesTable({ client }: AdminInvoicesTableProps) {
         ) : (
           <div className="text-center py-8 text-white/50">
             <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>No invoices yet for this client.</p>
+            <p>No invoices yet. Create one to get started.</p>
           </div>
         )}
       </CardContent>

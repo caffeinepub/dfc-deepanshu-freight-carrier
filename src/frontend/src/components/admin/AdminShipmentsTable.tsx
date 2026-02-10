@@ -3,7 +3,6 @@ import { useGetShipmentsByClient, useCreateShipment } from '../../hooks/useQueri
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -15,7 +14,7 @@ interface AdminShipmentsTableProps {
 }
 
 export function AdminShipmentsTable({ client }: AdminShipmentsTableProps) {
-  const { data: shipments, isLoading } = useGetShipmentsByClient(client.id);
+  const { data: shipments, isLoading } = useGetShipmentsByClient(client.id.toText());
   const createShipment = useCreateShipment();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -28,10 +27,10 @@ export function AdminShipmentsTable({ client }: AdminShipmentsTableProps) {
     e.preventDefault();
     try {
       await createShipment.mutateAsync({
-        trackingID: formData.trackingID.toUpperCase(),
+        trackingID: formData.trackingID,
         status: formData.status,
         location: formData.location,
-        client: client.id,
+        client: client.id.toText(),
       });
       setFormData({ trackingID: '', status: '', location: '' });
       setIsDialogOpen(false);
@@ -64,6 +63,7 @@ export function AdminShipmentsTable({ client }: AdminShipmentsTableProps) {
                   <Label htmlFor="trackingID" className="text-white">Tracking ID</Label>
                   <Input
                     id="trackingID"
+                    type="text"
                     required
                     value={formData.trackingID}
                     onChange={(e) => setFormData({ ...formData, trackingID: e.target.value })}
@@ -73,24 +73,26 @@ export function AdminShipmentsTable({ client }: AdminShipmentsTableProps) {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="status" className="text-white">Status</Label>
-                  <Textarea
+                  <Input
                     id="status"
+                    type="text"
                     required
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                     className="bg-neutral-950 border-neutral-700 text-white"
-                    placeholder="e.g., 🚚 In Transit - Expected delivery tomorrow"
+                    placeholder="e.g., In Transit"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="location" className="text-white">Location</Label>
                   <Input
                     id="location"
+                    type="text"
                     required
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     className="bg-neutral-950 border-neutral-700 text-white"
-                    placeholder="e.g., Mumbai"
+                    placeholder="e.g., Delhi"
                   />
                 </div>
                 <Button
@@ -141,7 +143,7 @@ export function AdminShipmentsTable({ client }: AdminShipmentsTableProps) {
         ) : (
           <div className="text-center py-8 text-white/50">
             <Package className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>No shipments yet for this client.</p>
+            <p>No shipments yet. Create one to get started.</p>
           </div>
         )}
       </CardContent>

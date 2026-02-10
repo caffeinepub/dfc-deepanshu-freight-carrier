@@ -20,12 +20,23 @@ export const UserRole = IDL.Variant({
   'guest' : IDL.Null,
 });
 export const Time = IDL.Int;
+export const Coordinates = IDL.Record({
+  'latitude' : IDL.Float64,
+  'longitude' : IDL.Float64,
+});
 export const Client = IDL.Record({
   'id' : IDL.Principal,
   'gstNumber' : IDL.Text,
   'address' : IDL.Text,
   'companyName' : IDL.Text,
   'mobile' : IDL.Text,
+});
+export const Shipment = IDL.Record({
+  'status' : IDL.Text,
+  'client' : IDL.Principal,
+  'trackingID' : IDL.Text,
+  'location' : IDL.Text,
+  'coordinates' : IDL.Opt(Coordinates),
 });
 export const ClientRole = IDL.Variant({
   'client' : IDL.Null,
@@ -42,12 +53,6 @@ export const Invoice = IDL.Record({
   'dueDate' : Time,
   'invoiceNo' : IDL.Nat,
   'amount' : IDL.Nat,
-});
-export const Shipment = IDL.Record({
-  'status' : IDL.Text,
-  'client' : IDL.Principal,
-  'trackingID' : IDL.Text,
-  'location' : IDL.Text,
 });
 export const http_header = IDL.Record({
   'value' : IDL.Text,
@@ -108,12 +113,24 @@ export const idlService = IDL.Service({
       [],
     ),
   'createShipment' : IDL.Func(
-      [IDL.Text, IDL.Text, IDL.Text, IDL.Principal, IDL.Text],
+      [
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Opt(Coordinates),
+        IDL.Principal,
+        IDL.Text,
+      ],
       [IDL.Bool],
       [],
     ),
   'exportInvoices' : IDL.Func([IDL.Text], [IDL.Vec(IDL.Text)], ['query']),
   'getAllClients' : IDL.Func([IDL.Text], [IDL.Vec(Client)], ['query']),
+  'getAllShipmentsForMap' : IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(Shipment)],
+      ['query'],
+    ),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getClient' : IDL.Func(
@@ -136,7 +153,16 @@ export const idlService = IDL.Service({
       [IDL.Vec(Invoice)],
       ['query'],
     ),
-  'getShipment' : IDL.Func([IDL.Text], [IDL.Opt(Shipment)], ['query']),
+  'getRevenueData' : IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(IDL.Tuple(Time, IDL.Nat))],
+      ['query'],
+    ),
+  'getShipment' : IDL.Func(
+      [IDL.Text, IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
+      [IDL.Opt(Shipment)],
+      ['query'],
+    ),
   'getShipmentsByClient' : IDL.Func(
       [IDL.Principal, IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
       [IDL.Vec(Shipment)],
@@ -162,15 +188,19 @@ export const idlService = IDL.Service({
   'revokeAdmin' : IDL.Func([IDL.Principal, IDL.Text], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'sendOtp' : IDL.Func([IDL.Text], [IDL.Bool, IDL.Text, IDL.Nat], []),
-  'storeMsg91ApiKey' : IDL.Func([IDL.Text], [], []),
-  'trackShipment' : IDL.Func([IDL.Text], [IDL.Opt(Shipment)], ['query']),
+  'storeMsg91ApiKey' : IDL.Func([IDL.Text, IDL.Text], [], []),
+  'trackShipment' : IDL.Func(
+      [IDL.Text, IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
+      [IDL.Opt(Shipment)],
+      ['query'],
+    ),
   'transform' : IDL.Func(
       [TransformationInput],
       [TransformationOutput],
       ['query'],
     ),
   'verifyMsg91AccessToken' : IDL.Func(
-      [IDL.Text],
+      [IDL.Text, IDL.Text],
       [IDL.Bool, IDL.Text, IDL.Nat],
       [],
     ),
@@ -201,12 +231,23 @@ export const idlFactory = ({ IDL }) => {
     'guest' : IDL.Null,
   });
   const Time = IDL.Int;
+  const Coordinates = IDL.Record({
+    'latitude' : IDL.Float64,
+    'longitude' : IDL.Float64,
+  });
   const Client = IDL.Record({
     'id' : IDL.Principal,
     'gstNumber' : IDL.Text,
     'address' : IDL.Text,
     'companyName' : IDL.Text,
     'mobile' : IDL.Text,
+  });
+  const Shipment = IDL.Record({
+    'status' : IDL.Text,
+    'client' : IDL.Principal,
+    'trackingID' : IDL.Text,
+    'location' : IDL.Text,
+    'coordinates' : IDL.Opt(Coordinates),
   });
   const ClientRole = IDL.Variant({ 'client' : IDL.Null, 'admin' : IDL.Null });
   const InvoiceStatus = IDL.Variant({
@@ -220,12 +261,6 @@ export const idlFactory = ({ IDL }) => {
     'dueDate' : Time,
     'invoiceNo' : IDL.Nat,
     'amount' : IDL.Nat,
-  });
-  const Shipment = IDL.Record({
-    'status' : IDL.Text,
-    'client' : IDL.Principal,
-    'trackingID' : IDL.Text,
-    'location' : IDL.Text,
   });
   const http_header = IDL.Record({ 'value' : IDL.Text, 'name' : IDL.Text });
   const http_request_result = IDL.Record({
@@ -287,12 +322,24 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'createShipment' : IDL.Func(
-        [IDL.Text, IDL.Text, IDL.Text, IDL.Principal, IDL.Text],
+        [
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Opt(Coordinates),
+          IDL.Principal,
+          IDL.Text,
+        ],
         [IDL.Bool],
         [],
       ),
     'exportInvoices' : IDL.Func([IDL.Text], [IDL.Vec(IDL.Text)], ['query']),
     'getAllClients' : IDL.Func([IDL.Text], [IDL.Vec(Client)], ['query']),
+    'getAllShipmentsForMap' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(Shipment)],
+        ['query'],
+      ),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getClient' : IDL.Func(
@@ -315,7 +362,16 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(Invoice)],
         ['query'],
       ),
-    'getShipment' : IDL.Func([IDL.Text], [IDL.Opt(Shipment)], ['query']),
+    'getRevenueData' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(IDL.Tuple(Time, IDL.Nat))],
+        ['query'],
+      ),
+    'getShipment' : IDL.Func(
+        [IDL.Text, IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
+        [IDL.Opt(Shipment)],
+        ['query'],
+      ),
     'getShipmentsByClient' : IDL.Func(
         [IDL.Principal, IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
         [IDL.Vec(Shipment)],
@@ -341,15 +397,19 @@ export const idlFactory = ({ IDL }) => {
     'revokeAdmin' : IDL.Func([IDL.Principal, IDL.Text], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'sendOtp' : IDL.Func([IDL.Text], [IDL.Bool, IDL.Text, IDL.Nat], []),
-    'storeMsg91ApiKey' : IDL.Func([IDL.Text], [], []),
-    'trackShipment' : IDL.Func([IDL.Text], [IDL.Opt(Shipment)], ['query']),
+    'storeMsg91ApiKey' : IDL.Func([IDL.Text, IDL.Text], [], []),
+    'trackShipment' : IDL.Func(
+        [IDL.Text, IDL.Opt(IDL.Text), IDL.Opt(IDL.Text)],
+        [IDL.Opt(Shipment)],
+        ['query'],
+      ),
     'transform' : IDL.Func(
         [TransformationInput],
         [TransformationOutput],
         ['query'],
       ),
     'verifyMsg91AccessToken' : IDL.Func(
-        [IDL.Text],
+        [IDL.Text, IDL.Text],
         [IDL.Bool, IDL.Text, IDL.Nat],
         [],
       ),

@@ -1,29 +1,48 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Build a Node.js (Express) + MySQL web app with user authentication: signup/login/logout using bcrypt-hashed passwords, session-based auth, unique email constraint, and a protected client dashboard with basic role support (client/admin).",
+  "summary": "DFC full-system: Node/Express + MySQL web app with client signup/login and session-protected client dashboard (shipments/bills), plus an admin panel with Google Maps live tracking and revenue charts, and WhatsApp support button.",
   "architectural_notes": [
-    "Use Node.js + Express server with MySQL (mysql2) database connection.",
-    "Authentication uses bcrypt password hashing and express-session for session-based login.",
-    "Static HTML pages served from /views; protect dashboard route by checking session userId.",
-    "Users table includes unique email constraint and role enum (client/admin)."
+    "Backend: Node.js + Express with express-session for auth/session management",
+    "Database: MySQL (mysql2) using db.js config module; schema includes users, shipments, bills",
+    "Frontend served as static HTML views + CSS in /public",
+    "Google Maps JavaScript API used for admin dashboard map (API key required)",
+    "Charts.js used for admin dashboard revenue chart"
   ],
-  "known_issues": [],
+  "known_issues": [
+    "Build/deploy attempt failed previously ('AI was unable to implement your request'); needs retry/clean implementation"
+  ],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-add-a-client-signup-ui-to-the-react-app-that-matches-the-existing-client-portal-flow-provide-an-email-password-signup-form-link-it-from-the-client-login-screen-show-clear-english-success-error-messages-and-after-successful-signup-guide-the-user-to-log-in",
-      "title": "Add a client signup UI to the React app that matches the existing client portal flow: provide an email + password signup form, link it from the client login screen, show clear English success/error messages, and after successful signup guide the user to log in.",
+      "id": "feature-add-an-admin-dashboard-tab-section-for-live-tracking-that-renders-a-google-maps-view-showing-all-shipments-with-markers-using-a-google-maps-javascript-api-key-provided-via-a-frontend-environment-variable-e-g-vite-google-maps-api-key",
+      "title": "Add an Admin Dashboard tab/section for “Live Tracking” that renders a Google Maps view showing all shipments with markers, using a Google Maps JavaScript API key provided via a frontend environment variable (e.g., VITE_GOOGLE_MAPS_API_KEY).",
       "reqIds": [
-        "REQ-2"
+        "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-ensure-the-client-dashboard-area-remains-protected-by-client-authentication-if-there-is-no-valid-client-session-token-the-ui-must-not-render-the-client-dashboard-and-must-prompt-for-login-if-a-session-expires-is-invalidated-the-ui-must-return-to-the-client-login-screen",
-      "title": "Ensure the client dashboard area remains protected by client authentication: if there is no valid client session token, the UI must not render the client dashboard and must prompt for login; if a session expires/is invalidated, the UI must return to the client login screen.",
+      "id": "feature-implement-the-missing-react-admin-tracking-component-currently-empty-to-power-the-new-live-tracking-tab-including-loading-empty-state-and-error-ui-consistent-with-the-existing-admin-design",
+      "title": "Implement the missing React admin tracking component (currently empty) to power the new “Live Tracking” tab, including loading, empty state, and error UI consistent with the existing admin design.",
       "reqIds": [
         "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-admin-dashboard-revenue-view-that-renders-a-line-chart-of-revenue-using-invoice-data-already-managed-in-the-app-replacing-static-demo-data-with-computed-totals-from-stored-invoices",
+      "title": "Add an Admin Dashboard “Revenue” view that renders a line chart of revenue using invoice data already managed in the app, replacing static demo data with computed totals from stored invoices.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-persistent-contact-support-via-whatsapp-button-link-in-the-client-dashboard-ui-that-opens-whatsapp-to-the-support-number-9817783604-with-a-prefilled-english-support-message",
+      "title": "Add a persistent “Contact Support via WhatsApp” button/link in the client dashboard UI that opens WhatsApp to the support number 9817783604 with a prefilled English support message.",
+      "reqIds": [
+        "REQ-5"
       ],
       "version": 1
     }
@@ -31,28 +50,51 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add MySQL-backed user authentication (users table, signup/login/logout) with bcrypt password hashing, express-session, unique email, role field, and protected client dashboard pages.",
+      "summary": "Set up MySQL database connection/config for the DFC system (dfc_db) and make project ready to run",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Implement backend support for email/password client accounts with a unique email constraint, including: (1) signup that rejects duplicate emails, (2) login that verifies a hashed password and returns a client session token, (3) logout that invalidates the current client session token, and (4) a way to retrieve the currently-authenticated client account status using the session token (needed for protected dashboard access).",
-      "reqIds": [
-        "REQ-1"
-      ],
+      "summary": "Implement client signup/login with sessions and client dashboard pages (active/delivered shipments, pending bills)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Implement admin login and admin dashboard panel",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Add Google Maps integration for admin dashboard live tracking (Google API key + maps.js)",
+      "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-5",
-      "summary": "Add basic role support for email/password accounts (client/admin) in backend user records, defaulting to \"client\" on signup, and persist the account creation timestamp.",
+      "summary": "Add Charts.js revenue chart integration in admin dashboard (charts.js)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Add WhatsApp support/contact button to client dashboard",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Extend the backend shipment model and APIs to support map rendering by storing coordinates per shipment (latitude/longitude) and exposing an admin-authorized query to fetch all shipments for the tracking map.",
       "reqIds": [
-        "REQ-4"
+        "REQ-2"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Add email/password client signup + login + logout with unique email and protected client dashboard",
+  "gameProjectType": "none",
+  "projectName": "dfc-full-system",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

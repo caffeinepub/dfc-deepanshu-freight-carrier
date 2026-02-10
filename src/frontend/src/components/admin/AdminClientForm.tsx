@@ -56,10 +56,10 @@ export function AdminClientForm() {
     }
 
     try {
-      const clientId = Principal.fromText(formData.clientPrincipal.trim());
+      const clientIdString = formData.clientPrincipal.trim();
       
       await addOrUpdateClient.mutateAsync({
-        clientId,
+        clientId: clientIdString,
         profile: {
           companyName: formData.companyName,
           gstNumber: formData.gstNumber,

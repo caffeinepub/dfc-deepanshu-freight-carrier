@@ -1,62 +1,46 @@
 import Map "mo:core/Map";
+import Text "mo:core/Text";
 import Time "mo:core/Time";
+import Principal "mo:core/Principal";
 
 module {
-  type ClientRole = {
-    #client;
-    #admin;
+  type Coordinates = {
+    latitude : Float;
+    longitude : Float;
   };
 
-  type OldClientAccount = {
-    identifier : Text;
-    email : ?Text;
-    mobile : ?Text;
-    password : Text;
-    profile : {
-      companyName : Text;
-      gstNumber : Text;
-      address : Text;
-      mobile : Text;
-    };
-    isFirstLogin : Bool;
-    activeSessionToken : ?Text;
+  type OldShipment = {
+    trackingID : Text;
+    status : Text;
+    location : Text;
+    client : Principal;
   };
 
-  type NewClientAccount = {
-    identifier : Text;
-    email : ?Text;
-    mobile : ?Text;
-    password : Text;
-    profile : {
-      companyName : Text;
-      gstNumber : Text;
-      address : Text;
-      mobile : Text;
-    };
-    isFirstLogin : Bool;
-    activeSessionToken : ?Text;
-    role : ClientRole;
-    createdAt : Time.Time;
+  type NewShipment = {
+    trackingID : Text;
+    status : Text;
+    location : Text;
+    client : Principal;
+    coordinates : ?Coordinates;
   };
 
   type OldActor = {
-    clientAccounts : Map.Map<Text, OldClientAccount>;
+    shipments : Map.Map<Text, OldShipment>;
   };
 
   type NewActor = {
-    clientAccounts : Map.Map<Text, NewClientAccount>;
+    shipments : Map.Map<Text, NewShipment>;
   };
 
   public func run(old : OldActor) : NewActor {
-    let newClientAccounts = old.clientAccounts.map<Text, OldClientAccount, NewClientAccount>(
-      func(_id, oldAccount) {
-        {
-          oldAccount with
-          role = #client;
-          createdAt = Time.now();
-        };
+    let newShipments = old.shipments.map<Text, OldShipment, NewShipment>(
+      func(_, oldShipment) {
+        { oldShipment with coordinates = null };
       }
     );
-    { clientAccounts = newClientAccounts };
+    {
+      old with
+      shipments = newShipments;
+    };
   };
 };

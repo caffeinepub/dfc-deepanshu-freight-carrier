@@ -1,5 +1,4 @@
-import { useGetInvoicesByClient } from '../../hooks/useQueries';
-import { useClientSession } from '../../hooks/useClientSession';
+import { useGetInvoicesByClient, useGetClientAccountStatus } from '../../hooks/useQueries';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,9 +7,10 @@ import { Loader2, FileText, Download, CreditCard } from 'lucide-react';
 import type { Invoice, InvoiceStatus } from '../../backend';
 
 export function ClientInvoicesTable() {
-  const { sessionToken } = useClientSession();
+  const { data: accountStatus } = useGetClientAccountStatus();
+  const clientId = accountStatus?.clientId || null;
   
-  const { data: invoices, isLoading } = useGetInvoicesByClient(undefined);
+  const { data: invoices, isLoading } = useGetInvoicesByClient(clientId);
 
   const getStatusBadge = (status: InvoiceStatus) => {
     const statusMap: Record<InvoiceStatus, { label: string; variant: 'default' | 'secondary' | 'destructive'; className?: string }> = {

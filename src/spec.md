@@ -1,13 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Add email/password client account authentication (signup, login, logout) with unique email enforcement and keep the client dashboard protected behind a valid session.
+**Goal:** Add admin live shipment tracking on Google Maps, an admin revenue chart based on real invoices, and a persistent WhatsApp support contact action in the client dashboard.
 
 **Planned changes:**
-- Backend (Motoko): add email/password account storage with unique email constraint, hashed password storage, role field (default `client`), and account creation timestamp.
-- Backend (Motoko): implement signup (reject duplicate email), login (verify password hash, issue session token with expiry), logout (invalidate token), and an auth-status endpoint to validate the current session token.
-- Frontend (React): add a “Create account” (signup) screen linked from the client login flow, with email + password validation and clear English success/error messages.
-- Frontend (React): enforce protected client dashboard routing/rendering based on session token presence and backend validity; clear token and return to login on invalid/expired sessions and on logout.
-- Data compatibility: apply safe defaults for any newly-added backend fields so existing persisted data remains readable.
+- Add an Admin Dashboard “Live Tracking” tab/route that renders a Google Maps view with shipment markers, using a Google Maps JavaScript API key read from a frontend environment variable.
+- Extend the shipment data model to store latitude/longitude per shipment and add an admin-authorized backend query to fetch all shipments for map rendering (including upgrade-safe migration only if needed).
+- Implement the previously empty React admin tracking panel with loading, empty, and error states consistent with the existing admin UI theme.
+- Add an Admin Dashboard “Revenue” view that shows a line chart computed from stored invoice records (e.g., totals grouped by month), with an empty state when no invoices exist.
+- Add a persistent “Contact Support via WhatsApp” button/link in the client dashboard that opens a WhatsApp deep link to 9817783604 with a prefilled English message.
 
-**User-visible outcome:** Users can create a client account with email/password, log in to receive a session, access the client dashboard only while authenticated, and log out to immediately lose dashboard access; duplicate emails and invalid credentials show clear English errors.
+**User-visible outcome:** Admins can open a Live Tracking tab to see all shipments plotted on Google Maps and view a revenue line chart based on actual invoices; clients can quickly contact support via a WhatsApp button from the dashboard.

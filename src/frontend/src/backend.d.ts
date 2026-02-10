@@ -23,10 +23,15 @@ export interface Shipment {
     client: Principal;
     trackingID: string;
     location: string;
+    coordinates?: Coordinates;
 }
 export interface TransformationInput {
     context: Uint8Array;
     response: http_request_result;
+}
+export interface Coordinates {
+    latitude: number;
+    longitude: number;
 }
 export interface Invoice {
     status: InvoiceStatus;
@@ -80,9 +85,10 @@ export interface backendInterface {
     clientSignup(email: string, password: string, profile: UserProfile): Promise<string>;
     createClientAccount(email: string | null, mobile: string | null, temporaryPassword: string, profile: UserProfile, adminToken: string): Promise<string>;
     createInvoice(invoiceNo: bigint, amount: bigint, dueDate: Time, client: Principal, adminToken: string): Promise<boolean>;
-    createShipment(trackingID: string, status: string, location: string, client: Principal, adminToken: string): Promise<boolean>;
+    createShipment(trackingID: string, status: string, location: string, coordinates: Coordinates | null, client: Principal, adminToken: string): Promise<boolean>;
     exportInvoices(adminToken: string): Promise<Array<string>>;
     getAllClients(adminToken: string): Promise<Array<Client>>;
+    getAllShipmentsForMap(adminToken: string): Promise<Array<Shipment>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
     getClient(id: Principal, adminToken: string | null): Promise<Client | null>;
@@ -92,7 +98,8 @@ export interface backendInterface {
     }>;
     getInvoice(invoiceNo: bigint, adminToken: string | null, clientSessionToken: string | null): Promise<Invoice | null>;
     getInvoicesByClient(client: Principal, adminToken: string | null, clientSessionToken: string | null): Promise<Array<Invoice>>;
-    getShipment(trackingID: string): Promise<Shipment | null>;
+    getRevenueData(adminToken: string): Promise<Array<[Time, bigint]>>;
+    getShipment(trackingID: string, adminToken: string | null, clientSessionToken: string | null): Promise<Shipment | null>;
     getShipmentsByClient(client: Principal, adminToken: string | null, clientSessionToken: string | null): Promise<Array<Shipment>>;
     getUserProfile(user: Principal, adminToken: string | null): Promise<UserProfile | null>;
     grantAdmin(targetPrincipal: Principal, adminToken: string): Promise<void>;
@@ -108,10 +115,10 @@ export interface backendInterface {
     revokeAdmin(targetPrincipal: Principal, adminToken: string): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     sendOtp(phoneNumber: string): Promise<[boolean, string, bigint]>;
-    storeMsg91ApiKey(apiKey: string): Promise<void>;
-    trackShipment(trackingID: string): Promise<Shipment | null>;
+    storeMsg91ApiKey(apiKey: string, adminToken: string): Promise<void>;
+    trackShipment(trackingID: string, adminToken: string | null, clientSessionToken: string | null): Promise<Shipment | null>;
     transform(input: TransformationInput): Promise<TransformationOutput>;
-    verifyMsg91AccessToken(jwtToken: string): Promise<[boolean, string, bigint]>;
+    verifyMsg91AccessToken(jwtToken: string, adminToken: string): Promise<[boolean, string, bigint]>;
     verifyOtp(phoneNumber: string, otp: string): Promise<[boolean, string, bigint]>;
     verifyOtpAndAuthenticate(phoneNumber: string, otp: string): Promise<string | null>;
 }

@@ -1,23 +1,25 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, UserPlus, FileDown, Shield } from 'lucide-react';
+import { Users, UserPlus, FileDown, Shield, Map, TrendingUp } from 'lucide-react';
 import { AdminClientsTable } from './AdminClientsTable';
 import { AdminClientForm } from './AdminClientForm';
 import { AdminClientDetail } from './AdminClientDetail';
 import { AdminInvoiceExportButton } from './AdminInvoiceExportButton';
 import { AdminMsg91Panel } from './AdminMsg91Panel';
+import { AdminTrackingPanel } from '../AdminTrackingPanel';
+import { AdminRevenuePanel } from './AdminRevenuePanel';
 import { AdminLogoutButton } from '../auth/AdminLogoutButton';
-import { useValidateAdminSession } from '@/hooks/useQueries';
+import { useAdminSession } from '@/hooks/useAdminSession';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AccessDeniedScreen } from '../auth/AccessDeniedScreen';
 import type { Client } from '../../backend';
 
 export function AdminDashboard() {
-  const { data: isValidSession, isLoading } = useValidateAdminSession();
+  const { isAuthenticated, isValidating } = useAdminSession();
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
-  if (isLoading) {
+  if (isValidating) {
     return (
       <Card className="bg-neutral-900 border-neutral-800">
         <CardHeader>
@@ -32,7 +34,7 @@ export function AdminDashboard() {
     );
   }
 
-  if (!isValidSession) {
+  if (!isAuthenticated) {
     return <AccessDeniedScreen />;
   }
 
@@ -52,7 +54,7 @@ export function AdminDashboard() {
           <div>
             <CardTitle className="text-gold text-3xl mb-2">Admin Dashboard</CardTitle>
             <CardDescription className="text-white/70 text-base">
-              Manage clients, shipments, invoices, and MSG91 configuration
+              Manage clients, shipments, invoices, tracking, and MSG91 configuration
             </CardDescription>
           </div>
           <AdminLogoutButton />
@@ -60,7 +62,7 @@ export function AdminDashboard() {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="clients" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-neutral-950 border border-neutral-800">
+          <TabsList className="grid w-full grid-cols-6 bg-neutral-950 border border-neutral-800">
             <TabsTrigger
               value="clients"
               className="data-[state=active]:bg-gold data-[state=active]:text-black"
@@ -74,6 +76,20 @@ export function AdminDashboard() {
             >
               <UserPlus className="w-4 h-4 mr-2" />
               Add Client
+            </TabsTrigger>
+            <TabsTrigger
+              value="tracking"
+              className="data-[state=active]:bg-gold data-[state=active]:text-black"
+            >
+              <Map className="w-4 h-4 mr-2" />
+              Live Tracking
+            </TabsTrigger>
+            <TabsTrigger
+              value="revenue"
+              className="data-[state=active]:bg-gold data-[state=active]:text-black"
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Revenue
             </TabsTrigger>
             <TabsTrigger
               value="msg91"
@@ -99,6 +115,14 @@ export function AdminDashboard() {
             <div className="max-w-2xl">
               <AdminClientForm />
             </div>
+          </TabsContent>
+
+          <TabsContent value="tracking" className="mt-6">
+            <AdminTrackingPanel />
+          </TabsContent>
+
+          <TabsContent value="revenue" className="mt-6">
+            <AdminRevenuePanel />
           </TabsContent>
 
           <TabsContent value="msg91" className="mt-6">

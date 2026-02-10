@@ -1,20 +1,14 @@
-import { useGetShipmentsByClient } from '../../hooks/useQueries';
-import { useClientSession } from '../../hooks/useClientSession';
+import { useGetShipmentsByClient, useGetClientAccountStatus } from '../../hooks/useQueries';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Package, Truck } from 'lucide-react';
-import { Principal } from '@dfinity/principal';
 
 export function ClientShipmentsTable() {
-  const { sessionToken } = useClientSession();
+  const { data: accountStatus } = useGetClientAccountStatus();
+  const clientId = accountStatus?.clientId || null;
   
-  // Extract client principal from session token (format: timestamp_session_clientId or timestamp_otp_session_mobile)
-  // For now, we'll need to get the principal from the backend via a separate query
-  // Since we don't have direct access to the principal, we'll use a placeholder
-  // In a real implementation, the backend would provide a method to get current client info
-  
-  const { data: shipments, isLoading } = useGetShipmentsByClient(undefined);
+  const { data: shipments, isLoading } = useGetShipmentsByClient(clientId);
 
   const activeShipments = shipments?.filter(s => !s.status.toLowerCase().includes('delivered')) || [];
   const deliveredShipments = shipments?.filter(s => s.status.toLowerCase().includes('delivered')) || [];
