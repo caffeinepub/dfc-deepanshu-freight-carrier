@@ -1,28 +1,21 @@
-import { useState, FormEvent, useEffect, useRef } from 'react';
-import { MessageCircle, Truck, Package, FileText, MapPin, Phone, Mail } from 'lucide-react';
+import { useState, FormEvent } from 'react';
+import { MessageCircle, Truck, Package, FileText, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Toaster } from '@/components/ui/sonner';
 import { AdminLoginCard } from '@/components/auth/AdminLoginCard';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { ClientPortalAuthCard } from '@/components/client/ClientPortalAuthCard';
-import { ClientDashboard } from '@/components/client/ClientDashboard';
-import { ClientPasswordChangeCard } from '@/components/client/ClientPasswordChangeCard';
 import { AppErrorBoundary } from '@/components/app/AppErrorBoundary';
 import { useAdminSession } from './hooks/useAdminSession';
 import { useClientSession, ClientSessionProvider } from './hooks/ClientSessionProvider';
-import { useGetClientAccountStatus } from './hooks/useQueries';
-import { useActor } from './hooks/useActor';
 import { scrollToSection } from './utils/scrollToSection';
 
 function AppContent() {
-  const { isAuthenticated: isAdminAuthenticated, isValidating: isAdminValidating } = useAdminSession();
+  const { isAuthenticated: isAdminAuthenticated } = useAdminSession();
   const { isAuthenticated: isClientAuthenticated } = useClientSession();
-  const { data: clientAccountStatus, isLoading: isLoadingClientStatus, isFetched: isClientStatusFetched } = useGetClientAccountStatus();
-  const { actor } = useActor();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -34,22 +27,6 @@ function AppContent() {
 
   const [trackingId, setTrackingId] = useState('');
   const [trackingResult, setTrackingResult] = useState('');
-  const [isTracking, setIsTracking] = useState(false);
-
-  // Track previous authentication state to detect login transitions
-  const prevAuthRef = useRef(isClientAuthenticated);
-
-  useEffect(() => {
-    // Detect transition from unauthenticated to authenticated
-    if (!prevAuthRef.current && isClientAuthenticated && isClientStatusFetched) {
-      console.log('[App] Client login detected, scrolling to portal');
-      // Small delay to ensure DOM is updated
-      setTimeout(() => {
-        scrollToSection('client-portal');
-      }, 100);
-    }
-    prevAuthRef.current = isClientAuthenticated;
-  }, [isClientAuthenticated, isClientStatusFetched]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -67,28 +44,8 @@ function AppContent() {
       return;
     }
 
-    setIsTracking(true);
-    setTrackingResult('');
-
-    try {
-      if (!actor) {
-        setTrackingResult('❌ Service temporarily unavailable. Please try again.');
-        return;
-      }
-
-      const shipment = await actor.trackShipment(id, null, null);
-      
-      if (shipment) {
-        setTrackingResult(shipment.status);
-      } else {
-        setTrackingResult('❌ Invalid Tracking ID. Please contact DFC office.');
-      }
-    } catch (error) {
-      console.error('Tracking error:', error);
-      setTrackingResult('❌ Error tracking shipment. Please try again.');
-    } finally {
-      setIsTracking(false);
-    }
+    // Tracking feature not available in current backend
+    setTrackingResult('❌ Tracking feature is currently unavailable. Please contact DFC office at 9817783604.');
   };
 
   // Determine what to show in Client Portal section
@@ -97,28 +54,29 @@ function AppContent() {
       return <ClientPortalAuthCard />;
     }
 
-    // Show loading state while fetching account status
-    if (isLoadingClientStatus || !isClientStatusFetched) {
-      return (
-        <Card className="bg-neutral-900 border-neutral-800">
-          <CardContent className="py-8">
-            <div className="flex items-center justify-center">
-              <Skeleton className="h-8 w-48 bg-neutral-800" />
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    // Show password change if first login
-    if (clientAccountStatus?.isFirstLogin) {
-      return <ClientPasswordChangeCard onSuccess={() => {
-        // The query will automatically refetch and show dashboard
-      }} />;
-    }
-
-    // Show dashboard for regular users
-    return <ClientDashboard />;
+    // Client portal features not available in current backend
+    return (
+      <Card className="bg-neutral-900 border-neutral-800">
+        <CardHeader>
+          <CardTitle className="text-gold text-2xl">Welcome to Client Portal</CardTitle>
+          <CardDescription className="text-white/70">
+            Your account has been created successfully
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-white/80">
+            Thank you for registering with DFC. Our team will contact you shortly to set up your shipments and invoices.
+          </p>
+          <p className="text-white/80">
+            For immediate assistance, please contact us at:
+          </p>
+          <div className="flex items-center gap-2 text-gold">
+            <Phone className="w-4 h-4" />
+            <span>9817783604</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
@@ -311,10 +269,9 @@ function AppContent() {
               
               <Button 
                 onClick={handleTrack}
-                disabled={isTracking}
                 className="w-full bg-gold hover:bg-gold/90 text-black font-bold text-lg h-12 rounded-lg"
               >
-                {isTracking ? 'Tracking...' : 'Track Now'}
+                Track Now
               </Button>
               
               {trackingResult && (
@@ -336,7 +293,7 @@ function AppContent() {
             Client Portal
           </h2>
           <p className="text-white/70 text-center mb-12 max-w-2xl mx-auto">
-            Access your shipment history, invoices, and account details through our secure client portal.
+            Register your account to get started with DFC services.
           </p>
           {renderClientPortalContent()}
         </div>
@@ -349,7 +306,7 @@ function AppContent() {
             Admin Dashboard
           </h2>
           <p className="text-white/70 text-center mb-12 max-w-2xl mx-auto">
-            Manage clients, shipments, invoices, and system configuration.
+            Manage client accounts and view login history.
           </p>
           {isAdminAuthenticated ? (
             <AdminDashboard />
@@ -440,49 +397,31 @@ function AppContent() {
               </CardContent>
             </Card>
 
-            <div className="space-y-6">
-              <Card className="bg-neutral-900 border-neutral-800">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Phone className="w-6 h-6 text-gold" />
-                    </div>
-                    <div>
-                      <h3 className="text-gold font-semibold text-lg mb-2">Phone</h3>
-                      <p className="text-white/80">+91 98177 83604</p>
-                    </div>
+            <Card className="bg-neutral-900 border-neutral-800">
+              <CardHeader>
+                <CardTitle className="text-gold text-2xl">Contact Information</CardTitle>
+                <CardDescription className="text-white/70">
+                  Reach out to us directly
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <Phone className="w-6 h-6 text-gold mt-1" />
+                  <div>
+                    <h3 className="text-white font-semibold mb-1">Phone</h3>
+                    <p className="text-white/80">+91 9817783604</p>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-neutral-900 border-neutral-800">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Mail className="w-6 h-6 text-gold" />
-                    </div>
-                    <div>
-                      <h3 className="text-gold font-semibold text-lg mb-2">Email</h3>
-                      <p className="text-white/80">contact@dfc.com</p>
-                    </div>
+                </div>
+                
+                <div className="flex items-start gap-4">
+                  <Mail className="w-6 h-6 text-gold mt-1" />
+                  <div>
+                    <h3 className="text-white font-semibold mb-1">Email</h3>
+                    <p className="text-white/80">contact@dfc.com</p>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-neutral-900 border-neutral-800">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <MapPin className="w-6 h-6 text-gold" />
-                    </div>
-                    <div>
-                      <h3 className="text-gold font-semibold text-lg mb-2">Location</h3>
-                      <p className="text-white/80">Serving All India</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -490,16 +429,14 @@ function AppContent() {
       {/* Footer */}
       <footer className="bg-neutral-950 border-t border-neutral-800 py-8">
         <div className="container mx-auto px-4 sm:px-6 lg:px-12">
-          <div className="text-center text-white/60">
+          <div className="text-center text-white/70">
             <p className="mb-2">
-              © {new Date().getFullYear()} Deepanshu Freight Carrier. All rights reserved.
+              © {new Date().getFullYear()} DFC Container Transport. All rights reserved.
             </p>
             <p className="text-sm">
-              Built with love using{' '}
+              Built with ❤️ using{' '}
               <a
-                href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(
-                  typeof window !== 'undefined' ? window.location.hostname : 'dfc-app'
-                )}`}
+                href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gold hover:text-gold/80 transition-colors"

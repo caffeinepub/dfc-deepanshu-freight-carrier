@@ -1,40 +1,144 @@
 {
   "kind": "build_request",
-  "title": "Configure Google Maps API key for Admin Live Tracking map",
+  "title": "Implement persistent client signup/login with generated client codes, admin client list/delete, and login history",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Configure the Google Maps JavaScript API key so the Admin Dashboard “Live Tracking” tab successfully loads Google Maps and renders shipment markers. Use this exact key value: \"AIzaSyC0ZPKa3tgNMATa8PwdUheyhIAH1E3Gi9o\".",
-      "target": "frontend",
+      "text": "Implement a persistent client signup API in the Motoko backend that creates a new client account record (not just frontend-only), enforces unique email, generates a unique client code in the format \"DFC\" + 5 digits (e.g., DFC12345), and stores the hashed password along with profile fields (companyName, gstNumber, address, mobile) and createdAt timestamp.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-1"
         ],
         "quotes": [
-          "<script src=\"https://maps.googleapis.com/maps/api/js?key=AIzaSyC0ZPKa3tgNMATa8PwdUheyhIAH1E3Gi9o&callback=initMap\" async defer></script>",
-          "Is app ki key add karo"
+          "\"Ensure ye table hai\" ... \"Signup karega → clients table me record add hoga\" ... \"Client ID auto generate hoga\""
         ]
       },
       "acceptanceCriteria": [
-        "When VITE_GOOGLE_MAPS_API_KEY is set to \"AIzaSyC0ZPKa3tgNMATa8PwdUheyhIAH1E3Gi9o\", the Admin Dashboard > Live Tracking view loads the Google Maps script using the callback=initMap parameter (via the existing dynamic loader in AdminTrackingPanel).",
-        "If the API key is not set, the Live Tracking view shows the existing English warning message that the Google Maps API key is not configured (no blank/white map).",
-        "With at least one shipment that has coordinates, the map renders and shows a marker per shipment with coordinates, and clicking a marker opens an info window with shipment details."
+        "Signing up with a new email persists a new client account in canister state and does not rely on any frontend-only state.",
+        "Signing up with an already-registered email fails with a clear error message in English (e.g., \"Email already registered\").",
+        "A client code like DFC12345 is generated during signup and is unique across all client accounts.",
+        "Client password is not stored in plaintext; the stored value is a one-way hash.",
+        "The stored client profile includes company name, GST number (optional), address, and mobile number, plus createdAt."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Implement a secure client password login API in the Motoko backend that (1) finds the account by email (and/or mobile if supported), (2) rejects login if the account is locked, (3) verifies password against the stored hash, (4) increments per-account failed-attempt counters on wrong password, (5) resets failed-attempt counters on successful login, and (6) returns the same session token format currently expected by the frontend.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "\"🔥 STEP 3 – Secure Login Route\" ... \"failed_attempts\" ... \"account_locked\""
+        ]
+      },
+      "acceptanceCriteria": [
+        "Logging in with an unknown email returns an English error (e.g., \"User not found\").",
+        "Logging in with a wrong password increments the account's failed-attempt counter and returns an English error (e.g., \"Wrong password\").",
+        "Logging in to a locked account returns an English error (e.g., \"Account locked. Contact admin\").",
+        "Successful login resets failed-attempt counter and returns a non-empty session token usable by existing client portal flows.",
+        "Session tokens continue to work with existing authorization checks that compare shipments/invoices to the client principal text stored in the session."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Record login history on every successful client authentication in the backend, capturing at minimum: identifier used, client principal text, login timestamp, and best-effort IP address (if supplied by the frontend; otherwise store null).",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "\"✔ Login history alag se store hogi\" ... \"Save Login History\""
+        ]
+      },
+      "acceptanceCriteria": [
+        "After a successful client login, a new login history entry is persisted and visible via the existing admin login history retrieval method used by the admin UI.",
+        "Each login history entry includes identifier, clientId, loginTime, and ipAddress (nullable).",
+        "If IP is not provided by the frontend, login history still records the event with ipAddress = null."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Add/extend admin backend APIs to support client monitoring and management: (a) list all client accounts including client code (DFCxxxxx), name/companyName, email, and createdAt; and (b) delete a client account by its generated client code (DFCxxxxx). Both operations must require a valid admin session token.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "\"app.get(\\\"/admin/clients\\\"\" ... \"app.delete(\\\"/admin/delete-client/:id\\\"\""
+        ]
+      },
+      "acceptanceCriteria": [
+        "Admin client list call returns all clients with fields: clientCode, companyName/name, email, createdAt.",
+        "Admin delete call removes the client account associated with the provided client code.",
+        "Both endpoints trap/reject when admin token is missing or invalid.",
+        "Deleting a client prevents subsequent login for that account."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Update the frontend data flow to use the new/updated backend behaviors for signup, login, and admin client list/delete, while keeping all user-facing messages in English and maintaining compatibility with the existing client session token handling and admin login history panel.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "\"Yah code donon add karo\""
+        ]
+      },
+      "acceptanceCriteria": [
+        "Client signup results in a persisted backend account; after refresh, admin can still see the newly created client in the admin client list UI.",
+        "Client login continues to work with existing client portal pages (shipments/invoices) using the returned session token.",
+        "Admin client list UI shows the generated client code for each client (DFCxxxxx) and can delete by that code.",
+        "All surfaced error/success strings for these flows are in English (e.g., email already registered, signup failed, wrong password, account locked, client deleted)."
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "If the backend state schema must change to add per-account failed-attempt counters, locked status, and generated client code, implement a conditional Motoko upgrade migration that preserves existing persisted data and initializes new fields with safe defaults.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "\"failed_attempts\" ... \"account_locked\" ... \"Client ID auto generate\""
+        ]
+      },
+      "acceptanceCriteria": [
+        "Upgrading the canister does not erase existing client accounts, sessions, shipments, invoices, or login history.",
+        "New fields introduced for existing accounts are initialized consistently (e.g., failedAttempts=0, accountLocked=false, clientCode generated if missing)."
       ]
     }
   ],
   "constraints": [
-    "Do not edit files under frontend/src/components/ui (read-only components).",
-    "Keep the frontend implementation in React (no new standalone admin-dashboard.html or public/maps.js page flow).",
-    "Do not add external backend services or REST endpoints; keep using the existing backend actor calls and React Query hooks for shipment data."
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "Do not edit frontend files under frontend/src/components/ui or any paths listed as immutable in SYSTEM_CONTEXT.",
+    "Do not implement or reference Express/server.js, MySQL tables, or npm packages like bcrypt on the backend; implement equivalent behavior in Motoko canister state."
   ],
   "nonGoals": [
-    "Implementing a new static HTML admin dashboard page (admin-dashboard.html).",
-    "Creating a separate public/maps.js file that fetches \"/api/shipments\" via REST.",
-    "Securing/obfuscating the Google Maps API key beyond standard Google-side restrictions (e.g., HTTP referrer restrictions), unless explicitly requested."
+    "Adding third-party authentication providers (only existing auth mechanisms remain).",
+    "Implementing external database persistence (MySQL/Postgres/etc.).",
+    "Adding real-time/WebSocket functionality."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

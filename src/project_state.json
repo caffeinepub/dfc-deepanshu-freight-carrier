@@ -1,21 +1,23 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project to add an admin dashboard map view using Google Maps JS API to display shipment markers fetched from /api/shipments.",
+  "summary": "Backend authentication + admin management system: MySQL clients table, signup/login APIs with bcrypt password hashing, login history logging, and admin endpoints to list/delete clients.",
   "architectural_notes": [
-    "Admin dashboard includes Google Maps JS API script tag with callback=initMap.",
-    "public/maps.js defines initMap() that initializes map and fetches /api/shipments to place markers when lat/lng are present."
+    "Use MySQL database with `clients` table (unique email, unique client_id, failed_attempts, account_locked, created_at).",
+    "Use bcrypt for password hashing and comparison in signup/login routes.",
+    "Capture IP address on login using `x-forwarded-for` header fallback to socket remoteAddress.",
+    "Login history persisted via `login_history` table (client_id, email, ip_address)."
   ],
   "known_issues": [
-    "Google Maps API key is being added directly in HTML; key exposure risk unless restricted (HTTP referrer restrictions) or moved to safer configuration."
+    "Signup may currently be frontend-only (no backend insert into `clients`), causing users not to be persisted in database."
   ],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-configure-the-google-maps-javascript-api-key-so-the-admin-dashboard-live-tracking-tab-successfully-loads-google-maps-and-renders-shipment-markers-use-this-exact-key-value-aizasyc0zpka3tgnmata8pwduheyhiah1e3gi9o",
-      "title": "Configure the Google Maps JavaScript API key so the Admin Dashboard “Live Tracking” tab successfully loads Google Maps and renders shipment markers. Use this exact key value: \"AIzaSyC0ZPKa3tgNMATa8PwdUheyhIAH1E3Gi9o\".",
+      "id": "feature-update-the-frontend-data-flow-to-use-the-new-updated-backend-behaviors-for-signup-login-and-admin-client-list-delete-while-keeping-all-user-facing-messages-in-english-and-maintaining-compatibility-with-the-existing-client-session-token-handling-and-admin-login-history-panel",
+      "title": "Update the frontend data flow to use the new/updated backend behaviors for signup, login, and admin client list/delete, while keeping all user-facing messages in English and maintaining compatibility with the existing client session token handling and admin login history panel.",
       "reqIds": [
-        "REQ-1"
+        "REQ-5"
       ],
       "version": 1
     }
@@ -23,12 +25,82 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Integrate Google Maps on admin dashboard and render shipment markers from /api/shipments via initMap in public/maps.js (include Maps JS API script with key + callback).",
+      "summary": "Create/ensure MySQL `clients` table with unique email and generated client_id plus lockout fields",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Implement `/signup` backend route to validate unique email, bcrypt-hash password, generate client_id, and insert into `clients`",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Implement `/login` backend route to verify password, track failed_attempts/reset on success, respect account_locked, and return client info",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Store login history on successful login (requires `login_history` table) including client_id, email, and IP address",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Admin API: GET `/admin/clients` to list clients (client_id, name, email, created_at)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Admin API: DELETE `/admin/delete-client/:id` to delete client by client_id",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Implement a persistent client signup API in the Motoko backend that creates a new client account record (not just frontend-only), enforces unique email, generates a unique client code in the format \"DFC\" + 5 digits (e.g., DFC12345), and stores the hashed password along with profile fields (companyName, gstNumber, address, mobile) and createdAt timestamp.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Implement a secure client password login API in the Motoko backend that (1) finds the account by email (and/or mobile if supported), (2) rejects login if the account is locked, (3) verifies password against the stored hash, (4) increments per-account failed-attempt counters on wrong password, (5) resets failed-attempt counters on successful login, and (6) returns the same session token format currently expected by the frontend.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Record login history on every successful client authentication in the backend, capturing at minimum: identifier used, client principal text, login timestamp, and best-effort IP address (if supplied by the frontend; otherwise store null).",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Add/extend admin backend APIs to support client monitoring and management: (a) list all client accounts including client code (DFCxxxxx), name/companyName, email, and createdAt; and (b) delete a client account by its generated client code (DFCxxxxx). Both operations must require a valid admin session token.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "If the backend state schema must change to add per-account failed-attempt counters, locked status, and generated client code, implement a conditional Motoko upgrade migration that preserves existing persisted data and initializes new fields with safe defaults.",
+      "reqIds": [
+        "REQ-6"
+      ],
       "status": "pending"
     }
   ],
-  "projectName": "Configure Google Maps API key for Admin Live Tracking map",
+  "projectName": "Implement persistent client signup/login with generated client codes, admin client list/delete, and login history",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

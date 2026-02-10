@@ -35,6 +35,11 @@ export function getClientAuthErrorMessage(error: unknown): string {
     return 'Invalid email/mobile or password. Please check your credentials and try again.';
   }
   
+  // Account locked
+  if (errorMessage.includes('Account is locked') || errorMessage.includes('account locked')) {
+    return 'Account locked. Contact admin for assistance.';
+  }
+  
   // Rate limiting
   if (errorMessage.includes('Too many login attempts')) {
     return 'Too many login attempts. Please try again in 15 minutes.';

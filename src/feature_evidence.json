@@ -2,11 +2,15 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-configure-the-google-maps-javascript-api-key-so-the-admin-dashboard-live-tracking-tab-successfully-loads-google-maps-and-renders-shipment-markers-use-this-exact-key-value-aizasyc0zpka3tgnmata8pwduheyhiah1e3gi9o",
-      "featureTitle": "Configure the Google Maps JavaScript API key so the Admin Dashboard “Live Tracking” tab successfully loads Google Maps and renders shipment markers. Use this exact key value: \"AIzaSyC0ZPKa3tgNMATa8PwdUheyhIAH1E3Gi9o\".",
+      "featureId": "feature-update-the-frontend-data-flow-to-use-the-new-updated-backend-behaviors-for-signup-login-and-admin-client-list-delete-while-keeping-all-user-facing-messages-in-english-and-maintaining-compatibility-with-the-existing-client-session-token-handling-and-admin-login-history-panel",
+      "featureTitle": "Update the frontend data flow to use the new/updated backend behaviors for signup, login, and admin client list/delete, while keeping all user-facing messages in English and maintaining compatibility with the existing client session token handling and admin login history panel.",
       "files": [
-        "frontend/.env",
-        "frontend/src/components/AdminTrackingPanel.tsx"
+        "frontend/src/components/admin/AdminClientsTable.tsx",
+        "frontend/src/components/admin/AdminDashboard.tsx",
+        "frontend/src/components/client/ClientPortalLoginCard.tsx",
+        "frontend/src/components/client/ClientSignupCard.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/utils/clientAuthErrors.ts"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -18,7 +22,7 @@
         "http-outcalls@3.0.0"
       ],
       "testIds": [
-        "REQ-1"
+        "REQ-5"
       ],
       "confidence": "high"
     }

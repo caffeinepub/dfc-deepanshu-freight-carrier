@@ -1,26 +1,47 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Configure Google Maps API key for Admin Live Tracking map",
+  "title": "Update frontend to use persistent client signup/login and admin client list/delete with client codes",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Configure VITE_GOOGLE_MAPS_API_KEY so Admin Dashboard > Live Tracking loads Google Maps via the existing dynamic loader and renders shipment markers with info windows.",
+      "id": "REQ-5",
+      "summary": "Align client signup/login and admin client list/delete UI/data flow with updated backend methods while keeping English messages and existing session-token compatibility (and keeping admin login history panel working).",
       "acceptanceCriteria": [
-        "When VITE_GOOGLE_MAPS_API_KEY is set to \"AIzaSyC0ZPKa3tgNMATa8PwdUheyhIAH1E3Gi9o\", the Admin Dashboard > Live Tracking view loads the Google Maps script using the callback=initMap parameter (via the existing dynamic loader in AdminTrackingPanel).",
-        "If the API key is not set, the Live Tracking view shows the existing English warning message that the Google Maps API key is not configured (no blank/white map).",
-        "With at least one shipment that has coordinates, the map renders and shows a marker per shipment with coordinates, and clicking a marker opens an info window with shipment details."
+        "Client signup results in a persisted backend account; after refresh, admin can still see the newly created client in the admin client list UI.",
+        "Client login continues to work with existing client portal pages (shipments/invoices) using the returned session token.",
+        "Admin client list UI shows the generated client code for each client (DFCxxxxx) and can delete by that code.",
+        "All surfaced error/success strings for these flows are in English (e.g., email already registered, signup failed, wrong password, account locked, client deleted)."
       ],
       "file_operations": [
         {
-          "path": "frontend/.env",
-          "operation": "create",
-          "description": "Add Vite environment configuration with VITE_GOOGLE_MAPS_API_KEY set to the exact value \"AIzaSyC0ZPKa3tgNMATa8PwdUheyhIAH1E3Gi9o\" so the existing AdminTrackingPanel dynamic loader can read it at build/runtime."
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Update admin client management hooks to use the updated backend capabilities exposed in the frontend backend interface: replace the legacy client list call with the admin-token guarded client-accounts list capability, and add a delete-by-clientCode mutation that refreshes the list on success. Update types used by these hooks to match the returned ClientAccount shape (including clientCode, email, createdAt). Ensure client auth mutations (signup/login) continue to pass ipAddress as null (or best-effort value if already available) and keep returning/setting the same session token format. Use the existing toast patterns to surface only English messages. Use core-infrastructure actor wiring already present in this hook file. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/AdminTrackingPanel.tsx",
+          "path": "frontend/src/components/admin/AdminClientsTable.tsx",
           "operation": "modify",
-          "description": "Harden the existing Google Maps dynamic loader to reliably load the script with callback=initMap (e.g., avoid duplicate script insertion across tab mounts, reset mapError appropriately when apiKey changes, and keep the current missing-key warning behavior and marker/info-window rendering logic intact)."
+          "description": "Update the admin clients list table to render the new client account fields (clientCode DFCxxxxx, companyName, email, createdAt) and provide a delete action that deletes by clientCode using the new delete mutation hook, then refreshes the list. Keep search behavior aligned with the displayed fields (e.g., companyName/email/clientCode/mobile if available). Use shadcn-ui table/button/input components already in use for consistent styling and interactions. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/admin/AdminDashboard.tsx",
+          "operation": "modify",
+          "description": "Adjust admin dashboard client-selection wiring to remain consistent with the updated client list data shape (ClientAccount vs legacy Client). Ensure the Clients tab still loads and that selecting a row continues to navigate to the existing detail view if applicable; if the detail view requires legacy fields, gate selection or map fields safely so the admin can still manage clients without breaking navigation. Keep the Login History tab behavior unchanged to maintain compatibility with the existing admin login history panel. Use shadcn-ui Tabs/Card components already in use. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/client/ClientPortalLoginCard.tsx",
+          "operation": "modify",
+          "description": "Ensure password-login error handling surfaces clear English messages for the updated backend behaviors (unknown user, wrong password, account locked) while keeping the same session token handling flow. If necessary, wire in the shared client-auth error mapping utility so backend errors are normalized to English UI strings. Use existing shadcn-ui form components already used in this card. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/client/ClientSignupCard.tsx",
+          "operation": "modify",
+          "description": "Ensure signup error handling surfaces clear English messages for the updated backend behaviors (e.g., email already registered) and that signup continues to create a persisted account via the backend, with UI feedback remaining English-only. If needed, update the post-signup flow messaging to avoid implying frontend-only creation. Use existing shadcn-ui form components already used in this card. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/utils/clientAuthErrors.ts",
+          "operation": "modify",
+          "description": "Extend/adjust client-auth error normalization to explicitly map the backend's updated English error strings (e.g., Email already registered, User not found, Wrong password, Account locked. Contact admin) into consistent, user-friendly English messages for login/signup flows. Ensure unknown errors fall back to a generic English message. Verify the component's usage instructions before implementing."
         }
       ]
     }

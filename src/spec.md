@@ -1,11 +1,14 @@
 # Specification
 
 ## Summary
-**Goal:** Configure the Google Maps JavaScript API key so the Admin Dashboard “Live Tracking” tab loads Google Maps and displays shipment markers.
+**Goal:** Add persistent client account signup/login in the Motoko backend with generated client codes, secure password verification, login history recording, and admin client list/delete, while keeping existing session token compatibility.
 
 **Planned changes:**
-- Set up the frontend to read `VITE_GOOGLE_MAPS_API_KEY` and use it to load the Google Maps JS script via the existing dynamic loader in `AdminTrackingPanel` with `callback=initMap`.
-- Ensure the Live Tracking view shows the existing English warning message when the API key is missing (instead of showing a blank/white map).
-- Verify map rendering behavior: for shipments with coordinates, render one marker per shipment and show an info window with shipment details on marker click.
+- Implement backend client signup that persists accounts in canister state, enforces unique email, generates unique client codes in the format DFC##### (5 digits), hashes passwords, and stores profile fields plus createdAt.
+- Implement backend client login that verifies hashed passwords, handles failed-attempt counters and locked accounts, resets counters on success, and returns the existing frontend-expected session token format.
+- Persist login history on each successful client login (identifier used, client principal text, timestamp, and nullable IP if provided).
+- Add/extend admin backend APIs to (1) list all client accounts (clientCode, companyName/name, email, createdAt) and (2) delete a client by clientCode, requiring a valid admin session token.
+- Update frontend data flow to use the new/updated backend signup/login and admin client list/delete behaviors, ensuring user-facing messages remain in English and existing session token handling/admin login history panel remain compatible.
+- Add a conditional Motoko upgrade migration to preserve existing persisted data and initialize new account fields (failedAttempts, accountLocked, clientCode when missing) with safe defaults.
 
-**User-visible outcome:** Admin users can open Admin Dashboard → Live Tracking and see Google Maps load successfully, with markers for shipments that have coordinates; if the API key is not configured, they see a clear warning message.
+**User-visible outcome:** Clients can sign up and log in with persistent accounts and consistent session tokens; admins can view all clients (including generated DFC codes), delete clients by code, and continue seeing login history entries recorded after successful logins.
