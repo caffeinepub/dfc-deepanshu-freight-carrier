@@ -1,99 +1,37 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-10T01:35:40.736Z",
+  "generatedAt": "2026-02-10T02:15:31.532Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 5,
-    "implemented": 4,
+    "total": 1,
+    "implemented": 1,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Add an Admin Dashboard tab/section for “Live Tracking” that renders a Google Maps view showing all shipments with markers, using a Google Maps JavaScript API key provided via a frontend environment variable (e.g., VITE_GOOGLE_MAPS_API_KEY).",
+        "summary": "Configure the Google Maps JavaScript API key so the Admin Dashboard “Live Tracking” tab successfully loads Google Maps and renders shipment markers. Use this exact key value: \"AIzaSyC0ZPKa3tgNMATa8PwdUheyhIAH1E3Gi9o\".",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/components/admin/AdminDashboard.tsx",
-          "frontend/src/components/AdminTrackingPanel.tsx",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/.env",
+          "frontend/src/components/AdminTrackingPanel.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/components/admin/AdminDashboard.tsx",
-          "frontend/src/components/AdminTrackingPanel.tsx",
-          "frontend/src/hooks/useQueries.ts"
-        ]
-      },
-      {
-        "id": "REQ-2",
-        "summary": "Extend the backend shipment model and APIs to support map rendering by storing coordinates per shipment (latitude/longitude) and exposing an admin-authorized query to fetch all shipments for the tracking map.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Implement the missing React admin tracking component (currently empty) to power the new “Live Tracking” tab, including loading, empty state, and error UI consistent with the existing admin design.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/AdminTrackingPanel.tsx",
-          "frontend/src/components/admin/AdminDashboard.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/AdminTrackingPanel.tsx",
-          "frontend/src/components/admin/AdminDashboard.tsx"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Add an Admin Dashboard “Revenue” view that renders a line chart of revenue using invoice data already managed in the app, replacing static demo data with computed totals from stored invoices.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/admin/AdminDashboard.tsx",
-          "frontend/src/components/admin/AdminRevenuePanel.tsx",
-          "frontend/src/hooks/useQueries.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/admin/AdminDashboard.tsx",
-          "frontend/src/components/admin/AdminRevenuePanel.tsx",
-          "frontend/src/hooks/useQueries.ts"
-        ]
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Add a persistent “Contact Support via WhatsApp” button/link in the client dashboard UI that opens WhatsApp to the support number 9817783604 with a prefilled English support message.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/lib/whatsapp.ts",
-          "frontend/src/components/client/ClientDashboard.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/lib/whatsapp.ts",
-          "frontend/src/components/client/ClientDashboard.tsx"
+          "frontend/.env",
+          "frontend/src/components/AdminTrackingPanel.tsx"
         ]
       }
     ]
   },
   "changedFiles": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/App.tsx",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
+    "frontend/.env",
     "frontend/src/components/AdminTrackingPanel.tsx",
-    "frontend/src/components/admin/AdminDashboard.tsx",
-    "frontend/src/components/admin/AdminRevenuePanel.tsx",
-    "frontend/src/components/admin/AdminRoleManagement.tsx",
-    "frontend/src/components/client/ClientDashboard.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/lib/whatsapp.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

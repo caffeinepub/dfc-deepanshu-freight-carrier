@@ -9,9 +9,9 @@ import Nat "mo:core/Nat";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 import OutCall "http-outcalls/outcall";
-import Migration "migration";
 
-(with migration = Migration.run)
+
+
 actor {
   // Data Models
   type Coordinates = {

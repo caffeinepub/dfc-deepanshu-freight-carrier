@@ -4,7 +4,7 @@
   "frontend/tailwind.config.js": "Tailwind configuration extended with Poppins font family, custom gold color token, and all existing shadcn/ui theme tokens.",
   "frontend/src/hooks/useQueries.ts": "React Query hooks for all backend operations including hooks for fetching all shipments for map display (useGetAllShipmentsForMap) and revenue data (useGetRevenueData) with proper admin token authorization, and fixed MSG91 mutations to include adminToken parameter.",
   "frontend/src/lib/shipmentsStorage.ts": "localStorage wrapper utility for managing shipments data with safe JSON parsing, auto-initialization with seed data (DFC1001-1003 with emoji statuses), and helper methods for CRUD operations on tracking IDs and statuses.",
-  "frontend/src/components/AdminTrackingPanel.tsx": "Admin live tracking panel that loads Google Maps with shipment markers from backend coordinates, shows loading/empty/error states, displays a disabled message when API key is not configured, and properly handles optional window.initMap property.",
+  "frontend/src/components/AdminTrackingPanel.tsx": "Admin live tracking panel that dynamically loads Google Maps with the configured API key, prevents duplicate script insertion, renders shipment markers with info windows, and shows appropriate loading/empty/error states.",
   "frontend/src/components/auth/LoginButton.tsx": "Deprecated Internet Identity login button component, no longer rendered in the UI.",
   "frontend/src/components/auth/ProfileSetupDialog.tsx": "Deprecated profile setup dialog component kept for compatibility but not used in password-only admin flow.",
   "frontend/src/components/auth/AccessDeniedScreen.tsx": "Access denied screen component shown when unauthorized users attempt to access restricted sections.",
@@ -39,5 +39,6 @@
   "frontend/src/utils/scrollToSection.ts": "Shared utility function for smooth scrolling to page sections with fixed header offset, used by navigation and post-login scroll behavior.",
   "frontend/src/main.tsx": "Application entry point wrapping the app with QueryClientProvider and ClientSessionProvider to enable global state management for client authentication.",
   "frontend/src/components/app/AppErrorBoundary.tsx": "React error boundary component that catches render-time errors and displays a user-friendly fallback screen with error details, refresh button, and copy-to-clipboard functionality using shadcn/ui components.",
-  "frontend/src/components/admin/AdminRevenuePanel.tsx": "Admin revenue analytics panel that fetches revenue data from backend, renders a line chart using Recharts with paid invoice amounts over time, and shows loading/empty/error states."
+  "frontend/src/components/admin/AdminRevenuePanel.tsx": "Admin revenue analytics panel that fetches revenue data from backend, renders a line chart using Recharts with paid invoice amounts over time, and shows loading/empty/error states.",
+  "frontend/.env": "Environment configuration file containing the Google Maps API key (AIzaSyC0ZPKa3tgNMATa8PwdUheyhIAH1E3Gi9o) for the VITE_GOOGLE_MAPS_API_KEY variable."
 }

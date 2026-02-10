@@ -1,48 +1,21 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "DFC full-system: Node/Express + MySQL web app with client signup/login and session-protected client dashboard (shipments/bills), plus an admin panel with Google Maps live tracking and revenue charts, and WhatsApp support button.",
+  "summary": "Project to add an admin dashboard map view using Google Maps JS API to display shipment markers fetched from /api/shipments.",
   "architectural_notes": [
-    "Backend: Node.js + Express with express-session for auth/session management",
-    "Database: MySQL (mysql2) using db.js config module; schema includes users, shipments, bills",
-    "Frontend served as static HTML views + CSS in /public",
-    "Google Maps JavaScript API used for admin dashboard map (API key required)",
-    "Charts.js used for admin dashboard revenue chart"
+    "Admin dashboard includes Google Maps JS API script tag with callback=initMap.",
+    "public/maps.js defines initMap() that initializes map and fetches /api/shipments to place markers when lat/lng are present."
   ],
   "known_issues": [
-    "Build/deploy attempt failed previously ('AI was unable to implement your request'); needs retry/clean implementation"
+    "Google Maps API key is being added directly in HTML; key exposure risk unless restricted (HTTP referrer restrictions) or moved to safer configuration."
   ],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-add-an-admin-dashboard-tab-section-for-live-tracking-that-renders-a-google-maps-view-showing-all-shipments-with-markers-using-a-google-maps-javascript-api-key-provided-via-a-frontend-environment-variable-e-g-vite-google-maps-api-key",
-      "title": "Add an Admin Dashboard tab/section for “Live Tracking” that renders a Google Maps view showing all shipments with markers, using a Google Maps JavaScript API key provided via a frontend environment variable (e.g., VITE_GOOGLE_MAPS_API_KEY).",
+      "id": "feature-configure-the-google-maps-javascript-api-key-so-the-admin-dashboard-live-tracking-tab-successfully-loads-google-maps-and-renders-shipment-markers-use-this-exact-key-value-aizasyc0zpka3tgnmata8pwduheyhiah1e3gi9o",
+      "title": "Configure the Google Maps JavaScript API key so the Admin Dashboard “Live Tracking” tab successfully loads Google Maps and renders shipment markers. Use this exact key value: \"AIzaSyC0ZPKa3tgNMATa8PwdUheyhIAH1E3Gi9o\".",
       "reqIds": [
         "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-the-missing-react-admin-tracking-component-currently-empty-to-power-the-new-live-tracking-tab-including-loading-empty-state-and-error-ui-consistent-with-the-existing-admin-design",
-      "title": "Implement the missing React admin tracking component (currently empty) to power the new “Live Tracking” tab, including loading, empty state, and error UI consistent with the existing admin design.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-an-admin-dashboard-revenue-view-that-renders-a-line-chart-of-revenue-using-invoice-data-already-managed-in-the-app-replacing-static-demo-data-with-computed-totals-from-stored-invoices",
-      "title": "Add an Admin Dashboard “Revenue” view that renders a line chart of revenue using invoice data already managed in the app, replacing static demo data with computed totals from stored invoices.",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-add-a-persistent-contact-support-via-whatsapp-button-link-in-the-client-dashboard-ui-that-opens-whatsapp-to-the-support-number-9817783604-with-a-prefilled-english-support-message",
-      "title": "Add a persistent “Contact Support via WhatsApp” button/link in the client dashboard UI that opens WhatsApp to the support number 9817783604 with a prefilled English support message.",
-      "reqIds": [
-        "REQ-5"
       ],
       "version": 1
     }
@@ -50,51 +23,12 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Set up MySQL database connection/config for the DFC system (dfc_db) and make project ready to run",
+      "summary": "Integrate Google Maps on admin dashboard and render shipment markers from /api/shipments via initMap in public/maps.js (include Maps JS API script with key + callback).",
       "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Implement client signup/login with sessions and client dashboard pages (active/delivered shipments, pending bills)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-3",
-      "summary": "Implement admin login and admin dashboard panel",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-4",
-      "summary": "Add Google Maps integration for admin dashboard live tracking (Google API key + maps.js)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-5",
-      "summary": "Add Charts.js revenue chart integration in admin dashboard (charts.js)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-6",
-      "summary": "Add WhatsApp support/contact button to client dashboard",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-8",
-      "summary": "Extend the backend shipment model and APIs to support map rendering by storing coordinates per shipment (latitude/longitude) and exposing an admin-authorized query to fetch all shipments for the tracking map.",
-      "reqIds": [
-        "REQ-2"
-      ],
       "status": "pending"
     }
   ],
-  "gameProjectType": "none",
-  "projectName": "dfc-full-system",
+  "projectName": "Configure Google Maps API key for Admin Live Tracking map",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

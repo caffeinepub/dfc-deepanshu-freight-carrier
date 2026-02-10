@@ -1,59 +1,32 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-10T01:35:40.733Z",
-  "summary": "Diff implements AdminDashboard tabs for Live Tracking and Revenue, adds a Google Maps-based AdminTrackingPanel driven by VITE_GOOGLE_MAPS_API_KEY, adds shipment coordinates + a migration module, and adds a client WhatsApp support button plus WhatsApp link helpers. However, the diff summary does not provide clear evidence that the backend exposes the required new admin-authorized APIs for fetching all shipments for the map and for computed revenue data from invoices (only frontend hooks/panels are shown).",
+  "generatedAt": "2026-02-10T02:15:31.529Z",
+  "summary": "The diff adds VITE_GOOGLE_MAPS_API_KEY with the specified key and updates AdminTrackingPanel to dynamically load the Google Maps JS script using callback=initMap and to render shipment markers. However, the acceptance criterion about showing the existing English warning message when the API key is not set is not clearly evidenced in the provided (truncated) diff. The diff also introduces documentation/state text implying a non-goal REST + public/maps.js approach.",
   "missing_requirements": [
     {
-      "id": "REQ-2",
-      "requirement": "Expose an admin-authorized backend query to fetch all shipments (including coordinates) in one call for map rendering, while preserving existing shipment flows and providing upgrade/migration if needed.",
-      "reason": "The diff shows the Shipment model updated with coordinates and adds a migration module, but does not show any new/updated backend function that fetches all shipments for the map with admin authorization, nor evidence that existing shipment endpoints were updated accordingly (create/list/track).",
+      "id": "REQ-1",
+      "requirement": "If the API key is not set, the Live Tracking view shows the existing English warning message that the Google Maps API key is not configured (no blank/white map).",
+      "reason": "In AdminTrackingPanel, when apiKey is missing it sets mapError to null and returns, but the truncated diff does not show any UI branch that displays the existing warning message in this case, so this acceptance criterion is not verifiable from the diff summary provided.",
       "evidence": [
-        "backend/main.mo",
-        "frontend/src/hooks/useQueries.ts",
-        "backend/migration.mo"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "requirement": "Compute Revenue chart data from stored invoice records (e.g., grouped by month) and expose it to the admin Revenue view (not hard-coded).",
-      "reason": "The new AdminRevenuePanel and hook usage are shown, but the backend API that computes revenue from invoices is not shown in the diff summary, so there is no direct evidence that revenue is actually computed from stored invoices (vs. placeholder data).",
-      "evidence": [
-        "frontend/src/components/admin/AdminRevenuePanel.tsx",
-        "frontend/src/hooks/useQueries.ts",
-        "backend/main.mo"
+        "frontend/src/components/AdminTrackingPanel.tsx"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Added an AdminRoleManagement panel stating role management is disabled in password-only authentication mode.",
-      "reason": "Not requested by any BuildRequest requirement (REQ-1..REQ-5).",
+      "description": "References to a non-goal implementation using a separate public/maps.js and fetching shipments via REST from /api/shipments.",
+      "reason": "BuildRequest explicitly lists as non-goals: creating a separate public/maps.js file and fetching \"/api/shipments\" via REST. The diff includes project state/notes describing that approach, even though it is not requested and contradicts constraints.",
       "evidence": [
-        "frontend/src/components/admin/AdminRoleManagement.tsx"
-      ]
-    },
-    {
-      "description": "Added WhatsApp payment reminder link generator (generateWhatsAppReminderLink) with templated reminder message.",
-      "reason": "REQ-5 only requested a client-dashboard WhatsApp support action; payment reminder link generation is not part of the request.",
-      "evidence": [
-        "frontend/src/lib/whatsapp.ts"
+        "project_state.json"
       ]
     }
   ],
-  "confidence": 0.62,
+  "confidence": 0.66,
   "changed_files": [
-    "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
+    "frontend/.env",
     "frontend/src/components/AdminTrackingPanel.tsx",
-    "frontend/src/components/admin/AdminDashboard.tsx",
-    "frontend/src/components/admin/AdminRevenuePanel.tsx",
-    "frontend/src/components/admin/AdminRoleManagement.tsx",
-    "frontend/src/components/client/ClientDashboard.tsx",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/lib/whatsapp.ts",
     "project_state.json"
   ]
 }

@@ -1,133 +1,40 @@
 {
   "kind": "build_request",
-  "title": "Add Admin live-tracking map + revenue chart and client WhatsApp support (IC canister-backed)",
+  "title": "Configure Google Maps API key for Admin Live Tracking map",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Add an Admin Dashboard tab/section for “Live Tracking” that renders a Google Maps view showing all shipments with markers, using a Google Maps JavaScript API key provided via a frontend environment variable (e.g., VITE_GOOGLE_MAPS_API_KEY).",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "Google Maps Live Tracking ✅",
-          "<script src=\"https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_API_KEY&callback=initMap\" async defer></script>"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Admin Dashboard includes a new tab/route labeled “Live Tracking”.",
-        "When the API key is present, the map loads without console errors and displays shipment markers based on backend shipment data.",
-        "When the API key is missing/empty, the UI shows a clear English message explaining that the Google Maps API key is not configured and the map is disabled.",
-        "Shipment markers are derived from shipment location coordinates stored on shipments (not hard-coded)."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Extend the backend shipment model and APIs to support map rendering by storing coordinates per shipment (latitude/longitude) and exposing an admin-authorized query to fetch all shipments for the tracking map.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "Google Maps Live Tracking ✅",
-          "// ===== API for Shipments (for map & client view) ====="
-        ]
-      },
-      "acceptanceCriteria": [
-        "Shipment data includes latitude and longitude fields (or equivalent) that can be used directly by the frontend map.",
-        "Admin-authenticated callers can fetch all shipments in one call for map rendering.",
-        "Existing shipment flows (create shipment, list shipments by client, track shipment) still work after the model update.",
-        "If existing stable state contains shipments, an upgrade/migration path is provided so the canister still upgrades successfully (conditional migration only if needed)."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Implement the missing React admin tracking component (currently empty) to power the new “Live Tracking” tab, including loading, empty state, and error UI consistent with the existing admin design.",
+      "text": "Configure the Google Maps JavaScript API key so the Admin Dashboard “Live Tracking” tab successfully loads Google Maps and renders shipment markers. Use this exact key value: \"AIzaSyC0ZPKa3tgNMATa8PwdUheyhIAH1E3Gi9o\".",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-6"
         ],
         "quotes": [
-          "Google Maps Live Tracking ✅"
+          "<script src=\"https://maps.googleapis.com/maps/api/js?key=AIzaSyC0ZPKa3tgNMATa8PwdUheyhIAH1E3Gi9o&callback=initMap\" async defer></script>",
+          "Is app ki key add karo"
         ]
       },
       "acceptanceCriteria": [
-        "The previously empty AdminTrackingPanel is implemented and is used by AdminDashboard.",
-        "The panel shows a loading state while shipments load, an empty state when there are no shipments, and an error state on failure.",
-        "User-facing text in the panel is in English and matches the existing neutral/gold theme used in AdminDashboard."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Add an Admin Dashboard “Revenue” view that renders a line chart of revenue using invoice data already managed in the app, replacing static demo data with computed totals from stored invoices.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "Charts.js Revenue ✅",
-          "public/charts.js"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Admin Dashboard includes a Revenue section/tab with a visible line chart.",
-        "Chart data is computed from real invoice records (e.g., grouped by month) rather than hard-coded sample values.",
-        "If there are no invoices, the chart area shows an English empty-state message instead of rendering a broken chart.",
-        "The Revenue section is accessible only when admin session is authenticated (consistent with existing AdminDashboard auth behavior)."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Add a persistent “Contact Support via WhatsApp” button/link in the client dashboard UI that opens WhatsApp to the support number 9817783604 with a prefilled English support message.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-1"
-        ],
-        "quotes": [
-          "WhatsApp Support Button ✅",
-          "<a href=\"https://wa.me/9817783604?text=Hello%20DFC%20Support\" target=\"_blank\">"
-        ]
-      },
-      "acceptanceCriteria": [
-        "ClientDashboard shows a clearly visible WhatsApp support action (button/link) on desktop and mobile.",
-        "Clicking the action opens a WhatsApp deep link to 9817783604 with a prefilled English message.",
-        "The button does not interfere with existing client dashboard tabs (Shipments/Invoices) and remains usable while data is loading."
+        "When VITE_GOOGLE_MAPS_API_KEY is set to \"AIzaSyC0ZPKa3tgNMATa8PwdUheyhIAH1E3Gi9o\", the Admin Dashboard > Live Tracking view loads the Google Maps script using the callback=initMap parameter (via the existing dynamic loader in AdminTrackingPanel).",
+        "If the API key is not set, the Live Tracking view shows the existing English warning message that the Google Maps API key is not configured (no blank/white map).",
+        "With at least one shipment that has coordinates, the map renders and shows a marker per shipment with coordinates, and clicking a marker opens an info window with shipment details."
       ]
     }
   ],
   "constraints": [
-    "Do not add or depend on Node/Express runtime files (server.js) in this project.",
-    "Do not add MySQL or any external database integration; persist and query data using the existing Motoko canister storage.",
-    "Do not edit any files under frontend/src/components/ui or other frontend immutable paths listed in SYSTEM_CONTEXT; compose existing UI components instead.",
-    "All user-facing text added/changed must be in English.",
-    "Keep backend logic within the single Motoko actor in backend/main.mo; add migration code only if required by a type/state change (conditional migration policy).",
-    "Do not store the Google Maps API key in the canister state; read it from frontend build-time environment configuration (Vite env)."
+    "Do not edit files under frontend/src/components/ui (read-only components).",
+    "Keep the frontend implementation in React (no new standalone admin-dashboard.html or public/maps.js page flow).",
+    "Do not add external backend services or REST endpoints; keep using the existing backend actor calls and React Query hooks for shipment data."
   ],
   "nonGoals": [
-    "Recreating the provided Node/Express + MySQL folder structure inside this Internet Computer project.",
-    "Implementing third-party auth providers beyond what the current app already supports.",
-    "Adding real-time tracking via WebSockets or push updates."
+    "Implementing a new static HTML admin dashboard page (admin-dashboard.html).",
+    "Creating a separate public/maps.js file that fetches \"/api/shipments\" via REST.",
+    "Securing/obfuscating the Google Maps API key beyond standard Google-side restrictions (e.g., HTTP referrer restrictions), unless explicitly requested."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [
-      "Use English for any user-facing text"
-    ],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

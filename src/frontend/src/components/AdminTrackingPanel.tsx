@@ -18,6 +18,7 @@ export function AdminTrackingPanel() {
   const markersRef = useRef<any[]>([]);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
+  const scriptLoadedRef = useRef(false);
 
   const { data: shipments, isLoading, error } = useGetAllShipmentsForMap();
 
@@ -25,14 +26,38 @@ export function AdminTrackingPanel() {
 
   useEffect(() => {
     if (!apiKey || apiKey.trim() === '') {
+      setMapError(null);
+      setMapLoaded(false);
       return;
     }
 
+    // If Google Maps is already loaded, mark as ready
     if (window.google && window.google.maps) {
       setMapLoaded(true);
+      setMapError(null);
       return;
     }
 
+    // Prevent duplicate script insertion
+    if (scriptLoadedRef.current) {
+      return;
+    }
+
+    // Check if script already exists in DOM
+    const existingScript = document.querySelector(
+      `script[src*="maps.googleapis.com/maps/api/js"]`
+    );
+    if (existingScript) {
+      scriptLoadedRef.current = true;
+      // Wait for the existing script to load
+      if (window.google && window.google.maps) {
+        setMapLoaded(true);
+        setMapError(null);
+      }
+      return;
+    }
+
+    scriptLoadedRef.current = true;
     const script = document.createElement('script');
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
     script.async = true;
@@ -40,17 +65,21 @@ export function AdminTrackingPanel() {
 
     window.initMap = () => {
       setMapLoaded(true);
+      setMapError(null);
     };
 
     script.onerror = () => {
       setMapError('Failed to load Google Maps. Please check your API key.');
+      scriptLoadedRef.current = false;
     };
 
     document.head.appendChild(script);
 
     return () => {
+      // Cleanup: only remove if we added it and it's still in DOM
       if (script.parentNode) {
         script.parentNode.removeChild(script);
+        scriptLoadedRef.current = false;
       }
       if (window.initMap) {
         window.initMap = undefined;

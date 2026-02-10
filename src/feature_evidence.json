@@ -2,12 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-add-an-admin-dashboard-tab-section-for-live-tracking-that-renders-a-google-maps-view-showing-all-shipments-with-markers-using-a-google-maps-javascript-api-key-provided-via-a-frontend-environment-variable-e-g-vite-google-maps-api-key",
-      "featureTitle": "Add an Admin Dashboard tab/section for “Live Tracking” that renders a Google Maps view showing all shipments with markers, using a Google Maps JavaScript API key provided via a frontend environment variable (e.g., VITE_GOOGLE_MAPS_API_KEY).",
+      "featureId": "feature-configure-the-google-maps-javascript-api-key-so-the-admin-dashboard-live-tracking-tab-successfully-loads-google-maps-and-renders-shipment-markers-use-this-exact-key-value-aizasyc0zpka3tgnmata8pwduheyhiah1e3gi9o",
+      "featureTitle": "Configure the Google Maps JavaScript API key so the Admin Dashboard “Live Tracking” tab successfully loads Google Maps and renders shipment markers. Use this exact key value: \"AIzaSyC0ZPKa3tgNMATa8PwdUheyhIAH1E3Gi9o\".",
       "files": [
-        "frontend/src/components/AdminTrackingPanel.tsx",
-        "frontend/src/components/admin/AdminDashboard.tsx",
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/.env",
+        "frontend/src/components/AdminTrackingPanel.tsx"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -20,70 +19,6 @@
       ],
       "testIds": [
         "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-implement-the-missing-react-admin-tracking-component-currently-empty-to-power-the-new-live-tracking-tab-including-loading-empty-state-and-error-ui-consistent-with-the-existing-admin-design",
-      "featureTitle": "Implement the missing React admin tracking component (currently empty) to power the new “Live Tracking” tab, including loading, empty state, and error UI consistent with the existing admin design.",
-      "files": [
-        "frontend/src/components/AdminTrackingPanel.tsx",
-        "frontend/src/components/admin/AdminDashboard.tsx"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "authorization@4.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-an-admin-dashboard-revenue-view-that-renders-a-line-chart-of-revenue-using-invoice-data-already-managed-in-the-app-replacing-static-demo-data-with-computed-totals-from-stored-invoices",
-      "featureTitle": "Add an Admin Dashboard “Revenue” view that renders a line chart of revenue using invoice data already managed in the app, replacing static demo data with computed totals from stored invoices.",
-      "files": [
-        "frontend/src/components/admin/AdminDashboard.tsx",
-        "frontend/src/components/admin/AdminRevenuePanel.tsx",
-        "frontend/src/hooks/useQueries.ts"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "authorization@4.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-4"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-add-a-persistent-contact-support-via-whatsapp-button-link-in-the-client-dashboard-ui-that-opens-whatsapp-to-the-support-number-9817783604-with-a-prefilled-english-support-message",
-      "featureTitle": "Add a persistent “Contact Support via WhatsApp” button/link in the client dashboard UI that opens WhatsApp to the support number 9817783604 with a prefilled English support message.",
-      "files": [
-        "frontend/src/components/client/ClientDashboard.tsx",
-        "frontend/src/lib/whatsapp.ts"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "authorization@4.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-5"
       ],
       "confidence": "high"
     }
