@@ -1,16 +1,16 @@
-import { useGetInvoicesByClient, useGetClientAccountStatus } from '../../hooks/useQueries';
+import { useGetClientInvoices } from '../../hooks/useQueries';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, FileText, Download, CreditCard } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, FileText, Download, CreditCard, LogIn, AlertCircle } from 'lucide-react';
+import { useClientSession } from '../../hooks/ClientSessionProvider';
 import type { Invoice, InvoiceStatus } from '../../backend';
 
 export function ClientInvoicesTable() {
-  const { data: accountStatus } = useGetClientAccountStatus();
-  const clientId = accountStatus?.clientId || null;
-  
-  const { data: invoices, isLoading } = useGetInvoicesByClient(clientId);
+  const { isAuthenticated } = useClientSession();
+  const { data: invoices, isLoading, error } = useGetClientInvoices();
 
   const getStatusBadge = (status: InvoiceStatus) => {
     const statusMap: Record<InvoiceStatus, { label: string; variant: 'default' | 'secondary' | 'destructive'; className?: string }> = {
@@ -32,6 +32,26 @@ export function ClientInvoicesTable() {
     window.open(paymentUrl, '_blank');
   };
 
+  // Show login prompt if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <Card className="bg-neutral-900 border-neutral-800">
+        <CardContent className="pt-12 pb-12">
+          <div className="text-center">
+            <LogIn className="w-16 h-16 mx-auto mb-4 text-gold opacity-50" />
+            <h3 className="text-xl font-semibold text-white mb-2">Authentication Required</h3>
+            <p className="text-white/70">Please log in to view your invoices.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Check for linkage errors
+  const isLinkageError = error && 
+    (String(error).includes('no linked principal') || 
+     String(error).includes('Client account has no linked principal'));
+
   return (
     <Card className="bg-neutral-900 border-neutral-800">
       <CardHeader>
@@ -42,6 +62,21 @@ export function ClientInvoicesTable() {
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 text-gold animate-spin" />
           </div>
+        ) : isLinkageError ? (
+          <Alert className="bg-yellow-900/20 border-yellow-800">
+            <AlertCircle className="h-4 w-4 text-yellow-500" />
+            <AlertDescription className="text-yellow-400">
+              <strong>Account Not Linked:</strong> Your account is not linked to a client profile. 
+              Please contact the administrator to link your account so you can view your invoices.
+            </AlertDescription>
+          </Alert>
+        ) : error ? (
+          <Alert className="bg-red-900/20 border-red-800">
+            <AlertCircle className="h-4 w-4 text-red-500" />
+            <AlertDescription className="text-red-400">
+              Failed to load invoices. Please try again or contact support.
+            </AlertDescription>
+          </Alert>
         ) : invoices && invoices.length > 0 ? (
           <div className="border border-neutral-800 rounded-lg overflow-hidden">
             <Table>

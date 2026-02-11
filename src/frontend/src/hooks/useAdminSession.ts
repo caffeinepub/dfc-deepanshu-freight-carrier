@@ -2,99 +2,146 @@ import { useState, useEffect } from 'react';
 import { useActor } from './useActor';
 import { useQueryClient } from '@tanstack/react-query';
 
-const ADMIN_TOKEN_KEY = 'dfc_admin_token';
+// Type assertion helper
+type ExtendedActor = any;
 
-// Generate a random session token
-function generateToken(): string {
-  return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-}
+const ADMIN_TOKEN_KEY = 'admin_session_token';
 
 export function useAdminSession() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
   const [adminToken, setAdminToken] = useState<string | null>(() => {
-    return localStorage.getItem(ADMIN_TOKEN_KEY);
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(ADMIN_TOKEN_KEY);
+    }
+    return null;
   });
-  const [isValidating, setIsValidating] = useState(true);
-  const [isValid, setIsValid] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
 
-  // Validate stored token on mount and actor change
+  // Validate token on mount and actor change
   useEffect(() => {
-    async function validateToken() {
-      if (!actor || !adminToken) {
-        setIsValid(false);
-        setIsValidating(false);
-        return;
-      }
+    if (!actor || !adminToken) return;
 
+    const validateToken = async () => {
+      setIsValidating(true);
       try {
-        // Try to use the token with a simple admin query
-        await actor.getAllClients(adminToken);
-        setIsValid(true);
-      } catch (error) {
-        // Token is invalid, clear it
-        setIsValid(false);
-        setAdminToken(null);
-        localStorage.removeItem(ADMIN_TOKEN_KEY);
+        // Try to call a protected method to validate the token
+        await (actor as ExtendedActor).getAllClients(adminToken);
+      } catch (error: any) {
+        console.error('Token validation failed:', error);
+        // Clear token if validation fails
+        if (error?.message?.includes('Invalid') || error?.message?.includes('expired')) {
+          clearAdminToken();
+        }
       } finally {
         setIsValidating(false);
       }
-    }
+    };
 
     validateToken();
   }, [actor, adminToken]);
 
-  const login = async (password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (password: string) => {
     if (!actor) {
-      return { success: false, error: 'Service not available' };
+      throw new Error('Service unavailable. Please try again later.');
     }
 
+    const token = `admin_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
     try {
-      const token = generateToken();
-      await actor.adminLogin(password, token);
-      
-      // Store token
+      // Check if adminLogin method exists
+      if (typeof (actor as ExtendedActor).adminLogin !== 'function') {
+        throw new Error('Service unavailable. Please contact support.');
+      }
+
+      await (actor as ExtendedActor).adminLogin(password, token);
       localStorage.setItem(ADMIN_TOKEN_KEY, token);
       setAdminToken(token);
-      setIsValid(true);
-      
-      return { success: true };
+      return token;
     } catch (error: any) {
+      console.error('Admin login failed:', error);
+      
+      // Convert backend errors to user-friendly messages
       const errorMessage = error?.message || String(error);
       
-      if (errorMessage.includes('Invalid password')) {
-        return { success: false, error: 'Wrong password' };
-      } else if (errorMessage.includes('Too many login attempts')) {
-        return { success: false, error: 'Too many attempts. Please try again later.' };
+      // Method-missing / service-unavailable detection
+      if (errorMessage.includes('not a function') || errorMessage.includes('has no method')) {
+        throw new Error('Service unavailable. Please contact support.');
       }
       
-      return { success: false, error: 'Login failed. Please try again.' };
+      // Preserve already-English, user-actionable backend error messages
+      // These are controlled error messages from the backend
+      if (
+        errorMessage.includes('Invalid password') ||
+        errorMessage.includes('Incorrect password') ||
+        errorMessage.includes('Invalid or expired') ||
+        errorMessage.includes('session token') ||
+        errorMessage.includes('Too many') ||
+        errorMessage.includes('rate limit')
+      ) {
+        // Backend already provided a clear English message - use it directly
+        throw new Error(errorMessage);
+      }
+      
+      // Map technical/canister errors to service unavailable
+      if (
+        errorMessage.includes('canister') ||
+        errorMessage.includes('service') ||
+        errorMessage.includes('network') ||
+        errorMessage.includes('timeout')
+      ) {
+        throw new Error('Service unavailable. Please try again later.');
+      }
+      
+      // If backend trapped with "Unauthorized", it's likely a password issue
+      if (errorMessage.includes('Unauthorized')) {
+        throw new Error('Invalid password. Please try again.');
+      }
+      
+      // For any other backend error, preserve the original message if it looks user-friendly
+      // (doesn't contain technical jargon)
+      if (
+        !errorMessage.includes('trap') &&
+        !errorMessage.includes('reject') &&
+        !errorMessage.includes('call') &&
+        errorMessage.length < 200
+      ) {
+        throw new Error(errorMessage);
+      }
+      
+      // Generic fallback only for truly unknown errors
+      throw new Error('Login failed. Please check your password and try again.');
     }
   };
 
   const logout = async () => {
-    if (actor && adminToken) {
-      try {
-        await actor.adminLogout(adminToken);
-      } catch (error) {
-        console.error('Logout error:', error);
+    if (!actor || !adminToken) return;
+
+    try {
+      // Try to call backend logout if available
+      if (typeof (actor as ExtendedActor).adminLogout === 'function') {
+        await (actor as ExtendedActor).adminLogout(adminToken);
       }
+    } catch (error) {
+      console.error('Backend logout failed:', error);
+      // Continue with local cleanup even if backend call fails
+    } finally {
+      clearAdminToken();
+      queryClient.clear();
     }
-    
-    // Clear local state
+  };
+
+  const clearAdminToken = () => {
     localStorage.removeItem(ADMIN_TOKEN_KEY);
     setAdminToken(null);
-    setIsValid(false);
-    
-    // Clear all cached queries
-    queryClient.clear();
   };
 
   return {
     adminToken,
-    isAuthenticated: isValid,
+    isAuthenticated: !!adminToken,
     isValidating,
     login,
     logout,
+    clearAdminToken,
   };
 }

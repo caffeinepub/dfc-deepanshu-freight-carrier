@@ -19,14 +19,12 @@ export function AdminLoginCard() {
     setIsLoading(true);
 
     try {
-      const result = await login(password);
-      
-      if (!result.success) {
-        setError(result.error || 'Login failed');
-      }
+      await login(password);
       // On success, the session hook will update and trigger re-render
-    } catch (err) {
-      setError('An unexpected error occurred');
+    } catch (err: any) {
+      // Display the user-friendly error message from useAdminSession
+      const errorMessage = err?.message || 'Login failed. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

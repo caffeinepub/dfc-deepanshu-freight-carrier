@@ -1,120 +1,75 @@
 {
   "kind": "build_request",
-  "title": "Add client login history tracking and admin view",
-  "priority": "normal",
+  "title": "Fix service-unavailable errors for Admin Login and Client Shipments/Delivery History loading",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Backend: Add persistent storage for a login history log that records each successful client login with fields: client identifier (email or mobile as entered), resolved client_id (client principal/text ID used by the session), login_time (server timestamp), and ip_address (optional text).",
+      "text": "Implement the missing backend (Motoko) admin session APIs used by the frontend so Admin Login no longer fails with “Service unavailable. Please contact support.” when the app attempts to call `actor.adminLogin(...)` and validate tokens via `actor.getAllClients(...)`.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "recent-messages:user-1"
+          "recent-messages"
         ],
         "quotes": [
-          "Solution: Login History System Add Karna Hoga ... store each successful client login (time, email, client_id, IP)"
+          "unavailable. Please contact support."
         ]
       },
       "acceptanceCriteria": [
-        "A new LoginHistoryEntry data type exists in backend/main.mo with fields that can represent: client_id, identifier/email, login_time, ip_address.",
-        "Login history entries are stored in canister state so they persist across calls (and across upgrades if the app already supports stable upgrades).",
-        "If ip_address is not provided by the caller, the stored value is empty or a clearly defined placeholder (e.g., null/\"Unknown\")."
+        "`adminLogin(password, token)` exists on the backend canister and does not produce method-not-found / not-a-function errors from the frontend.",
+        "On successful admin login, the frontend stores `admin_session_token` and the Admin section proceeds past the login card without showing the 'Service unavailable' alert.",
+        "When an invalid password is provided, the backend returns/throws a clear, user-actionable English error (not a generic trap), and the frontend displays it."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Backend: When a client login succeeds (both password login and OTP login flows, if both exist), append a new login history entry capturing identifier/email/mobile, client_id, current timestamp, and an ip_address value provided by the frontend (best-effort). Do not record entries for failed logins.",
+      "text": "Implement the missing backend (Motoko) shipment/history APIs referenced by the frontend so the Client Dashboard can load shipments and delivery history without failing (including `getClientShipmentsBySessionToken(sessionToken)` and any other shipment methods that the frontend calls after login).",
       "target": "backend",
       "source": {
         "messageIds": [
-          "recent-messages:user-1"
+          "recent-messages"
         ],
         "quotes": [
-          "Step 2: Login Route Me Record Save Karo Jab client successfully login kare ... Login History Save ..."
+          "Failed to load delivery history. Please try again or contact support.\n\nFailed to load shipments. Please try again or contact support."
         ]
       },
       "acceptanceCriteria": [
-        "Successful client password login results in exactly one new login history entry.",
-        "Successful client OTP login (if supported) results in exactly one new login history entry.",
-        "Failed login attempts (wrong password/invalid OTP/user not found/rate limited) do not create login history entries.",
-        "The login_time stored is based on the backend canister time (Time.now())."
+        "The Client Dashboard no longer shows the red error alerts for shipments/delivery history when the user is authenticated with a valid `sessionToken`.",
+        "Backend responses for client shipment retrieval are compatible with the frontend’s `unwrapVariantResponse` expectations (variant-style success/noSessionToken/notLinked), so the query resolves to an array of shipments on success.",
+        "If the `sessionToken` is missing/expired, the backend returns the appropriate variant (e.g., `noSessionToken`) and the frontend handles it without crashing."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Backend: Expose an admin-only query method to fetch login history entries ordered by most recent first. The method must require a valid admin session token and trap on unauthorized access.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "recent-messages:user-1"
-        ],
-        "quotes": [
-          "✅ Step 3: Admin Panel Me Login History Show Karna ... app.get(\"/admin/login-history\" ... ORDER BY login_time DESC"
-        ]
-      },
-      "acceptanceCriteria": [
-        "A new backend method (admin-only) returns an array of login history entries sorted descending by login_time.",
-        "Calling the method with an invalid/expired admin token traps with an unauthorized error (following existing patterns like other admin-only queries)."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Frontend: Add a new \"Login History\" section in the Admin Dashboard tabs and render a table showing: Client Email/Identifier, Login Time, IP Address. All user-facing text must be in English.",
+      "text": "Update the Client Shipments/Delivery History UI error handling to display the real error message returned by React Query (when available) instead of always showing only the generic fallback text, while keeping all user-facing text in English.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages:user-1"
+          "recent-messages"
         ],
         "quotes": [
-          "Admin Dashboard me ek section add karo ... Frontend table: Client Email, Login Time, IP Address"
+          "Failed to load delivery history. Please try again or contact support.\n\nFailed to load shipments. Please try again or contact support."
         ]
       },
       "acceptanceCriteria": [
-        "AdminDashboard includes a new tab labeled \"Login History\" visible only when the admin is authenticated (consistent with existing dashboard behavior).",
-        "The Login History view shows a table with columns: Client Email/Identifier, Login Time, IP Address.",
-        "Login Time is displayed in a readable format (e.g., local date/time string) and the table is ordered newest-first.",
-        "The UI includes loading and empty states consistent with the rest of the admin panels (skeleton/loading indicator and an empty message like \"No login history yet\")."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Frontend: Add React Query wiring (hook/query key) to fetch login history from the backend using the current adminToken, and ensure the query is disabled when no actor or no adminToken is available.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "recent-messages:user-1"
-        ]
-      },
-      "acceptanceCriteria": [
-        "A new React Query hook exists in frontend/src/hooks/useQueries.ts to fetch login history using actor + adminToken.",
-        "The query key is stable and includes adminToken similarly to existing admin queries (e.g., ['loginHistory', adminToken]).",
-        "The Login History admin UI uses the hook and correctly handles loading/error/empty states."
+        "When shipment/history loading fails, the UI renders a user-friendly message derived from the thrown error (e.g., session expired, account not linked, service unavailable), not only the fixed generic string.",
+        "The UI continues to show a safe generic fallback message if the error is missing/empty/too technical.",
+        "No changes are made to read-only paths listed in `frontend.immutablePaths`."
       ]
     }
   ],
   "constraints": [
-    "Use English for all user-facing text.",
-    "Backend must remain a single Motoko actor (all logic in backend/main.mo).",
-    "Do not edit files under frontend/src/components/ui or any paths listed in frontend.immutablePaths.",
-    "Do not assume the backend can access the client IP address directly; store IP only if provided by the frontend as best-effort input."
+    "Backend must remain a single Motoko actor in `backend/main.mo` (no additional backend services).",
+    "Use English for any user-facing text.",
+    "Do not edit files under `frontend/src/components/ui` or any other `frontend.immutablePaths` entries; compose existing UI components instead."
   ],
   "nonGoals": [
-    "Do not implement third-party auth providers or external databases (no SQL tables).",
-    "Do not record admin login history unless explicitly requested.",
-    "Do not add real-time updates/streaming for login history; fetch-on-view is sufficient."
+    "Adding new product features unrelated to fixing the failing admin login and shipment/history loading flows.",
+    "Integrating third-party auth providers beyond existing Internet Identity support.",
+    "Adding external databases or non-Motoko backend services."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

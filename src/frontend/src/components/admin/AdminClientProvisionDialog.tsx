@@ -12,9 +12,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useCreateClientAccount } from '../../hooks/useQueries';
+import { useCreateClientAccount, useProvisionClientAccount } from '../../hooks/useQueries';
 import { Loader2, UserPlus, Copy, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { Principal } from '@icp-sdk/core/principal';
 
 export function AdminClientProvisionDialog() {
   const [open, setOpen] = useState(false);
@@ -24,11 +25,14 @@ export function AdminClientProvisionDialog() {
     companyName: '',
     gstNumber: '',
     address: '',
+    clientPrincipalId: '',
   });
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [principalError, setPrincipalError] = useState<string | null>(null);
 
   const createAccount = useCreateClientAccount();
+  const provisionAccount = useProvisionClientAccount();
 
   const generatePassword = (): string => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$%';
@@ -39,6 +43,22 @@ export function AdminClientProvisionDialog() {
     return password;
   };
 
+  const validatePrincipal = (principalId: string): boolean => {
+    if (!principalId.trim()) {
+      setPrincipalError('Client Principal ID is required');
+      return false;
+    }
+    
+    try {
+      Principal.fromText(principalId.trim());
+      setPrincipalError(null);
+      return true;
+    } catch (error) {
+      setPrincipalError('Invalid Principal ID format. Please check and try again.');
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -47,26 +67,39 @@ export function AdminClientProvisionDialog() {
       return;
     }
 
+    if (!validatePrincipal(formData.clientPrincipalId)) {
+      return;
+    }
+
     const tempPassword = generatePassword();
+    const identifier = formData.email || formData.mobile;
 
     try {
+      // Step 1: Create the client account
       await createAccount.mutateAsync({
-        email: formData.email || null,
-        mobile: formData.mobile || null,
-        temporaryPassword: tempPassword,
-        profile: {
-          companyName: formData.companyName,
-          gstNumber: formData.gstNumber,
-          address: formData.address,
-          mobile: formData.mobile,
-        },
+        identifier,
+        password: tempPassword,
+        linkedPrincipal: Principal.fromText(formData.clientPrincipalId.trim()),
+        email: formData.email || undefined,
+        mobile: formData.mobile || undefined,
+        companyName: formData.companyName,
+        gstNumber: formData.gstNumber,
+        address: formData.address,
+      });
+
+      // Step 2: Link the account to the client Principal
+      const linkedPrincipal = Principal.fromText(formData.clientPrincipalId.trim());
+      await provisionAccount.mutateAsync({
+        identifier,
+        password: tempPassword,
+        linkedPrincipal,
       });
 
       setGeneratedPassword(tempPassword);
-      toast.success('Client account created successfully');
+      toast.success('Client account created and linked successfully');
     } catch (error: any) {
-      console.error('Failed to create client account:', error);
-      toast.error(error?.message || 'Failed to create client account');
+      console.error('Failed to create and provision client account:', error);
+      // Error toasts are handled by the mutation hooks
     }
   };
 
@@ -87,10 +120,14 @@ export function AdminClientProvisionDialog() {
       companyName: '',
       gstNumber: '',
       address: '',
+      clientPrincipalId: '',
     });
     setGeneratedPassword(null);
     setCopied(false);
+    setPrincipalError(null);
   };
+
+  const isPending = createAccount.isPending || provisionAccount.isPending;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -100,16 +137,55 @@ export function AdminClientProvisionDialog() {
           Create Client Account
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-neutral-900 border-neutral-800 text-white max-w-2xl">
+      <DialogContent className="bg-neutral-900 border-neutral-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-gold text-xl">Create New Client Account</DialogTitle>
           <DialogDescription className="text-white/70">
-            Provision a new client account with login credentials
+            Provision a new client account with login credentials and link it to a client Principal
           </DialogDescription>
         </DialogHeader>
 
         {!generatedPassword ? (
           <form onSubmit={handleSubmit} className="space-y-4">
+            <Alert className="bg-blue-900/20 border-blue-800">
+              <AlertCircle className="h-4 w-4 text-blue-500" />
+              <AlertDescription className="text-blue-400 text-sm">
+                <strong>Important:</strong> You must provide the Client Principal ID to link this login account. 
+                This ensures shipments and invoices created for that client will be visible after login.
+              </AlertDescription>
+            </Alert>
+
+            <div className="space-y-2">
+              <Label htmlFor="clientPrincipalId" className="text-white">
+                Client Principal ID *
+              </Label>
+              <Input
+                id="clientPrincipalId"
+                type="text"
+                placeholder="e.g., rrkah-fqaaa-aaaaa-aaaaq-cai"
+                value={formData.clientPrincipalId}
+                onChange={(e) => {
+                  setFormData({ ...formData, clientPrincipalId: e.target.value });
+                  setPrincipalError(null);
+                }}
+                onBlur={() => {
+                  if (formData.clientPrincipalId.trim()) {
+                    validatePrincipal(formData.clientPrincipalId);
+                  }
+                }}
+                required
+                className={`bg-neutral-950 border-neutral-700 text-white font-mono ${
+                  principalError ? 'border-red-500' : ''
+                }`}
+              />
+              {principalError && (
+                <p className="text-red-500 text-sm">{principalError}</p>
+              )}
+              <p className="text-xs text-white/50">
+                The Principal ID of the client for whom you're creating this login account
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-white">
@@ -189,16 +265,16 @@ export function AdminClientProvisionDialog() {
 
             <Button
               type="submit"
-              disabled={createAccount.isPending}
+              disabled={isPending}
               className="w-full bg-gold hover:bg-gold/90 text-black font-semibold"
             >
-              {createAccount.isPending ? (
+              {isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating Account...
+                  Creating and Linking Account...
                 </>
               ) : (
-                'Create Account'
+                'Create and Link Account'
               )}
             </Button>
           </form>
@@ -207,7 +283,7 @@ export function AdminClientProvisionDialog() {
             <Alert className="bg-green-900/20 border-green-800">
               <CheckCircle2 className="h-4 w-4 text-green-500" />
               <AlertDescription className="text-green-400">
-                Client account created successfully!
+                Client account created and linked successfully!
               </AlertDescription>
             </Alert>
 
@@ -230,36 +306,22 @@ export function AdminClientProvisionDialog() {
                 <Button
                   type="button"
                   onClick={handleCopyPassword}
-                  className="bg-gold hover:bg-gold/90 text-black"
+                  variant="outline"
+                  className="border-neutral-700 hover:bg-neutral-800"
                 >
                   {copied ? (
-                    <>
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Copied
-                    </>
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
                   ) : (
-                    <>
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copy
-                    </>
+                    <Copy className="w-4 h-4" />
                   )}
                 </Button>
               </div>
             </div>
 
-            <div className="space-y-2 p-4 bg-neutral-950 rounded-lg">
-              <p className="text-white/90 font-semibold">Account Details:</p>
-              <p className="text-white/70 text-sm">
-                {formData.email && `Email: ${formData.email}`}
-                {formData.email && formData.mobile && ' | '}
-                {formData.mobile && `Mobile: ${formData.mobile}`}
-              </p>
-              <p className="text-white/70 text-sm">Company: {formData.companyName}</p>
-            </div>
-
-            <Alert className="bg-neutral-950 border-neutral-700">
-              <AlertDescription className="text-white/70 text-sm">
-                The client will be required to change this password on their first login.
+            <Alert className="bg-blue-900/20 border-blue-800">
+              <AlertCircle className="h-4 w-4 text-blue-500" />
+              <AlertDescription className="text-blue-400 text-sm">
+                Share this password with the client. They will be prompted to change it on first login.
               </AlertDescription>
             </Alert>
 
@@ -267,7 +329,7 @@ export function AdminClientProvisionDialog() {
               onClick={handleClose}
               className="w-full bg-gold hover:bg-gold/90 text-black font-semibold"
             >
-              Close
+              Done
             </Button>
           </div>
         )}

@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { Principal } from '@dfinity/principal';
+import { Principal } from '@icp-sdk/core/principal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -57,9 +57,10 @@ export function AdminClientForm() {
 
     try {
       const clientIdString = formData.clientPrincipal.trim();
+      const clientPrincipal = Principal.fromText(clientIdString);
       
       await addOrUpdateClient.mutateAsync({
-        clientId: clientIdString,
+        clientId: clientPrincipal,
         profile: {
           companyName: formData.companyName,
           gstNumber: formData.gstNumber,

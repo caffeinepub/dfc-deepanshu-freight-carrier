@@ -16,9 +16,6 @@ export function ClientSessionProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem(CLIENT_SESSION_KEY);
       const validToken = stored && stored.trim() ? stored.trim() : null;
-      if (validToken) {
-        console.log('[ClientSession] Initialized with existing token');
-      }
       return validToken;
     }
     return null;
@@ -27,16 +24,13 @@ export function ClientSessionProvider({ children }: { children: ReactNode }) {
   const setClientToken = (token: string) => {
     const trimmedToken = token.trim();
     if (!trimmedToken) {
-      console.error('[ClientSession] Attempted to store empty session token');
       return;
     }
-    console.log('[ClientSession] Token set successfully');
     localStorage.setItem(CLIENT_SESSION_KEY, trimmedToken);
     setSessionToken(trimmedToken);
   };
 
   const clearClientToken = () => {
-    console.log('[ClientSession] Token cleared');
     localStorage.removeItem(CLIENT_SESSION_KEY);
     setSessionToken(null);
   };

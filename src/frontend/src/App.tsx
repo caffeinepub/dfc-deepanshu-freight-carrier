@@ -1,4 +1,4 @@
-import { useState, FormEvent, useEffect, useRef } from 'react';
+import { useState, FormEvent, useEffect, useRef, lazy, Suspense } from 'react';
 import { MessageCircle, Truck, Package, FileText, MapPin, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,9 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Toaster } from '@/components/ui/sonner';
 import { AdminLoginCard } from '@/components/auth/AdminLoginCard';
-import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { ClientPortalAuthCard } from '@/components/client/ClientPortalAuthCard';
-import { ClientDashboard } from '@/components/client/ClientDashboard';
 import { ClientPasswordChangeCard } from '@/components/client/ClientPasswordChangeCard';
 import { AppErrorBoundary } from '@/components/app/AppErrorBoundary';
 import { useAdminSession } from './hooks/useAdminSession';
@@ -18,8 +16,15 @@ import { useGetClientAccountStatus } from './hooks/useQueries';
 import { useActor } from './hooks/useActor';
 import { scrollToSection } from './utils/scrollToSection';
 
+// Type assertion helper
+type ExtendedActor = any;
+
+// Lazy load heavy dashboard components
+const AdminDashboard = lazy(() => import('@/components/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const ClientDashboard = lazy(() => import('@/components/client/ClientDashboard').then(m => ({ default: m.ClientDashboard })));
+
 function AppContent() {
-  const { isAuthenticated: isAdminAuthenticated, isValidating: isAdminValidating } = useAdminSession();
+  const { isAuthenticated: isAdminAuthenticated } = useAdminSession();
   const { isAuthenticated: isClientAuthenticated } = useClientSession();
   const { data: clientAccountStatus, isLoading: isLoadingClientStatus, isFetched: isClientStatusFetched } = useGetClientAccountStatus();
   const { actor } = useActor();
@@ -38,16 +43,23 @@ function AppContent() {
 
   // Track previous authentication state to detect login transitions
   const prevAuthRef = useRef(isClientAuthenticated);
+  const scrolledRef = useRef(false);
 
   useEffect(() => {
-    // Detect transition from unauthenticated to authenticated
-    if (!prevAuthRef.current && isClientAuthenticated && isClientStatusFetched) {
-      console.log('[App] Client login detected, scrolling to portal');
+    // Detect transition from unauthenticated to authenticated (only once per login)
+    if (!prevAuthRef.current && isClientAuthenticated && isClientStatusFetched && !scrolledRef.current) {
+      scrolledRef.current = true;
       // Small delay to ensure DOM is updated
       setTimeout(() => {
         scrollToSection('client-portal');
       }, 100);
     }
+    
+    // Reset scroll flag when user logs out
+    if (prevAuthRef.current && !isClientAuthenticated) {
+      scrolledRef.current = false;
+    }
+    
     prevAuthRef.current = isClientAuthenticated;
   }, [isClientAuthenticated, isClientStatusFetched]);
 
@@ -76,7 +88,7 @@ function AppContent() {
         return;
       }
 
-      const shipment = await actor.trackShipment(id, null, null);
+      const shipment = await (actor as ExtendedActor).trackShipment(id, null, null);
       
       if (shipment) {
         setTrackingResult(shipment.status);
@@ -84,7 +96,6 @@ function AppContent() {
         setTrackingResult('❌ Invalid Tracking ID. Please contact DFC office.');
       }
     } catch (error) {
-      console.error('Tracking error:', error);
       setTrackingResult('❌ Error tracking shipment. Please try again.');
     } finally {
       setIsTracking(false);
@@ -117,8 +128,20 @@ function AppContent() {
       }} />;
     }
 
-    // Show dashboard for regular users
-    return <ClientDashboard />;
+    // Show dashboard for regular users (lazy loaded)
+    return (
+      <Suspense fallback={
+        <Card className="bg-neutral-900 border-neutral-800">
+          <CardContent className="py-8">
+            <div className="flex items-center justify-center">
+              <Skeleton className="h-8 w-48 bg-neutral-800" />
+            </div>
+          </CardContent>
+        </Card>
+      }>
+        <ClientDashboard />
+      </Suspense>
+    );
   };
 
   return (
@@ -352,7 +375,17 @@ function AppContent() {
             Manage clients, shipments, invoices, and system configuration.
           </p>
           {isAdminAuthenticated ? (
-            <AdminDashboard />
+            <Suspense fallback={
+              <Card className="bg-neutral-900 border-neutral-800">
+                <CardContent className="py-8">
+                  <div className="flex items-center justify-center">
+                    <Skeleton className="h-8 w-48 bg-neutral-800" />
+                  </div>
+                </CardContent>
+              </Card>
+            }>
+              <AdminDashboard />
+            </Suspense>
           ) : (
             <AdminLoginCard />
           )}
@@ -427,7 +460,7 @@ function AppContent() {
                     value={formData.load}
                     onChange={(e) => setFormData({ ...formData, load: e.target.value })}
                     required
-                    className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 min-h-[100px]"
+                    className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 min-h-24"
                   />
                   <Button 
                     type="submit"
@@ -442,43 +475,56 @@ function AppContent() {
 
             <div className="space-y-6">
               <Card className="bg-neutral-900 border-neutral-800">
-                <CardContent className="pt-6">
+                <CardHeader>
+                  <CardTitle className="text-gold text-2xl">Contact Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Phone className="w-6 h-6 text-gold" />
+                    <div className="w-10 h-10 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Phone className="w-5 h-5 text-gold" />
                     </div>
                     <div>
-                      <h3 className="text-gold font-semibold text-lg mb-2">Phone</h3>
-                      <p className="text-white/80">+91 98177 83604</p>
+                      <p className="text-white/70 text-sm">Phone</p>
+                      <a href="tel:+919817783604" className="text-white text-lg hover:text-gold transition-colors">
+                        +91 98177 83604
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Mail className="w-5 h-5 text-gold" />
+                    </div>
+                    <div>
+                      <p className="text-white/70 text-sm">Email</p>
+                      <a href="mailto:deepanshufrightcarrier@gmail.com" className="text-white text-lg hover:text-gold transition-colors break-all">
+                        deepanshufrightcarrier@gmail.com
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <MapPin className="w-5 h-5 text-gold" />
+                    </div>
+                    <div>
+                      <p className="text-white/70 text-sm">Address</p>
+                      <p className="text-white text-lg">
+                        Dudiwala Kishanpura, Bhiwani, Haryana
+                      </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="bg-neutral-900 border-neutral-800">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Mail className="w-6 h-6 text-gold" />
-                    </div>
-                    <div>
-                      <h3 className="text-gold font-semibold text-lg mb-2">Email</h3>
-                      <p className="text-white/80">contact@dfc.com</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-neutral-900 border-neutral-800">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-gold/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <MapPin className="w-6 h-6 text-gold" />
-                    </div>
-                    <div>
-                      <h3 className="text-gold font-semibold text-lg mb-2">Location</h3>
-                      <p className="text-white/80">Serving All India</p>
-                    </div>
+                <CardHeader>
+                  <CardTitle className="text-gold text-xl">Business Hours</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-white/80">
+                    <p>Monday - Saturday: 9:00 AM - 7:00 PM</p>
+                    <p>Sunday: Closed</p>
                   </div>
                 </CardContent>
               </Card>
@@ -491,10 +537,8 @@ function AppContent() {
       <footer className="bg-neutral-950 border-t border-neutral-800 py-8">
         <div className="container mx-auto px-4 sm:px-6 lg:px-12">
           <div className="text-center text-white/60">
-            <p className="mb-2">
-              © {new Date().getFullYear()} Deepanshu Freight Carrier. All rights reserved.
-            </p>
-            <p className="text-sm">
+            <p>© {new Date().getFullYear()} DFC. All rights reserved.</p>
+            <p className="mt-2">
               Built with love using{' '}
               <a
                 href={`https://caffeine.ai/?utm_source=Caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(
@@ -502,7 +546,7 @@ function AppContent() {
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gold hover:text-gold/80 transition-colors"
+                className="text-gold hover:underline"
               >
                 caffeine.ai
               </a>

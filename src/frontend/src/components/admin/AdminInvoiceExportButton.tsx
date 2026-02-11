@@ -1,10 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { FileDown, Loader2 } from 'lucide-react';
-import { useExportInvoices } from '@/hooks/useQueries';
+import { useExportAllInvoices } from '@/hooks/useQueries';
 import { toast } from 'sonner';
 
 export function AdminInvoiceExportButton() {
-  const exportMutation = useExportInvoices();
+  const exportMutation = useExportAllInvoices();
 
   const handleExport = async () => {
     try {

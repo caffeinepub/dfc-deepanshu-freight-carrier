@@ -1,48 +1,26 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Admin login history table with React Query hook",
+  "title": "Show real React Query errors for Client Shipments and Delivery History",
   "requirements": [
     {
-      "id": "REQ-4",
-      "summary": "Add an authenticated-only \"Login History\" tab to the Admin Dashboard that displays a newest-first table of client login history with loading and empty states (English text only).",
+      "id": "REQ-3",
+      "summary": "Improve Client Shipments/Delivery History error UI to surface actionable React Query error messages with safe English fallbacks.",
       "acceptanceCriteria": [
-        "AdminDashboard includes a new tab labeled \"Login History\" visible only when the admin is authenticated (consistent with existing dashboard behavior).",
-        "The Login History view shows a table with columns: Client Email/Identifier, Login Time, IP Address.",
-        "Login Time is displayed in a readable format (e.g., local date/time string) and the table is ordered newest-first.",
-        "The UI includes loading and empty states consistent with the rest of the admin panels (skeleton/loading indicator and an empty message like \"No login history yet\")."
+        "When shipment/history loading fails, the UI renders a user-friendly message derived from the thrown error (e.g., session expired, account not linked, service unavailable), not only the fixed generic string.",
+        "The UI continues to show a safe generic fallback message if the error is missing/empty/too technical.",
+        "No changes are made to read-only paths listed in `frontend.immutablePaths`."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/components/admin/AdminLoginHistoryPanel.tsx",
+          "path": "frontend/src/utils/queryErrorMessage.ts",
           "operation": "create",
-          "description": "Create an AdminLoginHistoryPanel component that renders a table for login history entries (identifier/email, formatted login time, IP address) with skeleton loading, error state, and an English empty state message (e.g., \"No login history yet\"). Use shadcn-ui table primitives already used elsewhere (e.g., Table/TableHead/TableRow) to match existing admin tables. Verify the component's usage instructions before implementing."
+          "description": "Add a small utility to turn React Query thrown errors into safe, user-facing English messages (prefer error.message when already user-friendly; otherwise map via existing getClientAuthErrorMessage; otherwise return a generic fallback)."
         },
         {
-          "path": "frontend/src/components/admin/AdminDashboard.tsx",
+          "path": "frontend/src/components/client/ClientShipmentsTable.tsx",
           "operation": "modify",
-          "description": "Wire the new \"Login History\" tab into the existing AdminDashboard TabsList/TabsContent, ensuring it is only reachable when isAuthenticated is true (already enforced by AdminDashboard). Update the tab grid column count as needed and render AdminLoginHistoryPanel in its TabsContent. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Add a React Query hook in useQueries.ts to fetch admin login history using actor + adminToken, with a stable query key and disabled behavior when prerequisites are missing.",
-      "acceptanceCriteria": [
-        "A new React Query hook exists in frontend/src/hooks/useQueries.ts to fetch login history using actor + adminToken.",
-        "The query key is stable and includes adminToken similarly to existing admin queries (e.g., ['loginHistory', adminToken]).",
-        "The Login History admin UI uses the hook and correctly handles loading/error/empty states."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add a new useGetLoginHistory React Query hook that calls the existing backend capability to fetch login history using actor + adminToken. Ensure a stable query key that includes adminToken (e.g., ['loginHistory', adminToken]) and set enabled to false when actor is missing, actor is fetching, or adminToken is missing—consistent with other admin queries. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/admin/AdminLoginHistoryPanel.tsx",
-          "operation": "modify",
-          "description": "Use the new useGetLoginHistory hook to fetch data and drive loading/error/empty/success rendering. Ensure the displayed rows are newest-first (preserve backend ordering and optionally re-sort by loginTime descending defensively) and format loginTime as a readable local date/time string. Verify the component's usage instructions before implementing."
+          "description": "Replace the fixed generic red-alert text for Shipments and Delivery History with a message produced from the React Query `error` (via the new queryErrorMessage helper), while preserving the existing special handling for linkage errors and keeping all user-facing text in English."
         }
       ]
     }

@@ -1,127 +1,108 @@
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
-import { useIsGoogleApiKeyConfigured, useSetGoogleApiKey } from '@/hooks/useQueries';
+import { useIsGoogleApiKeyConfigured, useStoreGoogleApiKey } from '@/hooks/useQueries';
+import { Loader2, Key, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function AdminGoogleGeocodingPanel() {
   const [apiKey, setApiKey] = useState('');
   const { data: isConfigured, isLoading: isCheckingConfig } = useIsGoogleApiKeyConfigured();
-  const setGoogleApiKeyMutation = useSetGoogleApiKey();
+  const storeApiKey = useStoreGoogleApiKey();
 
-  const handleSaveApiKey = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!apiKey.trim()) {
-      return;
-    }
-    await setGoogleApiKeyMutation.mutateAsync(apiKey);
+    if (!apiKey.trim()) return;
+
+    await storeApiKey.mutateAsync(apiKey);
     setApiKey('');
   };
-
-  if (isCheckingConfig) {
-    return (
-      <Card className="bg-neutral-900 border-neutral-800">
-        <CardHeader>
-          <Skeleton className="h-8 w-64 bg-neutral-800" />
-          <Skeleton className="h-4 w-96 bg-neutral-800 mt-2" />
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Skeleton className="h-12 w-full bg-neutral-800" />
-          <Skeleton className="h-12 w-full bg-neutral-800" />
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card className="bg-neutral-900 border-neutral-800">
       <CardHeader>
         <CardTitle className="text-gold flex items-center gap-2">
-          <MapPin className="w-5 h-5" />
-          Google Geocoding Configuration
+          <Key className="w-5 h-5" />
+          Google Geocoding API Configuration
         </CardTitle>
         <CardDescription className="text-white/70">
-          Configure Google Geocoding API key for automatic address-to-coordinates conversion
+          Configure Google Geocoding API for address-to-coordinates conversion
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Configuration Status */}
-        <Alert
-          className={
-            isConfigured
-              ? 'bg-green-950/30 border-green-800/50'
-              : 'bg-neutral-800 border-neutral-700'
-          }
-        >
-          {isConfigured ? (
+      <CardContent className="space-y-4">
+        {isCheckingConfig ? (
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="w-6 h-6 text-gold animate-spin" />
+          </div>
+        ) : isConfigured ? (
+          <Alert className="bg-green-900/20 border-green-800">
             <CheckCircle2 className="h-4 w-4 text-green-500" />
-          ) : (
-            <XCircle className="h-4 w-4 text-gold" />
-          )}
-          <AlertDescription className="text-white/90">
-            {isConfigured
-              ? 'Google Geocoding API key is configured'
-              : 'Google Geocoding API key is not configured'}
-          </AlertDescription>
-        </Alert>
+            <AlertDescription className="text-green-400">
+              Google API key is configured and ready to use.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <Alert className="bg-yellow-900/20 border-yellow-800">
+            <AlertCircle className="h-4 w-4 text-yellow-500" />
+            <AlertDescription className="text-yellow-400">
+              Google API key is not configured. Please add your API key below.
+            </AlertDescription>
+          </Alert>
+        )}
 
-        {/* Save/Update API Key Form */}
-        <form onSubmit={handleSaveApiKey} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="googleApiKey" className="text-white/90">
-              {isConfigured ? 'Update Google Geocoding API Key' : 'Google Geocoding API Key'}
+            <Label htmlFor="googleApiKey" className="text-white">
+              Google API Key
             </Label>
             <Input
               id="googleApiKey"
               type="password"
-              placeholder="Enter your Google Geocoding API key"
+              placeholder="Enter your Google API key"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              className="bg-neutral-800 border-neutral-700 text-white placeholder:text-white/40"
-              disabled={setGoogleApiKeyMutation.isPending}
+              className="bg-neutral-950 border-neutral-700 text-white"
             />
-            <p className="text-sm text-white/50">
-              The API key will be stored securely and never displayed after saving.
+            <p className="text-xs text-white/50">
+              Get your API key from{' '}
+              <a
+                href="https://console.cloud.google.com/apis/credentials"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gold hover:underline"
+              >
+                Google Cloud Console
+              </a>
             </p>
           </div>
 
           <Button
             type="submit"
-            disabled={!apiKey.trim() || setGoogleApiKeyMutation.isPending}
-            className="bg-gold hover:bg-gold/90 text-black font-medium"
+            disabled={!apiKey.trim() || storeApiKey.isPending}
+            className="w-full bg-gold hover:bg-gold/90 text-black font-semibold"
           >
-            {setGoogleApiKeyMutation.isPending ? (
+            {storeApiKey.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving...
+                Storing API Key...
               </>
             ) : (
-              <>{isConfigured ? 'Update API Key' : 'Save API Key'}</>
+              'Store API Key'
             )}
           </Button>
         </form>
 
-        {/* Information */}
-        <Alert className="bg-neutral-800 border-neutral-700">
-          <AlertDescription className="text-white/70 text-sm space-y-2">
-            <p className="font-medium text-white/90">How to get a Google Geocoding API key:</p>
-            <ol className="list-decimal list-inside space-y-1 ml-2">
-              <li>Go to the Google Cloud Console</li>
-              <li>Create or select a project</li>
-              <li>Enable the Geocoding API</li>
-              <li>Create credentials (API key)</li>
-              <li>Copy and paste the API key above</li>
-            </ol>
-            <p className="mt-3">
-              Once configured, shipments will automatically geocode addresses to coordinates when
-              created.
-            </p>
-          </AlertDescription>
-        </Alert>
+        <div className="mt-6 p-4 bg-neutral-950 rounded-lg space-y-2">
+          <h4 className="text-white font-semibold text-sm">Setup Instructions:</h4>
+          <ol className="text-white/70 text-sm space-y-1 list-decimal list-inside">
+            <li>Go to Google Cloud Console</li>
+            <li>Enable Geocoding API for your project</li>
+            <li>Create an API key with Geocoding API access</li>
+            <li>Copy and paste the API key above</li>
+          </ol>
+        </div>
       </CardContent>
     </Card>
   );

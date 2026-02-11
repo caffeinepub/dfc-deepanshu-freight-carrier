@@ -1,10 +1,11 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Package, FileText } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import type { Client } from '@/lib/types';
 import { AdminShipmentsTable } from './AdminShipmentsTable';
 import { AdminInvoicesTable } from './AdminInvoicesTable';
-import type { Client } from '../../backend';
 
 interface AdminClientDetailProps {
   client: Client;
@@ -12,13 +13,15 @@ interface AdminClientDetailProps {
 }
 
 export function AdminClientDetail({ client, onBack }: AdminClientDetailProps) {
+  const [activeTab, setActiveTab] = useState('shipments');
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button
-          onClick={onBack}
           variant="outline"
-          className="bg-neutral-900 border-neutral-700 text-white hover:bg-neutral-800"
+          onClick={onBack}
+          className="border-gold text-gold hover:bg-gold/10"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Clients
@@ -28,29 +31,21 @@ export function AdminClientDetail({ client, onBack }: AdminClientDetailProps) {
       <Card className="bg-neutral-900 border-neutral-800">
         <CardHeader>
           <CardTitle className="text-gold text-2xl">{client.companyName}</CardTitle>
-          <CardDescription className="text-white/70 space-y-1">
-            <div>GST: {client.gstNumber}</div>
-            <div>Mobile: {client.mobile}</div>
-            <div>Address: {client.address}</div>
-            <div className="text-xs mt-2 font-mono">Principal: {client.id.toString()}</div>
-          </CardDescription>
         </CardHeader>
+        <CardContent className="space-y-2 text-white/80">
+          <p><strong>GST:</strong> {client.gstNumber}</p>
+          <p><strong>Mobile:</strong> {client.mobile}</p>
+          <p><strong>Address:</strong> {client.address}</p>
+          <p className="text-xs text-white/50 font-mono">Principal: {client.id.toString()}</p>
+        </CardContent>
       </Card>
 
-      <Tabs defaultValue="shipments" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 bg-neutral-900 border border-neutral-800">
-          <TabsTrigger 
-            value="shipments" 
-            className="data-[state=active]:bg-gold data-[state=active]:text-black"
-          >
-            <Package className="w-4 h-4 mr-2" />
+          <TabsTrigger value="shipments" className="data-[state=active]:bg-gold data-[state=active]:text-black">
             Shipments
           </TabsTrigger>
-          <TabsTrigger 
-            value="invoices" 
-            className="data-[state=active]:bg-gold data-[state=active]:text-black"
-          >
-            <FileText className="w-4 h-4 mr-2" />
+          <TabsTrigger value="invoices" className="data-[state=active]:bg-gold data-[state=active]:text-black">
             Invoices
           </TabsTrigger>
         </TabsList>

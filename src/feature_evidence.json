@@ -2,11 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-frontend-add-a-new-login-history-section-in-the-admin-dashboard-tabs-and-render-a-table-showing-client-email-identifier-login-time-ip-address-all-user-facing-text-must-be-in-english",
-      "featureTitle": "Frontend: Add a new \"Login History\" section in the Admin Dashboard tabs and render a table showing: Client Email/Identifier, Login Time, IP Address. All user-facing text must be in English.",
+      "featureId": "feature-update-the-client-shipments-delivery-history-ui-error-handling-to-display-the-real-error-message-returned-by-react-query-when-available-instead-of-always-showing-only-the-generic-fallback-text-while-keeping-all-user-facing-text-in-english",
+      "featureTitle": "Update the Client Shipments/Delivery History UI error handling to display the real error message returned by React Query (when available) instead of always showing only the generic fallback text, while keeping all user-facing text in English.",
       "files": [
-        "frontend/src/components/admin/AdminDashboard.tsx",
-        "frontend/src/components/admin/AdminLoginHistoryPanel.tsx"
+        "frontend/src/components/client/ClientShipmentsTable.tsx",
+        "frontend/src/utils/queryErrorMessage.ts"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -18,28 +18,7 @@
         "http-outcalls@3.0.0"
       ],
       "testIds": [
-        "REQ-4"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-frontend-add-react-query-wiring-hook-query-key-to-fetch-login-history-from-the-backend-using-the-current-admintoken-and-ensure-the-query-is-disabled-when-no-actor-or-no-admintoken-is-available",
-      "featureTitle": "Frontend: Add React Query wiring (hook/query key) to fetch login history from the backend using the current adminToken, and ensure the query is disabled when no actor or no adminToken is available.",
-      "files": [
-        "frontend/src/components/admin/AdminLoginHistoryPanel.tsx",
-        "frontend/src/hooks/useQueries.ts"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "authorization@4.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-5"
+        "REQ-3"
       ],
       "confidence": "high"
     }

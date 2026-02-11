@@ -12,7 +12,11 @@ declare global {
   }
 }
 
-export function AdminTrackingPanel() {
+interface AdminTrackingPanelProps {
+  enabled?: boolean;
+}
+
+export function AdminTrackingPanel({ enabled = true }: AdminTrackingPanelProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -20,11 +24,16 @@ export function AdminTrackingPanel() {
   const [mapError, setMapError] = useState<string | null>(null);
   const scriptLoadedRef = useRef(false);
 
-  const { data: shipments, isLoading, error } = useGetAllShipmentsForMap();
+  const { data: shipments, isLoading, error } = useGetAllShipmentsForMap(enabled);
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
   useEffect(() => {
+    // Only load script when panel is enabled
+    if (!enabled) {
+      return;
+    }
+
     if (!apiKey || apiKey.trim() === '') {
       setMapError(null);
       setMapLoaded(false);
@@ -85,10 +94,10 @@ export function AdminTrackingPanel() {
         window.initMap = undefined;
       }
     };
-  }, [apiKey]);
+  }, [apiKey, enabled]);
 
   useEffect(() => {
-    if (!mapLoaded || !mapRef.current || !window.google) {
+    if (!enabled || !mapLoaded || !mapRef.current || !window.google) {
       return;
     }
 
@@ -186,7 +195,11 @@ export function AdminTrackingPanel() {
         mapInstanceRef.current.fitBounds(bounds);
       }
     }
-  }, [mapLoaded, shipments]);
+  }, [enabled, mapLoaded, shipments]);
+
+  if (!enabled) {
+    return null;
+  }
 
   if (!apiKey || apiKey.trim() === '') {
     return (

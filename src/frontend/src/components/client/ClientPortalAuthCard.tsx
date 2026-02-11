@@ -36,7 +36,7 @@ export function ClientPortalAuthCard() {
         </TabsContent>
 
         <TabsContent value="signup">
-          <ClientSignupCard onSuccess={handleSignupSuccess} />
+          <ClientSignupCard onSignupSuccess={handleSignupSuccess} />
         </TabsContent>
       </Tabs>
     </div>

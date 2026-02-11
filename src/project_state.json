@@ -1,28 +1,18 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project to add a Login History System: store each successful client login (time, email, client_id, IP) and expose it in the admin panel.",
-  "architectural_notes": [
-    "Add `login_history` DB table with fields: id, client_id, email, login_time (default CURRENT_TIMESTAMP), ip_address.",
-    "On successful `/login`, insert a login_history record (capture IP from `x-forwarded-for` or socket remoteAddress).",
-    "Provide admin endpoint `/admin/login-history` returning login_history ordered by login_time DESC; admin UI displays Email, Login Time, IP Address."
+  "summary": "New project",
+  "architectural_notes": [],
+  "known_issues": [
+    "Server error/unavailable when loading Delivery History and Shipments (\"Failed to load... Please try again or contact support\")."
   ],
-  "known_issues": [],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-frontend-add-a-new-login-history-section-in-the-admin-dashboard-tabs-and-render-a-table-showing-client-email-identifier-login-time-ip-address-all-user-facing-text-must-be-in-english",
-      "title": "Frontend: Add a new \"Login History\" section in the Admin Dashboard tabs and render a table showing: Client Email/Identifier, Login Time, IP Address. All user-facing text must be in English.",
+      "id": "feature-update-the-client-shipments-delivery-history-ui-error-handling-to-display-the-real-error-message-returned-by-react-query-when-available-instead-of-always-showing-only-the-generic-fallback-text-while-keeping-all-user-facing-text-in-english",
+      "title": "Update the Client Shipments/Delivery History UI error handling to display the real error message returned by React Query (when available) instead of always showing only the generic fallback text, while keeping all user-facing text in English.",
       "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-frontend-add-react-query-wiring-hook-query-key-to-fetch-login-history-from-the-backend-using-the-current-admintoken-and-ensure-the-query-is-disabled-when-no-actor-or-no-admintoken-is-available",
-      "title": "Frontend: Add React Query wiring (hook/query key) to fetch login history from the backend using the current adminToken, and ensure the query is disabled when no actor or no adminToken is available.",
-      "reqIds": [
-        "REQ-5"
+        "REQ-3"
       ],
       "version": 1
     }
@@ -30,36 +20,22 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Implement Login History System (DB table + record on login + admin view/API)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Backend: Add persistent storage for a login history log that records each successful client login with fields: client identifier (email or mobile as entered), resolved client_id (client principal/text ID used by the session), login_time (server timestamp), and ip_address (optional text).",
+      "summary": "Implement the missing backend (Motoko) admin session APIs used by the frontend so Admin Login no longer fails with “Service unavailable. Please contact support.” when the app attempts to call `actor.adminLogin(...)` and validate tokens via `actor.getAllClients(...)`.",
       "reqIds": [
         "REQ-1"
       ],
       "status": "pending"
     },
     {
-      "id": "AR-3",
-      "summary": "Backend: When a client login succeeds (both password login and OTP login flows, if both exist), append a new login history entry capturing identifier/email/mobile, client_id, current timestamp, and an ip_address value provided by the frontend (best-effort). Do not record entries for failed logins.",
+      "id": "AR-2",
+      "summary": "Implement the missing backend (Motoko) shipment/history APIs referenced by the frontend so the Client Dashboard can load shipments and delivery history without failing (including `getClientShipmentsBySessionToken(sessionToken)` and any other shipment methods that the frontend calls after login).",
       "reqIds": [
         "REQ-2"
       ],
       "status": "pending"
-    },
-    {
-      "id": "AR-4",
-      "summary": "Backend: Expose an admin-only query method to fetch login history entries ordered by most recent first. The method must require a valid admin session token and trap on unauthorized access.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "status": "pending"
     }
   ],
-  "projectName": "Add client login history tracking and admin view",
+  "projectName": "Fix service-unavailable errors for Admin Login and Client Shipments/Delivery History loading",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }
