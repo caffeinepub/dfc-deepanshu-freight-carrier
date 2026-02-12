@@ -98,7 +98,7 @@ export interface backendInterface {
         __kind__: "success";
         success: string;
     }>;
-    createClientAccount(identifier: string, password: string, linkedPrincipal: Principal, email: string | null, mobile: string | null, companyName: string, gstNumber: string, address: string): Promise<string | null>;
+    createClientAccount(identifier: string, password: string, email: string | null, mobile: string | null, companyName: string, gstNumber: string, address: string): Promise<string | null>;
     getAllClients(sessionToken: string): Promise<AllClientsResponse | null>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
@@ -110,7 +110,6 @@ export interface backendInterface {
         authenticated: {
             clientId: string;
             isFirstLogin: boolean;
-            linkedPrincipal?: Principal;
             profile: UserProfile;
         };
     }>;
@@ -136,7 +135,8 @@ export interface backendInterface {
     }>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
-    provisionClientAccount(identifier: string, password: string, linkedPrincipal: Principal): Promise<void>;
+    provisionClientAccount(identifier: string, password: string): Promise<void>;
+    repairMissingLinkedPrincipals(): Promise<bigint>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     sendOtp(phoneNumber: string): Promise<Variant_invalidPhone_success_rateLimited>;
     validateAdminSession(sessionToken: string): Promise<string | null>;

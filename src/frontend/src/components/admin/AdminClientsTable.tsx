@@ -4,8 +4,9 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, RefreshCw, Eye } from 'lucide-react';
-import { useGetAllClients } from '../../hooks/useQueries';
+import { Badge } from '@/components/ui/badge';
+import { Search, RefreshCw, Eye, Wrench } from 'lucide-react';
+import { useGetAllClients, useRepairUnlinkedClients } from '../../hooks/useQueries';
 import type { Client } from '../../lib/types';
 
 interface AdminClientsTableProps {
@@ -14,6 +15,7 @@ interface AdminClientsTableProps {
 
 export function AdminClientsTable({ onSelectClient }: AdminClientsTableProps) {
   const { data: clientsData, isLoading, refetch, isFetching } = useGetAllClients();
+  const repairMutation = useRepairUnlinkedClients();
   const [searchTerm, setSearchTerm] = useState('');
 
   const clients = clientsData?.clientAccounts || [];
@@ -21,6 +23,12 @@ export function AdminClientsTable({ onSelectClient }: AdminClientsTableProps) {
     account.profile.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     account.identifier.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const unlinkedCount = clients.filter(account => !account.linkedPrincipal).length;
+
+  const handleRepair = async () => {
+    await repairMutation.mutateAsync();
+  };
 
   if (isLoading) {
     return (
@@ -46,16 +54,30 @@ export function AdminClientsTable({ onSelectClient }: AdminClientsTableProps) {
               Manage client accounts and profiles
             </CardDescription>
           </div>
-          <Button
-            onClick={() => refetch()}
-            disabled={isFetching}
-            variant="outline"
-            size="sm"
-            className="border-neutral-700 hover:bg-neutral-800 text-white"
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            {unlinkedCount > 0 && (
+              <Button
+                onClick={handleRepair}
+                disabled={repairMutation.isPending}
+                variant="default"
+                size="sm"
+                className="bg-gold hover:bg-gold/90 text-black"
+              >
+                <Wrench className={`w-4 h-4 mr-2 ${repairMutation.isPending ? 'animate-spin' : ''}`} />
+                Repair Unlinked ({unlinkedCount})
+              </Button>
+            )}
+            <Button
+              onClick={() => refetch()}
+              disabled={isFetching}
+              variant="outline"
+              size="sm"
+              className="border-neutral-700 hover:bg-neutral-800 text-white"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -108,27 +130,34 @@ export function AdminClientsTable({ onSelectClient }: AdminClientsTableProps) {
                         {account.profile.gstNumber}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          onClick={() => {
-                            if (account.linkedPrincipal) {
-                              const client: Client = {
-                                id: account.linkedPrincipal,
-                                companyName: account.profile.companyName,
-                                gstNumber: account.profile.gstNumber,
-                                address: account.profile.address,
-                                mobile: account.profile.mobile,
-                              };
-                              onSelectClient(client);
-                            }
-                          }}
-                          variant="ghost"
-                          size="sm"
-                          className="text-gold hover:text-gold/80 hover:bg-neutral-800"
-                          disabled={!account.linkedPrincipal}
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          View
-                        </Button>
+                        <div className="flex items-center justify-end gap-2">
+                          {!account.linkedPrincipal && (
+                            <Badge variant="destructive" className="text-xs">
+                              Not linked
+                            </Badge>
+                          )}
+                          <Button
+                            onClick={() => {
+                              if (account.linkedPrincipal) {
+                                const client: Client = {
+                                  id: account.linkedPrincipal,
+                                  companyName: account.profile.companyName,
+                                  gstNumber: account.profile.gstNumber,
+                                  address: account.profile.address,
+                                  mobile: account.profile.mobile,
+                                };
+                                onSelectClient(client);
+                              }
+                            }}
+                            variant="ghost"
+                            size="sm"
+                            className="text-gold hover:text-gold/80 hover:bg-neutral-800"
+                            disabled={!account.linkedPrincipal}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            View
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

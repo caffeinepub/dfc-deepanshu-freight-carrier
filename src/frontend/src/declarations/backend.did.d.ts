@@ -76,16 +76,7 @@ export interface _SERVICE {
       { 'success' : string }
   >,
   'createClientAccount' : ActorMethod<
-    [
-      string,
-      string,
-      Principal,
-      [] | [string],
-      [] | [string],
-      string,
-      string,
-      string,
-    ],
+    [string, string, [] | [string], [] | [string], string, string, string],
     [] | [string]
   >,
   'getAllClients' : ActorMethod<[string], [] | [AllClientsResponse]>,
@@ -98,7 +89,6 @@ export interface _SERVICE {
         'authenticated' : {
           'clientId' : string,
           'isFirstLogin' : boolean,
-          'linkedPrincipal' : [] | [Principal],
           'profile' : UserProfile,
         }
       }
@@ -117,10 +107,8 @@ export interface _SERVICE {
   >,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'provisionClientAccount' : ActorMethod<
-    [string, string, Principal],
-    undefined
-  >,
+  'provisionClientAccount' : ActorMethod<[string, string], undefined>,
+  'repairMissingLinkedPrincipals' : ActorMethod<[], bigint>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'sendOtp' : ActorMethod<
     [string],

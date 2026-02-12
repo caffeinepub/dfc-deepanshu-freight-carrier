@@ -180,7 +180,6 @@ export function useGetClientAccountStatus() {
           clientId: result.authenticated.clientId,
           profile: result.authenticated.profile,
           isFirstLogin: result.authenticated.isFirstLogin,
-          linkedPrincipal: result.authenticated.linkedPrincipal,
         };
       }
 
@@ -363,6 +362,33 @@ export function useGetAllClients() {
   });
 }
 
+export function useRepairUnlinkedClients() {
+  const { actor } = useActor();
+  const { adminToken } = useAdminSession();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!actor) throw new Error('Backend service is not available');
+      if (!adminToken) throw new Error('Admin session required');
+
+      const count = await actor.repairMissingLinkedPrincipals();
+      return Number(count);
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ['allClients'] });
+      if (count > 0) {
+        toast.success(`Successfully repaired ${count} unlinked client account${count !== 1 ? 's' : ''}`);
+      } else {
+        toast.info('No unlinked accounts found');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to repair client accounts');
+    },
+  });
+}
+
 export function useAdminAddOrUpdateClient() {
   const { actor } = useActor();
   const { adminToken } = useAdminSession();
@@ -422,12 +448,9 @@ export function useCreateClientAccount() {
       if (!actor) throw new Error('Backend service is not available');
       if (!adminToken) throw new Error('Admin session required');
 
-      const principal = Principal.fromText(data.linkedPrincipal);
-
       const result = await actor.createClientAccount(
         data.identifier,
         data.password,
-        principal,
         data.email || null,
         data.mobile || null,
         data.companyName,
@@ -461,12 +484,9 @@ export function useProvisionClientAccount() {
       if (!actor) throw new Error('Backend service is not available');
       if (!adminToken) throw new Error('Admin session required');
 
-      const principal = Principal.fromText(data.linkedPrincipal);
-
       await actor.provisionClientAccount(
         data.identifier,
-        data.password,
-        principal
+        data.password
       );
     },
     onSuccess: () => {
@@ -647,8 +667,8 @@ export function useCreateInvoice() {
       try {
         await (actor as any).createInvoice(
           adminToken,
-          data.invoiceNo,
-          data.amount,
+          BigInt(data.invoiceNo),
+          BigInt(data.amount),
           data.status,
           data.dueDate,
           data.client
@@ -686,8 +706,8 @@ export function useUpdateInvoice() {
       try {
         await (actor as any).updateInvoice(
           adminToken,
-          data.invoiceNo,
-          data.amount,
+          BigInt(data.invoiceNo),
+          BigInt(data.amount),
           data.status,
           data.dueDate
         );
@@ -717,7 +737,7 @@ export function useDeleteInvoice() {
       if (!adminToken) throw new Error('Admin session required');
 
       try {
-        await (actor as any).deleteInvoice(adminToken, invoiceNo);
+        await (actor as any).deleteInvoice(adminToken, BigInt(invoiceNo));
       } catch (error: any) {
         if (error.message?.includes('not found') || error.message?.includes('has no method')) {
           throw new Error('Feature not available');
@@ -733,21 +753,18 @@ export function useDeleteInvoice() {
   });
 }
 
-// ============================================================================
-// Admin Configuration Hooks
-// ============================================================================
-
-export function useSetMsg91ApiKey() {
+export function useExportAllInvoices() {
   const { actor } = useActor();
   const { adminToken } = useAdminSession();
 
   return useMutation({
-    mutationFn: async (apiKey: string) => {
+    mutationFn: async () => {
       if (!actor) throw new Error('Backend service is not available');
       if (!adminToken) throw new Error('Admin session required');
 
       try {
-        await (actor as any).setMsg91ApiKey(adminToken, apiKey);
+        const result = await (actor as any).exportAllInvoices(adminToken);
+        return result as string[];
       } catch (error: any) {
         if (error.message?.includes('not found') || error.message?.includes('has no method')) {
           throw new Error('Feature not available');
@@ -755,93 +772,6 @@ export function useSetMsg91ApiKey() {
         throw error;
       }
     },
-    onSuccess: () => {
-      toast.success('MSG91 API key saved successfully');
-    },
-  });
-}
-
-export function useVerifyMsg91Token() {
-  const { actor } = useActor();
-  const { adminToken } = useAdminSession();
-
-  return useMutation({
-    mutationFn: async (apiKey: string) => {
-      if (!actor) throw new Error('Backend service is not available');
-      if (!adminToken) throw new Error('Admin session required');
-
-      try {
-        const result = await (actor as any).verifyMsg91Token(adminToken, apiKey);
-        return result;
-      } catch (error: any) {
-        if (error.message?.includes('not found') || error.message?.includes('has no method')) {
-          throw new Error('Feature not available');
-        }
-        throw error;
-      }
-    },
-  });
-}
-
-export function useIsMsg91ApiKeyStored() {
-  const { actor } = useActor();
-  const { adminToken } = useAdminSession();
-
-  return useQuery<boolean>({
-    queryKey: ['isMsg91ApiKeyStored', adminToken],
-    queryFn: async () => {
-      if (!actor || !adminToken) return false;
-      try {
-        const result = await (actor as any).isMsg91ApiKeyStored(adminToken);
-        return result || false;
-      } catch (error) {
-        return false;
-      }
-    },
-    enabled: !!actor && !!adminToken,
-  });
-}
-
-export function useStoreGoogleApiKey() {
-  const { actor } = useActor();
-  const { adminToken } = useAdminSession();
-
-  return useMutation({
-    mutationFn: async (apiKey: string) => {
-      if (!actor) throw new Error('Backend service is not available');
-      if (!adminToken) throw new Error('Admin session required');
-
-      try {
-        await (actor as any).storeGoogleApiKey(adminToken, apiKey);
-      } catch (error: any) {
-        if (error.message?.includes('not found') || error.message?.includes('has no method')) {
-          throw new Error('Feature not available');
-        }
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      toast.success('Google API key saved successfully');
-    },
-  });
-}
-
-export function useIsGoogleApiKeyConfigured() {
-  const { actor } = useActor();
-  const { adminToken } = useAdminSession();
-
-  return useQuery<boolean>({
-    queryKey: ['isGoogleApiKeyConfigured', adminToken],
-    queryFn: async () => {
-      if (!actor || !adminToken) return false;
-      try {
-        const result = await (actor as any).isGoogleApiKeyConfigured(adminToken);
-        return result || false;
-      } catch (error) {
-        return false;
-      }
-    },
-    enabled: !!actor && !!adminToken,
   });
 }
 
@@ -873,7 +803,7 @@ export function useGetLoginHistory() {
   const { actor } = useActor();
   const { adminToken } = useAdminSession();
 
-  return useQuery<Array<{ identifier: string; loginTime: bigint; ipAddress?: string }>>({
+  return useQuery<Array<{ identifier: string; clientId: string; loginTime: bigint; ipAddress: string | null }>>({
     queryKey: ['loginHistory', adminToken],
     queryFn: async () => {
       if (!actor || !adminToken) return [];
@@ -886,6 +816,50 @@ export function useGetLoginHistory() {
       }
     },
     enabled: !!actor && !!adminToken,
+  });
+}
+
+// ============================================================================
+// Admin Configuration Hooks (Stub implementations)
+// ============================================================================
+
+export function useSetMsg91ApiKey() {
+  return useMutation({
+    mutationFn: async (_apiKey: string) => {
+      throw new Error('MSG91 API key configuration has been removed from the backend');
+    },
+  });
+}
+
+export function useIsMsg91ApiKeyStored() {
+  return useQuery({
+    queryKey: ['msg91ApiKeyStored'],
+    queryFn: async () => false,
+    enabled: false,
+  });
+}
+
+export function useVerifyMsg91Token() {
+  return useMutation({
+    mutationFn: async (_apiKey: string) => {
+      throw new Error('MSG91 token verification has been removed from the backend');
+    },
+  });
+}
+
+export function useIsGoogleApiKeyConfigured() {
+  return useQuery({
+    queryKey: ['googleApiKeyConfigured'],
+    queryFn: async () => false,
+    enabled: false,
+  });
+}
+
+export function useStoreGoogleApiKey() {
+  return useMutation({
+    mutationFn: async (_apiKey: string) => {
+      throw new Error('Google API key storage has been removed from the backend');
+    },
   });
 }
 
@@ -906,27 +880,5 @@ export function useGetAllShipmentsForMap() {
       }
     },
     enabled: !!actor && !!adminToken,
-  });
-}
-
-export function useExportAllInvoices() {
-  const { actor } = useActor();
-  const { adminToken } = useAdminSession();
-
-  return useMutation({
-    mutationFn: async () => {
-      if (!actor) throw new Error('Backend service is not available');
-      if (!adminToken) throw new Error('Admin session required');
-
-      try {
-        const result = await (actor as any).exportAllInvoices(adminToken);
-        return result as string[];
-      } catch (error: any) {
-        if (error.message?.includes('not found') || error.message?.includes('has no method')) {
-          throw new Error('Export feature not available');
-        }
-        throw error;
-      }
-    },
   });
 }

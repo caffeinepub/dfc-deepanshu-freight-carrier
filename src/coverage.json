@@ -1,69 +1,44 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T02:45:09.552Z",
+  "generatedAt": "2026-02-12T03:24:08.606Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 5,
-    "implemented": 4,
+    "total": 3,
+    "implemented": 2,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Re-enable the Client Portal **Login** UI by removing the hard-coded disabled state and “Unavailable” messaging in `frontend/src/components/client/ClientPortalLoginCard.tsx` so users can type into fields and submit the form.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/client/ClientPortalLoginCard.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/client/ClientPortalLoginCard.tsx"
-        ]
-      },
-      {
-        "id": "REQ-2",
-        "summary": "Re-enable the Client Portal **OTP login** UI in `frontend/src/components/client/ClientPortalLoginCard.tsx` by removing hard-coded `disabled` props and preventing ‘Unavailable’ UX. Ensure OTP flow buttons respect pending/loading states instead of being permanently disabled.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/client/ClientPortalLoginCard.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/client/ClientPortalLoginCard.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Ensure the Client Portal **Signup** path is not blocked by any UI-level disabled/blocked state and that errors from backend are shown clearly in `frontend/src/components/client/ClientSignupCard.tsx`.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/client/ClientSignupCard.tsx",
-          "frontend/src/utils/clientAuthErrors.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/utils/clientAuthErrors.ts"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Implement backend client authentication APIs required for Client Portal login/signup so the frontend no longer needs to hide these flows. Add functions to `backend/main.mo` for: client signup, password login, send OTP, verify OTP, and retrieving client account status (as used by the frontend).",
+        "summary": "Fix backend client signup and auto-repair logic so it never traps with \"blob too long for principal\" when generating linkedPrincipal for email/mobile identifiers, including: clientSignup, autoRepairClientAccount, and repairMissingLinkedPrincipals.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
-        "id": "REQ-5",
-        "summary": "Wire the frontend client auth mutations/queries to the backend methods so that successful login/signup results in a persisted client session and the Client Portal section renders the authenticated experience as designed in `frontend/src/App.tsx`.",
+        "id": "REQ-2",
+        "summary": "Update the client signup UI to use the validated/normalized identifier value from validateClientIdentifier (e.g., digit-only mobile normalization) when deciding whether to send email vs mobile and when submitting the signup mutation payload.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/hooks/ClientSessionProvider.tsx",
-          "frontend/src/App.tsx"
+          "frontend/src/utils/clientIdentifier.ts",
+          "frontend/src/components/client/ClientSignupCard.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useQueries.ts",
-          "frontend/src/hooks/useQueries.ts"
+          "frontend/src/utils/clientIdentifier.ts",
+          "frontend/src/components/client/ClientSignupCard.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Improve client-facing error messaging for unexpected backend traps during signup: map the specific error text \"blob too long for principal\" to a user-friendly English message and avoid showing raw trap text in the UI.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/utils/clientAuthErrors.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/utils/clientAuthErrors.ts"
         ]
       }
     ]
@@ -76,20 +51,12 @@
     "frontend-implementation-plan.json",
     "frontend/src/backend.d.ts",
     "frontend/src/backend.ts",
-    "frontend/src/components/AdminTrackingPanel.tsx",
-    "frontend/src/components/admin/AdminClientForm.tsx",
-    "frontend/src/components/admin/AdminClientProvisionDialog.tsx",
-    "frontend/src/components/admin/AdminClientsTable.tsx",
-    "frontend/src/components/admin/AdminDashboard.tsx",
-    "frontend/src/components/admin/AdminInvoicesTable.tsx",
-    "frontend/src/components/admin/AdminLoginHistoryPanel.tsx",
-    "frontend/src/components/admin/AdminRevenuePanel.tsx",
-    "frontend/src/components/admin/AdminShipmentsTable.tsx",
-    "frontend/src/components/client/ClientPortalLoginCard.tsx",
+    "frontend/src/components/client/ClientSignupCard.tsx",
     "frontend/src/declarations/backend.did.d.ts",
     "frontend/src/declarations/backend.did.js",
     "frontend/src/hooks/useQueries.ts",
     "frontend/src/utils/clientAuthErrors.ts",
+    "frontend/src/utils/clientIdentifier.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

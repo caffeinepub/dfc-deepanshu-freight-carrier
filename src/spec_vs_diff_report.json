@@ -1,91 +1,27 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T02:45:09.549Z",
-  "summary": "Diff adds substantial new admin/dashboard functionality and introduces client auth hooks plus an updated ClientPortalLoginCard. However, the requested ClientSignupCard changes are not evidenced in the provided diff summary, and backend client-auth API implementations are not clearly visible due to truncation.",
+  "generatedAt": "2026-02-12T03:24:08.603Z",
+  "summary": "Frontend changes implement identifier normalization for signup (using validateClientIdentifier) and add a user-friendly error mapping for the specific trap text. The backend diff excerpt does not show any changes to linkedPrincipal generation or the specified backend repair/signup functions, so the core backend fix appears missing based on available evidence.",
   "missing_requirements": [
     {
-      "id": "REQ-3",
-      "requirement": "Ensure the Client Portal Signup path is not blocked by any UI-level disabled/blocked state and that errors from backend are shown clearly in frontend/src/components/client/ClientSignupCard.tsx.",
-      "reason": "The diff summary does not show any modification to frontend/src/components/client/ClientSignupCard.tsx, so there is no evidence that signup fields/buttons were re-enabled or that backend errors are rendered in the existing error alert area.",
+      "id": "REQ-1",
+      "requirement": "Fix backend client signup and auto-repair logic so it never traps with \"blob too long for principal\" when generating linkedPrincipal for email/mobile identifiers, including: clientSignup, autoRepairClientAccount, and repairMissingLinkedPrincipals.",
+      "reason": "The provided backend/main.mo diff excerpt shows imports, type definitions, and rate-limit helpers, but does not show any modifications to clientSignup, autoRepairClientAccount, repairMissingLinkedPrincipals, or any linkedPrincipal derivation logic. With the backend file truncated, there is no positive evidence in the diff summary that the required backend fix was implemented.",
       "evidence": [
-        "MODIFIED FILES list does not include frontend/src/components/client/ClientSignupCard.tsx"
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "requirement": "Implement backend client authentication APIs in backend/main.mo for client signup, password login, send OTP, verify OTP, and retrieving client account status.",
-      "reason": "backend/main.mo is truncated and the visible portion shows new types/state (ClientAccount, ClientSession, OtpRecord, rate limiting) but does not show the required public methods (e.g., clientSignup, clientPasswordLogin, sendOtp, verifyOtp, client account status). Therefore implementation cannot be confirmed from the provided diff summary.",
-      "evidence": [
-        "backend/main.mo (truncated): shows types/maps and rate limit helpers but no visible public API methods"
+        "backend/main.mo (truncated; no shown changes to clientSignup/autoRepairClientAccount/repairMissingLinkedPrincipals or linkedPrincipal generation)"
       ]
     }
   ],
-  "hallucinated_features": [
-    {
-      "description": "Admin dashboard enhancements (new/expanded tabbed interface and additional admin panels such as Revenue Analytics, Login History, Configuration UI).",
-      "reason": "BuildRequest explicitly lists redesigning the admin dashboard/admin auth as a non-goal; these admin UI additions are not requested by REQ-1..REQ-5.",
-      "evidence": [
-        "frontend/src/components/admin/AdminDashboard.tsx",
-        "frontend/src/components/admin/AdminRevenuePanel.tsx",
-        "frontend/src/components/admin/AdminLoginHistoryPanel.tsx"
-      ]
-    },
-    {
-      "description": "Admin client account provisioning flow (dialog that generates passwords, creates/provisions accounts, copy-to-clipboard, principal validation).",
-      "reason": "Not requested in REQ-1..REQ-5 (scope is client portal login/signup re-enable + backend client auth APIs).",
-      "evidence": [
-        "frontend/src/components/admin/AdminClientProvisionDialog.tsx"
-      ]
-    },
-    {
-      "description": "Admin clients table/search and multiple admin CRUD UI changes (clients/shipments/invoices tables and forms).",
-      "reason": "Not requested by the BuildRequest and falls under admin dashboard work (non-goal).",
-      "evidence": [
-        "frontend/src/components/admin/AdminClientsTable.tsx",
-        "frontend/src/components/admin/AdminClientForm.tsx",
-        "frontend/src/components/admin/AdminShipmentsTable.tsx",
-        "frontend/src/components/admin/AdminInvoicesTable.tsx"
-      ]
-    },
-    {
-      "description": "Google Maps script-loading optimization in AdminTrackingPanel (deferred script loading, cleanup, enabled prop behavior).",
-      "reason": "Not requested by REQ-1..REQ-5.",
-      "evidence": [
-        "frontend/src/components/AdminTrackingPanel.tsx"
-      ]
-    },
-    {
-      "description": "Local storage shipments seed/utility implementation.",
-      "reason": "Not requested by the BuildRequest.",
-      "evidence": [
-        "frontend/src/lib/shipmentsStorage.ts (mentioned in frontend-file-summaries.txt)"
-      ]
-    },
-    {
-      "description": "Introduction of a new frontend utility for client auth error messaging (getClientAuthErrorMessage).",
-      "reason": "Not explicitly requested (BuildRequest references using existing error handling utilities; this appears to add a new utility).",
-      "evidence": [
-        "frontend/src/utils/clientAuthErrors.ts"
-      ]
-    }
-  ],
-  "confidence": 0.66,
+  "hallucinated_features": [],
+  "confidence": 0.63,
   "changed_files": [
     "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/AdminTrackingPanel.tsx",
-    "frontend/src/components/admin/AdminClientForm.tsx",
-    "frontend/src/components/admin/AdminClientProvisionDialog.tsx",
-    "frontend/src/components/admin/AdminClientsTable.tsx",
-    "frontend/src/components/admin/AdminDashboard.tsx",
-    "frontend/src/components/admin/AdminInvoicesTable.tsx",
-    "frontend/src/components/admin/AdminLoginHistoryPanel.tsx",
-    "frontend/src/components/admin/AdminRevenuePanel.tsx",
-    "frontend/src/components/admin/AdminShipmentsTable.tsx",
-    "frontend/src/components/client/ClientPortalLoginCard.tsx",
+    "frontend/src/components/client/ClientSignupCard.tsx",
     "frontend/src/hooks/useQueries.ts",
     "frontend/src/utils/clientAuthErrors.ts",
+    "frontend/src/utils/clientIdentifier.ts",
     "project_state.json"
   ]
 }

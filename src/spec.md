@@ -1,13 +1,11 @@
 # Specification
 
 ## Summary
-**Goal:** Re-enable Client Portal login and signup by removing hard-disabled frontend UI states and implementing/wiring the missing backend client authentication APIs so clients can authenticate and access the intended portal experience.
+**Goal:** Fix client signup failures caused by the backend trapping with "blob too long for principal", and ensure the signup UI submits a normalized identifier and shows friendly errors.
 
 **Planned changes:**
-- Remove hard-coded disabled/unavailable UX from Client Portal Password login UI in `frontend/src/components/client/ClientPortalLoginCard.tsx` so inputs and submit behave based on validation and pending state.
-- Remove hard-coded disabled/unavailable UX from Client Portal OTP login UI in `frontend/src/components/client/ClientPortalLoginCard.tsx` so Send OTP / Verify OTP flows work and only disable during pending states.
-- Ensure Client Portal Signup UI in `frontend/src/components/client/ClientSignupCard.tsx` is fully editable, submit disables only while pending, and backend failures show clear English error messaging in the existing alert area.
-- Add required client auth methods to `backend/main.mo`: client signup, password login, send OTP, verify OTP, and client account status retrieval for the current session.
-- Wire frontend client auth mutations/queries to the new backend methods so successful login/signup persists a client session via `frontend/src/hooks/ClientSessionProvider.tsx` and the authenticated Client Portal flow in `frontend/src/App.tsx` proceeds as designed.
+- Update backend signup and account auto-repair flows (clientSignup, autoRepairClientAccount, repairMissingLinkedPrincipals) to generate linkedPrincipal for email/mobile identifiers without trapping on long values.
+- Update signup UI to use the validated/normalized identifier returned by validateClientIdentifier when choosing email vs mobile flow and when submitting the signup payload.
+- Map backend errors containing "blob too long for principal" to a user-friendly English message during signup, without exposing raw trap text; keep other error mappings unchanged.
 
-**User-visible outcome:** Clients can sign up and log in (password or OTP) from the Client Portal without “Unavailable” blocks; after successful authentication, the session is saved and the portal loads the first-login/password-change screen or the client dashboard as appropriate.
+**User-visible outcome:** Users can sign up successfully with a typical email or a 10-digit mobile number (even if entered with spaces/dashes or extra whitespace), and if the server encounters the specific principal-length error, the UI shows a clear English message instead of the raw trap text.

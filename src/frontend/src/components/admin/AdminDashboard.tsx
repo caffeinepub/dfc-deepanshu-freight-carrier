@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LogOut, FileDown } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { AdminClientsTable } from './AdminClientsTable';
 import { AdminClientDetail } from './AdminClientDetail';
 import { AdminTrackingPanel } from '../AdminTrackingPanel';

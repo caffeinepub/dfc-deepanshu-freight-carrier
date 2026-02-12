@@ -1,113 +1,86 @@
 {
   "kind": "build_request",
-  "title": "Re-enable Client Portal Login and Signup (remove hard-disabled UI and implement missing client auth APIs)",
-  "priority": "normal",
+  "title": "Fix client signup failure: \"blob too long for principal\"",
+  "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Re-enable the Client Portal **Login** UI by removing the hard-coded disabled state and “Unavailable” messaging in `frontend/src/components/client/ClientPortalLoginCard.tsx` so users can type into fields and submit the form.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-5"
-        ],
-        "quotes": [
-          "Yes sign up par bhi ye problem hai"
-        ]
-      },
-      "acceptanceCriteria": [
-        "In Client Portal Login (Password tab), the identifier and password inputs are enabled and editable.",
-        "The Login button is enabled when form validation passes and a login request is not pending.",
-        "The button label no longer says “Login (Unavailable)”.",
-        "The hard-coded yellow warning banner about login being unavailable is removed (or only shown when a real backend error indicates unavailability)."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Re-enable the Client Portal **OTP login** UI in `frontend/src/components/client/ClientPortalLoginCard.tsx` by removing hard-coded `disabled` props and preventing ‘Unavailable’ UX. Ensure OTP flow buttons respect pending/loading states instead of being permanently disabled.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-5"
-        ],
-        "quotes": [
-          "Yes sign up par bhi ye problem hai"
-        ]
-      },
-      "acceptanceCriteria": [
-        "In the OTP tab, the phone number input and Send OTP button are enabled (except during pending mutation states).",
-        "After OTP is sent, the OTP input and Verify button are enabled (except during pending mutation states).",
-        "No OTP UI element is permanently disabled via hard-coded `disabled` props."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Ensure the Client Portal **Signup** path is not blocked by any UI-level disabled/blocked state and that errors from backend are shown clearly in `frontend/src/components/client/ClientSignupCard.tsx`.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-5"
-        ],
-        "quotes": [
-          "Yes sign up par bhi ye problem hai"
-        ]
-      },
-      "acceptanceCriteria": [
-        "All Signup fields are enabled and editable.",
-        "Signup submit button is enabled when not pending and disables only while the signup request is pending.",
-        "If signup fails, an English, user-readable error message is shown in the existing error alert area."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Implement backend client authentication APIs required for Client Portal login/signup so the frontend no longer needs to hide these flows. Add functions to `backend/main.mo` for: client signup, password login, send OTP, verify OTP, and retrieving client account status (as used by the frontend).",
+      "text": "Fix backend client signup and auto-repair logic so it never traps with \"blob too long for principal\" when generating linkedPrincipal for email/mobile identifiers, including: clientSignup, autoRepairClientAccount, and repairMissingLinkedPrincipals.",
       "target": "backend",
       "source": {
         "messageIds": [
           "msg-5"
         ],
         "quotes": [
-          "Yes sign up par bhi ye problem hai"
+          "Ab yah kya problem hai"
         ]
       },
       "acceptanceCriteria": [
-        "Backend exposes callable methods for client signup and client login that return a session token on success (and do not require admin privileges).",
-        "Backend exposes callable methods for send OTP and verify OTP that allow completing an OTP login and issuing a session token on success.",
-        "Backend exposes a callable method to retrieve client account status for the current session token (e.g., `isFirstLogin`).",
-        "On invalid credentials/OTP/token, backend returns a deterministic error (trap or variant) that the frontend can convert into a user-friendly English message via existing error handling utilities."
+        "Signing up with a typical email address (e.g., name@gmail.com) succeeds without any backend trap/reject errors.",
+        "Signing up with a 10-digit mobile number succeeds without any backend trap/reject errors.",
+        "clientPasswordLogin and verifyOtp auto-repair paths do not trap when linking accounts missing linkedPrincipal.",
+        "Admin bulk repair (repairMissingLinkedPrincipals) completes without trapping, even when identifiers are long (emails).",
+        "No backend state migration is required (no schema/type changes)."
       ]
     },
     {
-      "id": "REQ-5",
-      "text": "Wire the frontend client auth mutations/queries to the backend methods so that successful login/signup results in a persisted client session and the Client Portal section renders the authenticated experience as designed in `frontend/src/App.tsx`.",
-      "target": "both",
+      "id": "REQ-2",
+      "text": "Update the client signup UI to use the validated/normalized identifier value from validateClientIdentifier (e.g., digit-only mobile normalization) when deciding whether to send email vs mobile and when submitting the signup mutation payload.",
+      "target": "frontend",
       "source": {
         "messageIds": [
           "msg-5"
         ],
         "quotes": [
-          "Yes sign up par bhi ye problem hai"
+          "Ab yah kya problem hai"
         ]
       },
       "acceptanceCriteria": [
-        "After a successful password login or OTP login, a client session token is saved via `frontend/src/hooks/ClientSessionProvider.tsx` and `useClientSession()` reports `isAuthenticated=true`.",
-        "After successful signup, the UI switches to the Login tab (existing behavior) and the new account can subsequently log in if backend supports it.",
-        "When authenticated, the app proceeds to load client account status and then shows the password-change screen on first login or the client dashboard otherwise (existing `App.tsx` logic)."
+        "If a user enters a mobile number with spaces/dashes, the signup request uses the normalized 10-digit number.",
+        "If a user enters an email with leading/trailing whitespace, the signup request uses the trimmed/normalized email.",
+        "The signup form no longer produces backend errors caused by sending an unnormalized identifier type (email vs mobile)."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Improve client-facing error messaging for unexpected backend traps during signup: map the specific error text \"blob too long for principal\" to a user-friendly English message and avoid showing raw trap text in the UI.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-5"
+        ],
+        "quotes": [
+          "Ab yah kya problem hai"
+        ]
+      },
+      "acceptanceCriteria": [
+        "If the backend ever returns an error containing \"blob too long for principal\", the UI displays a clear English message (e.g., \"Signup failed due to a server error. Please try again.\") instead of the raw text.",
+        "Other existing error mappings remain unchanged."
       ]
     }
   ],
   "constraints": [
-    "Do not edit any files under `frontend/src/components/ui` (shadcn components are read-only).",
-    "Do not modify any paths listed in `frontend.immutablePaths` in SYSTEM_CONTEXT.",
-    "Backend must remain a single Motoko actor in `backend/main.mo`; only add `backend/migration.mo` if state schema changes require a migration."
+    "Backend must remain a single Motoko actor (all logic in backend/main.mo).",
+    "Do not edit files under frontend/src/components/ui or any other immutablePaths listed in SYSTEM_CONTEXT.",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Redesigning the admin dashboard or admin authentication.",
-    "Adding third-party authentication providers (only existing auth patterns are allowed).",
-    "Adding external databases or non-Internet-Computer backend services."
+    "Adding new authentication providers (only existing password/OTP flows).",
+    "Introducing external databases or additional backend services.",
+    "UI redesign beyond what is necessary to fix signup and error messaging."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }

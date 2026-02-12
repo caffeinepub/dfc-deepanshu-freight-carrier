@@ -31,7 +31,7 @@ export function ClientSignupCard({ onSignupSuccess }: ClientSignupCardProps) {
     e.preventDefault();
     setError('');
 
-    // Validate identifier
+    // Validate and normalize identifier
     const identifierValidation = validateClientIdentifier(formData.identifier);
     if (!identifierValidation.isValid) {
       setError(identifierValidation.errorMessage || 'Invalid email or mobile number');
@@ -50,13 +50,15 @@ export function ClientSignupCard({ onSignupSuccess }: ClientSignupCardProps) {
     }
 
     try {
-      const isEmail = formData.identifier.includes('@');
+      // Use normalized identifier and type from validation
+      const normalizedIdentifier = identifierValidation.normalized;
+      const isEmail = identifierValidation.type === 'email';
       
       await clientSignup.mutateAsync({
-        identifier: formData.identifier.trim(),
+        identifier: normalizedIdentifier,
         password: formData.password,
-        email: isEmail ? formData.identifier.trim() : undefined,
-        mobile: !isEmail ? formData.identifier.trim() : undefined,
+        email: isEmail ? normalizedIdentifier : undefined,
+        mobile: !isEmail ? normalizedIdentifier : undefined,
         companyName: formData.companyName,
         gstNumber: formData.gstNumber,
         address: formData.address,

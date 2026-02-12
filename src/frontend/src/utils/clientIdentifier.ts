@@ -1,11 +1,14 @@
 /**
  * Utility to validate and normalize client identifiers (email or mobile).
- * Returns validation result with user-facing English error messages.
+ * Returns validation result with user-facing English error messages and identifier type.
  */
+
+export type IdentifierType = 'email' | 'mobile';
 
 export interface IdentifierValidationResult {
   isValid: boolean;
   normalized: string;
+  type?: IdentifierType;
   errorMessage?: string;
 }
 
@@ -15,10 +18,12 @@ export interface IdentifierValidationResult {
  * Email validation:
  * - Must contain '@' symbol
  * - Basic format check
+ * - Returns trimmed/normalized email
  * 
  * Mobile validation:
  * - Must be exactly 10 digits
- * - Only numeric characters allowed
+ * - Strips spaces, dashes, and other non-digit characters
+ * - Returns normalized 10-digit number
  */
 export function validateClientIdentifier(input: string): IdentifierValidationResult {
   const trimmed = input.trim();
@@ -45,6 +50,7 @@ export function validateClientIdentifier(input: string): IdentifierValidationRes
     return {
       isValid: true,
       normalized: trimmed,
+      type: 'email',
     };
   }
 
@@ -57,7 +63,7 @@ export function validateClientIdentifier(input: string): IdentifierValidationRes
     };
   }
 
-  // Mobile number validation (10 digits only)
+  // Mobile number validation - strip spaces, dashes, and other non-digit characters
   const digitsOnly = trimmed.replace(/\D/g, '');
 
   if (digitsOnly.length !== 10) {
@@ -68,16 +74,10 @@ export function validateClientIdentifier(input: string): IdentifierValidationRes
     };
   }
 
-  if (trimmed !== digitsOnly) {
-    return {
-      isValid: false,
-      normalized: trimmed,
-      errorMessage: 'Mobile number must contain only digits (0-9).',
-    };
-  }
-
+  // Return normalized mobile number (digits only)
   return {
     isValid: true,
     normalized: digitsOnly,
+    type: 'mobile',
   };
 }

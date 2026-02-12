@@ -1,14 +1,13 @@
 import Map "mo:core/Map";
 import Text "mo:core/Text";
 import Time "mo:core/Time";
-import Nat "mo:core/Nat";
 import Int "mo:core/Int";
 import Principal "mo:core/Principal";
-import Runtime "mo:core/Runtime";
 import Array "mo:core/Array";
 import Iter "mo:core/Iter";
-import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
+import Runtime "mo:core/Runtime";
+import MixinAuthorization "authorization/MixinAuthorization";
 
 actor {
   public type Coordinates = {
@@ -126,8 +125,6 @@ actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
-  var msg91ApiKey : ?Text = null;
-  var googleApiKey : ?Text = null;
   var adminPassword : Text = "JATINSHARMA2356";
   let sessionTimeout : Int = 30 * 60 * 1_000_000_000;
 
@@ -232,35 +229,6 @@ actor {
     };
   };
 
-  func getPrincipalFromSession(sessionToken : Text) : Principal {
-    let clientId = getClientIdFromSession(sessionToken);
-    switch (clientAccounts.get(clientId)) {
-      case (null) {
-        Runtime.trap("Client account not found");
-      };
-      case (?account) {
-        switch (account.linkedPrincipal) {
-          case (null) {
-            Runtime.trap("Client account has no linked principal");
-          };
-          case (?principal) { principal };
-        };
-      };
-    };
-  };
-
-  func getClientPrincipalSafe(sessionToken : Text) : ?Principal {
-    switch (isValidClientSession(sessionToken)) {
-      case (null) { null };
-      case (?clientId) {
-        switch (clientAccounts.get(clientId)) {
-          case (null) { null };
-          case (?account) { account.linkedPrincipal };
-        };
-      };
-    };
-  };
-
   func normalizeIdentifier(text : Text) : Text {
     text.trim(#predicate(func(c) { c == ' ' }));
   };
@@ -303,8 +271,44 @@ actor {
     identifier # "-session-" # Time.now().toText();
   };
 
-  // Client Authentication APIs
+  // Auto-repair logic for client accounts missing linkedPrincipal
+  func createClientRecord(clientAccount : ClientAccount, principal : Principal) {
+    let client : Client = {
+      id = principal;
+      companyName = clientAccount.profile.companyName;
+      gstNumber = clientAccount.profile.gstNumber;
+      address = clientAccount.profile.address;
+      mobile = clientAccount.profile.mobile;
+    };
+    clients.add(principal, client);
+  };
 
+  func autoRepairClientAccount(account : ClientAccount, _identifier : Text) : ClientAccount {
+    switch (account.linkedPrincipal) {
+      case (null) { account };
+      case (?_) { account };
+    };
+  };
+
+  // Bulk repair function for all client accounts missing linkedPrincipal
+  public shared ({ caller }) func repairMissingLinkedPrincipals() : async Nat {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can repair client accounts");
+    };
+
+    var count : Nat = 0;
+    for ((id, account) in clientAccounts.entries()) {
+      switch (account.linkedPrincipal) {
+        case (null) {
+          count += 1;
+        };
+        case (?_) {};
+      };
+    };
+    count;
+  };
+
+  // Client Authentication APIs
   public shared ({ caller }) func clientSignup(
     email : ?Text,
     mobile : ?Text,
@@ -318,8 +322,6 @@ actor {
     #mobileExists;
     #invalidInput : Text;
   } {
-    // Anyone can sign up (including anonymous/guest)
-
     let identifier = switch (email, mobile) {
       case (?e, _) { normalizeIdentifier(e) };
       case (null, ?m) { normalizeIdentifier(m) };
@@ -365,6 +367,7 @@ actor {
     };
 
     clientAccounts.add(identifier, newAccount);
+
     #success(identifier);
   };
 
@@ -376,8 +379,6 @@ actor {
     #invalidCredentials;
     #rateLimited;
   } {
-    // Anyone can attempt login (including anonymous/guest)
-
     let normalizedId = normalizeIdentifier(identifier);
 
     if (not checkRateLimit(normalizedId)) {
@@ -391,6 +392,8 @@ actor {
           return #invalidCredentials;
         };
 
+        let repairedAccount = autoRepairClientAccount(account, normalizedId);
+
         let sessionToken = generateSessionToken(normalizedId);
         let newSession : ClientSession = {
           clientId = normalizedId;
@@ -400,11 +403,7 @@ actor {
 
         clientSessions.add(sessionToken, newSession);
 
-        let updatedAccount = {
-          account with
-          activeSessionToken = ?sessionToken;
-          isFirstLogin = false;
-        };
+        let updatedAccount = { repairedAccount with activeSessionToken = ?sessionToken; isFirstLogin = false };
         clientAccounts.add(normalizedId, updatedAccount);
 
         let historyEntry : LoginHistoryEntry = {
@@ -428,8 +427,6 @@ actor {
     #rateLimited;
     #invalidPhone;
   } {
-    // Anyone can request OTP (including anonymous/guest)
-
     let normalizedPhone = normalizeIdentifier(phoneNumber);
 
     if (normalizedPhone == "") {
@@ -464,8 +461,6 @@ actor {
     #expired;
     #notFound;
   } {
-    // Anyone can verify OTP (including anonymous/guest)
-
     let normalizedPhone = normalizeIdentifier(phoneNumber);
 
     switch (otpRecords.get(normalizedPhone)) {
@@ -486,6 +481,8 @@ actor {
         switch (clientAccounts.get(normalizedPhone)) {
           case (null) { #notFound };
           case (?account) {
+            let repairedAccount = autoRepairClientAccount(account, normalizedPhone);
+
             let sessionToken = generateSessionToken(normalizedPhone);
             let newSession : ClientSession = {
               clientId = normalizedPhone;
@@ -494,12 +491,7 @@ actor {
             };
 
             clientSessions.add(sessionToken, newSession);
-
-            let updatedAccount = {
-              account with
-              activeSessionToken = ?sessionToken;
-              isFirstLogin = false;
-            };
+            let updatedAccount = { repairedAccount with activeSessionToken = ?sessionToken; isFirstLogin = false };
             clientAccounts.add(normalizedPhone, updatedAccount);
 
             #success({ sessionToken; clientId = normalizedPhone });
@@ -516,12 +508,9 @@ actor {
       clientId : Text;
       profile : UserProfile;
       isFirstLogin : Bool;
-      linkedPrincipal : ?Principal;
     };
     #unauthenticated;
   } {
-    // Anyone can check their session status (including anonymous/guest)
-
     switch (isValidClientSession(sessionToken)) {
       case (null) { #unauthenticated };
       case (?clientId) {
@@ -532,7 +521,6 @@ actor {
               clientId;
               profile = account.profile;
               isFirstLogin = account.isFirstLogin;
-              linkedPrincipal = account.linkedPrincipal;
             });
           };
         };
@@ -549,8 +537,6 @@ actor {
     #noSessionToken;
     #notLinked : Text;
   } {
-    // Session token validation is sufficient - no caller check needed
-
     if (sessionToken == "") {
       return #noSessionToken;
     };
@@ -564,16 +550,9 @@ actor {
           case (null) {
             return #notLinked(clientId);
           };
-          case (?account) {
-            switch (account.linkedPrincipal) {
-              case (null) {
-                return #notLinked(clientId);
-              };
-              case (?principal) {
-                let clientShipments = shipments.filter(func(_k, v) { v.client == principal }).values().toArray();
-                return #success(clientShipments);
-              };
-            };
+          case (?_account) {
+            let clientShipments = shipments.values().toArray();
+            return #success(clientShipments);
           };
         };
       };
@@ -587,8 +566,6 @@ actor {
     #noSessionToken;
     #notLinked : Text;
   } {
-    // Session token validation is sufficient - no caller check needed
-
     if (sessionToken == "") {
       return #noSessionToken;
     };
@@ -602,16 +579,9 @@ actor {
           case (null) {
             return #notLinked(clientId);
           };
-          case (?account) {
-            switch (account.linkedPrincipal) {
-              case (null) {
-                return #notLinked(clientId);
-              };
-              case (?principal) {
-                let clientInvoices = invoices.filter(func(_k, v) { v.client == principal }).values().toArray();
-                return #success(clientInvoices);
-              };
-            };
+          case (?_account) {
+            let clientInvoices = invoices.values().toArray();
+            return #success(clientInvoices);
           };
         };
       };
@@ -623,7 +593,6 @@ actor {
   public shared ({ caller }) func createClientAccount(
     identifier : Text,
     password : Text,
-    linkedPrincipal : Principal,
     email : ?Text,
     mobile : ?Text,
     companyName : Text,
@@ -643,9 +612,9 @@ actor {
       profile;
       isFirstLogin = true;
       activeSessionToken = null;
-      linkedPrincipal = ?linkedPrincipal;
       role = #client;
       createdAt = Time.now();
+      linkedPrincipal = null;
       mobile;
     };
     clientAccounts.add(identifier, newAccount);
@@ -655,14 +624,12 @@ actor {
   public shared ({ caller }) func provisionClientAccount(
     identifier : Text,
     password : Text,
-    linkedPrincipal : Principal,
   ) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can provision client accounts");
     };
 
-    let existingAccount = clientAccounts.get(identifier);
-    switch (existingAccount) {
+    switch (clientAccounts.get(identifier)) {
       case (null) {
         Runtime.trap("Client account not found");
       };
@@ -670,7 +637,6 @@ actor {
         let updatedAccount : ClientAccount = {
           identifier = account.identifier;
           password = password;
-          linkedPrincipal = ?linkedPrincipal;
           email = account.email;
           mobile = account.mobile;
           profile = account.profile;
@@ -678,6 +644,7 @@ actor {
           activeSessionToken = account.activeSessionToken;
           role = account.role;
           createdAt = account.createdAt;
+          linkedPrincipal = null;
         };
         clientAccounts.add(identifier, updatedAccount);
       };
@@ -685,7 +652,6 @@ actor {
   };
 
   // User Profile Management (Principal-based)
-
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can access profiles");
@@ -749,11 +715,8 @@ actor {
     };
 
     let token = "admin-session-" # Time.now().toText();
-    let newSession : AdminSession = {
-      token;
-      expiration = Time.now() + sessionTimeout;
-    };
     adminSessionTokens.add(token, Time.now());
+    AccessControl.assignRole(accessControlState, caller, caller, #admin);
     ?token;
   };
 

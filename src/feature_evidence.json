@@ -2,30 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-re-enable-the-client-portal-login-ui-by-removing-the-hard-coded-disabled-state-and-unavailable-messaging-in-frontend-src-components-client-clientportallogincard-tsx-so-users-can-type-into-fields-and-submit-the-form",
-      "featureTitle": "Re-enable the Client Portal **Login** UI by removing the hard-coded disabled state and “Unavailable” messaging in `frontend/src/components/client/ClientPortalLoginCard.tsx` so users can type into fields and submit the form.",
+      "featureId": "feature-update-the-client-signup-ui-to-use-the-validated-normalized-identifier-value-from-validateclientidentifier-e-g-digit-only-mobile-normalization-when-deciding-whether-to-send-email-vs-mobile-and-when-submitting-the-signup-mutation-payload",
+      "featureTitle": "Update the client signup UI to use the validated/normalized identifier value from validateClientIdentifier (e.g., digit-only mobile normalization) when deciding whether to send email vs mobile and when submitting the signup mutation payload.",
       "files": [
-        "frontend/src/components/client/ClientPortalLoginCard.tsx"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "authorization@4.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-re-enable-the-client-portal-otp-login-ui-in-frontend-src-components-client-clientportallogincard-tsx-by-removing-hard-coded-disabled-props-and-preventing-unavailable-ux-ensure-otp-flow-buttons-respect-pending-loading-states-instead-of-being-permanently-disabled",
-      "featureTitle": "Re-enable the Client Portal **OTP login** UI in `frontend/src/components/client/ClientPortalLoginCard.tsx` by removing hard-coded `disabled` props and preventing ‘Unavailable’ UX. Ensure OTP flow buttons respect pending/loading states instead of being permanently disabled.",
-      "files": [
-        "frontend/src/components/client/ClientPortalLoginCard.tsx"
+        "frontend/src/components/client/ClientSignupCard.tsx",
+        "frontend/src/utils/clientIdentifier.ts"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -42,8 +23,8 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-ensure-the-client-portal-signup-path-is-not-blocked-by-any-ui-level-disabled-blocked-state-and-that-errors-from-backend-are-shown-clearly-in-frontend-src-components-client-clientsignupcard-tsx",
-      "featureTitle": "Ensure the Client Portal **Signup** path is not blocked by any UI-level disabled/blocked state and that errors from backend are shown clearly in `frontend/src/components/client/ClientSignupCard.tsx`.",
+      "featureId": "feature-improve-client-facing-error-messaging-for-unexpected-backend-traps-during-signup-map-the-specific-error-text-blob-too-long-for-principal-to-a-user-friendly-english-message-and-avoid-showing-raw-trap-text-in-the-ui",
+      "featureTitle": "Improve client-facing error messaging for unexpected backend traps during signup: map the specific error text \"blob too long for principal\" to a user-friendly English message and avoid showing raw trap text in the UI.",
       "files": [
         "frontend/src/utils/clientAuthErrors.ts"
       ],
@@ -58,26 +39,6 @@
       ],
       "testIds": [
         "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-wire-the-frontend-client-auth-mutations-queries-to-the-backend-methods-so-that-successful-login-signup-results-in-a-persisted-client-session-and-the-client-portal-section-renders-the-authenticated-experience-as-designed-in-frontend-src-app-tsx",
-      "featureTitle": "Wire the frontend client auth mutations/queries to the backend methods so that successful login/signup results in a persisted client session and the Client Portal section renders the authenticated experience as designed in `frontend/src/App.tsx`.",
-      "files": [
-        "frontend/src/hooks/useQueries.ts"
-      ],
-      "components": [
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "authorization@4.0.0",
-        "http-outcalls@3.0.0"
-      ],
-      "testIds": [
-        "REQ-5"
       ],
       "confidence": "high"
     }

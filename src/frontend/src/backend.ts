@@ -181,7 +181,7 @@ export interface backendInterface {
         __kind__: "success";
         success: string;
     }>;
-    createClientAccount(identifier: string, password: string, linkedPrincipal: Principal, email: string | null, mobile: string | null, companyName: string, gstNumber: string, address: string): Promise<string | null>;
+    createClientAccount(identifier: string, password: string, email: string | null, mobile: string | null, companyName: string, gstNumber: string, address: string): Promise<string | null>;
     getAllClients(sessionToken: string): Promise<AllClientsResponse | null>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
@@ -193,7 +193,6 @@ export interface backendInterface {
         authenticated: {
             clientId: string;
             isFirstLogin: boolean;
-            linkedPrincipal?: Principal;
             profile: UserProfile;
         };
     }>;
@@ -219,7 +218,8 @@ export interface backendInterface {
     }>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
-    provisionClientAccount(identifier: string, password: string, linkedPrincipal: Principal): Promise<void>;
+    provisionClientAccount(identifier: string, password: string): Promise<void>;
+    repairMissingLinkedPrincipals(): Promise<bigint>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     sendOtp(phoneNumber: string): Promise<Variant_invalidPhone_success_rateLimited>;
     validateAdminSession(sessionToken: string): Promise<string | null>;
@@ -337,17 +337,17 @@ export class Backend implements backendInterface {
             return from_candid_variant_n6(this._uploadFile, this._downloadFile, result);
         }
     }
-    async createClientAccount(arg0: string, arg1: string, arg2: Principal, arg3: string | null, arg4: string | null, arg5: string, arg6: string, arg7: string): Promise<string | null> {
+    async createClientAccount(arg0: string, arg1: string, arg2: string | null, arg3: string | null, arg4: string, arg5: string, arg6: string): Promise<string | null> {
         if (this.processError) {
             try {
-                const result = await this.actor.createClientAccount(arg0, arg1, arg2, to_candid_opt_n5(this._uploadFile, this._downloadFile, arg3), to_candid_opt_n5(this._uploadFile, this._downloadFile, arg4), arg5, arg6, arg7);
+                const result = await this.actor.createClientAccount(arg0, arg1, to_candid_opt_n5(this._uploadFile, this._downloadFile, arg2), to_candid_opt_n5(this._uploadFile, this._downloadFile, arg3), arg4, arg5, arg6);
                 return from_candid_opt_n1(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.createClientAccount(arg0, arg1, arg2, to_candid_opt_n5(this._uploadFile, this._downloadFile, arg3), to_candid_opt_n5(this._uploadFile, this._downloadFile, arg4), arg5, arg6, arg7);
+            const result = await this.actor.createClientAccount(arg0, arg1, to_candid_opt_n5(this._uploadFile, this._downloadFile, arg2), to_candid_opt_n5(this._uploadFile, this._downloadFile, arg3), arg4, arg5, arg6);
             return from_candid_opt_n1(this._uploadFile, this._downloadFile, result);
         }
     }
@@ -401,7 +401,6 @@ export class Backend implements backendInterface {
         authenticated: {
             clientId: string;
             isFirstLogin: boolean;
-            linkedPrincipal?: Principal;
             profile: UserProfile;
         };
     }> {
@@ -431,14 +430,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getClientInvoicesBySessionToken(arg0);
-                return from_candid_variant_n30(this._uploadFile, this._downloadFile, result);
+                return from_candid_variant_n29(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getClientInvoicesBySessionToken(arg0);
-            return from_candid_variant_n30(this._uploadFile, this._downloadFile, result);
+            return from_candid_variant_n29(this._uploadFile, this._downloadFile, result);
         }
     }
     async getClientShipmentsBySessionToken(arg0: string): Promise<{
@@ -454,14 +453,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getClientShipmentsBySessionToken(arg0);
-                return from_candid_variant_n31(this._uploadFile, this._downloadFile, result);
+                return from_candid_variant_n30(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getClientShipmentsBySessionToken(arg0);
-            return from_candid_variant_n31(this._uploadFile, this._downloadFile, result);
+            return from_candid_variant_n30(this._uploadFile, this._downloadFile, result);
         }
     }
     async getUserProfile(arg0: Principal): Promise<UserProfile | null> {
@@ -492,17 +491,31 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async provisionClientAccount(arg0: string, arg1: string, arg2: Principal): Promise<void> {
+    async provisionClientAccount(arg0: string, arg1: string): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.provisionClientAccount(arg0, arg1, arg2);
+                const result = await this.actor.provisionClientAccount(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.provisionClientAccount(arg0, arg1, arg2);
+            const result = await this.actor.provisionClientAccount(arg0, arg1);
+            return result;
+        }
+    }
+    async repairMissingLinkedPrincipals(): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.repairMissingLinkedPrincipals();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.repairMissingLinkedPrincipals();
             return result;
         }
     }
@@ -524,14 +537,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.sendOtp(arg0);
-                return from_candid_variant_n32(this._uploadFile, this._downloadFile, result);
+                return from_candid_variant_n31(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.sendOtp(arg0);
-            return from_candid_variant_n32(this._uploadFile, this._downloadFile, result);
+            return from_candid_variant_n31(this._uploadFile, this._downloadFile, result);
         }
     }
     async validateAdminSession(arg0: string): Promise<string | null> {
@@ -567,14 +580,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.verifyOtp(arg0, arg1);
-                return from_candid_variant_n33(this._uploadFile, this._downloadFile, result);
+                return from_candid_variant_n32(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.verifyOtp(arg0, arg1);
-            return from_candid_variant_n33(this._uploadFile, this._downloadFile, result);
+            return from_candid_variant_n32(this._uploadFile, this._downloadFile, result);
         }
     }
 }
@@ -692,24 +705,6 @@ function from_candid_record_n23(_uploadFile: (file: ExternalBlob) => Promise<Uin
         coordinates: record_opt_to_undefined(from_candid_opt_n24(_uploadFile, _downloadFile, value.coordinates))
     };
 }
-function from_candid_record_n29(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    clientId: string;
-    isFirstLogin: boolean;
-    linkedPrincipal: [] | [Principal];
-    profile: _UserProfile;
-}): {
-    clientId: string;
-    isFirstLogin: boolean;
-    linkedPrincipal?: Principal;
-    profile: UserProfile;
-} {
-    return {
-        clientId: value.clientId,
-        isFirstLogin: value.isFirstLogin,
-        linkedPrincipal: record_opt_to_undefined(from_candid_opt_n15(_uploadFile, _downloadFile, value.linkedPrincipal)),
-        profile: value.profile
-    };
-}
 function from_candid_record_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     clientAccounts: Array<_ClientAccount>;
     state: string;
@@ -759,7 +754,6 @@ function from_candid_variant_n28(_uploadFile: (file: ExternalBlob) => Promise<Ui
     authenticated: {
         clientId: string;
         isFirstLogin: boolean;
-        linkedPrincipal: [] | [Principal];
         profile: _UserProfile;
     };
 }): {
@@ -770,7 +764,6 @@ function from_candid_variant_n28(_uploadFile: (file: ExternalBlob) => Promise<Ui
     authenticated: {
         clientId: string;
         isFirstLogin: boolean;
-        linkedPrincipal?: Principal;
         profile: UserProfile;
     };
 } {
@@ -779,10 +772,10 @@ function from_candid_variant_n28(_uploadFile: (file: ExternalBlob) => Promise<Ui
         unauthenticated: value.unauthenticated
     } : "authenticated" in value ? {
         __kind__: "authenticated",
-        authenticated: from_candid_record_n29(_uploadFile, _downloadFile, value.authenticated)
+        authenticated: value.authenticated
     } : value;
 }
-function from_candid_variant_n30(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n29(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     noSessionToken: null;
 } | {
     notLinked: string;
@@ -809,7 +802,7 @@ function from_candid_variant_n30(_uploadFile: (file: ExternalBlob) => Promise<Ui
         success: from_candid_vec_n16(_uploadFile, _downloadFile, value.success)
     } : value;
 }
-function from_candid_variant_n31(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n30(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     noSessionToken: null;
 } | {
     notLinked: string;
@@ -836,7 +829,7 @@ function from_candid_variant_n31(_uploadFile: (file: ExternalBlob) => Promise<Ui
         success: from_candid_vec_n21(_uploadFile, _downloadFile, value.success)
     } : value;
 }
-function from_candid_variant_n32(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n31(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     invalidPhone: null;
 } | {
     success: null;
@@ -845,7 +838,7 @@ function from_candid_variant_n32(_uploadFile: (file: ExternalBlob) => Promise<Ui
 }): Variant_invalidPhone_success_rateLimited {
     return "invalidPhone" in value ? Variant_invalidPhone_success_rateLimited.invalidPhone : "success" in value ? Variant_invalidPhone_success_rateLimited.success : "rateLimited" in value ? Variant_invalidPhone_success_rateLimited.rateLimited : value;
 }
-function from_candid_variant_n33(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n32(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     expired: null;
 } | {
     invalidOtp: null;

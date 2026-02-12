@@ -11,6 +11,11 @@ export function getClientAuthErrorMessage(error: any): string {
   if (error.message && typeof error.message === 'string') {
     const msg = error.message.toLowerCase();
 
+    // Map "blob too long for principal" to user-friendly message
+    if (msg.includes('blob too long for principal')) {
+      return 'Signup failed due to a server error. Please try again or contact support.';
+    }
+
     // Backend-provided English messages - pass through
     if (
       msg.includes('invalid') ||

@@ -1,44 +1,26 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Enable Client Portal authentication UI: login and signup are currently hard-disabled in the frontend and need to be re-enabled so users can access the portal.",
-  "architectural_notes": [
-    "Client Portal Login UI appears intentionally disabled in frontend (e.g., disabled props + hard-coded 'Login (Unavailable)' messaging in ClientPortalLoginCard.tsx); similar issue reported for Signup UI."
-  ],
+  "summary": "New project",
+  "architectural_notes": [],
   "known_issues": [
-    "Client Portal Login and Signup screens are disabled/blocked via frontend UI (not a server error), preventing users from authenticating."
+    "User reports an unspecified problem after deployment (\"Ab yah kya problem hai\"); details unknown."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-re-enable-the-client-portal-login-ui-by-removing-the-hard-coded-disabled-state-and-unavailable-messaging-in-frontend-src-components-client-clientportallogincard-tsx-so-users-can-type-into-fields-and-submit-the-form",
-      "title": "Re-enable the Client Portal **Login** UI by removing the hard-coded disabled state and “Unavailable” messaging in `frontend/src/components/client/ClientPortalLoginCard.tsx` so users can type into fields and submit the form.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-re-enable-the-client-portal-otp-login-ui-in-frontend-src-components-client-clientportallogincard-tsx-by-removing-hard-coded-disabled-props-and-preventing-unavailable-ux-ensure-otp-flow-buttons-respect-pending-loading-states-instead-of-being-permanently-disabled",
-      "title": "Re-enable the Client Portal **OTP login** UI in `frontend/src/components/client/ClientPortalLoginCard.tsx` by removing hard-coded `disabled` props and preventing ‘Unavailable’ UX. Ensure OTP flow buttons respect pending/loading states instead of being permanently disabled.",
+      "id": "feature-update-the-client-signup-ui-to-use-the-validated-normalized-identifier-value-from-validateclientidentifier-e-g-digit-only-mobile-normalization-when-deciding-whether-to-send-email-vs-mobile-and-when-submitting-the-signup-mutation-payload",
+      "title": "Update the client signup UI to use the validated/normalized identifier value from validateClientIdentifier (e.g., digit-only mobile normalization) when deciding whether to send email vs mobile and when submitting the signup mutation payload.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-ensure-the-client-portal-signup-path-is-not-blocked-by-any-ui-level-disabled-blocked-state-and-that-errors-from-backend-are-shown-clearly-in-frontend-src-components-client-clientsignupcard-tsx",
-      "title": "Ensure the Client Portal **Signup** path is not blocked by any UI-level disabled/blocked state and that errors from backend are shown clearly in `frontend/src/components/client/ClientSignupCard.tsx`.",
+      "id": "feature-improve-client-facing-error-messaging-for-unexpected-backend-traps-during-signup-map-the-specific-error-text-blob-too-long-for-principal-to-a-user-friendly-english-message-and-avoid-showing-raw-trap-text-in-the-ui",
+      "title": "Improve client-facing error messaging for unexpected backend traps during signup: map the specific error text \"blob too long for principal\" to a user-friendly English message and avoid showing raw trap text in the UI.",
       "reqIds": [
         "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-wire-the-frontend-client-auth-mutations-queries-to-the-backend-methods-so-that-successful-login-signup-results-in-a-persisted-client-session-and-the-client-portal-section-renders-the-authenticated-experience-as-designed-in-frontend-src-app-tsx",
-      "title": "Wire the frontend client auth mutations/queries to the backend methods so that successful login/signup results in a persisted client session and the Client Portal section renders the authenticated experience as designed in `frontend/src/App.tsx`.",
-      "reqIds": [
-        "REQ-5"
       ],
       "version": 1
     }
@@ -46,26 +28,14 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Re-enable Client Portal Login UI (remove hard-coded disabled fields/button and warning so login can be used)",
-      "reqIds": [],
-      "status": "in_progress"
-    },
-    {
-      "id": "AR-2",
-      "summary": "Re-enable Client Portal Signup UI (remove any hard-coded disabled/blocked state so signup works)",
-      "reqIds": [],
-      "status": "in_progress"
-    },
-    {
-      "id": "AR-6",
-      "summary": "Implement backend client authentication APIs required for Client Portal login/signup so the frontend no longer needs to hide these flows. Add functions to `backend/main.mo` for: client signup, password login, send OTP, verify OTP, and retrieving client account status (as used by the frontend).",
+      "summary": "Fix backend client signup and auto-repair logic so it never traps with \"blob too long for principal\" when generating linkedPrincipal for email/mobile identifiers, including: clientSignup, autoRepairClientAccount, and repairMissingLinkedPrincipals.",
       "reqIds": [
-        "REQ-4"
+        "REQ-1"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Re-enable Client Portal Login and Signup (remove hard-disabled UI and implement missing client auth APIs)",
+  "projectName": "Fix client signup failure: \"blob too long for principal\"",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

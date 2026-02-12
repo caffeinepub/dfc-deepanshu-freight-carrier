@@ -107,7 +107,6 @@ export const idlService = IDL.Service({
       [
         IDL.Text,
         IDL.Text,
-        IDL.Principal,
         IDL.Opt(IDL.Text),
         IDL.Opt(IDL.Text),
         IDL.Text,
@@ -128,7 +127,6 @@ export const idlService = IDL.Service({
           'authenticated' : IDL.Record({
             'clientId' : IDL.Text,
             'isFirstLogin' : IDL.Bool,
-            'linkedPrincipal' : IDL.Opt(IDL.Principal),
             'profile' : UserProfile,
           }),
         }),
@@ -163,11 +161,8 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-  'provisionClientAccount' : IDL.Func(
-      [IDL.Text, IDL.Text, IDL.Principal],
-      [],
-      [],
-    ),
+  'provisionClientAccount' : IDL.Func([IDL.Text, IDL.Text], [], []),
+  'repairMissingLinkedPrincipals' : IDL.Func([], [IDL.Nat], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'sendOtp' : IDL.Func(
       [IDL.Text],
@@ -297,7 +292,6 @@ export const idlFactory = ({ IDL }) => {
         [
           IDL.Text,
           IDL.Text,
-          IDL.Principal,
           IDL.Opt(IDL.Text),
           IDL.Opt(IDL.Text),
           IDL.Text,
@@ -318,7 +312,6 @@ export const idlFactory = ({ IDL }) => {
             'authenticated' : IDL.Record({
               'clientId' : IDL.Text,
               'isFirstLogin' : IDL.Bool,
-              'linkedPrincipal' : IDL.Opt(IDL.Principal),
               'profile' : UserProfile,
             }),
           }),
@@ -353,11 +346,8 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-    'provisionClientAccount' : IDL.Func(
-        [IDL.Text, IDL.Text, IDL.Principal],
-        [],
-        [],
-      ),
+    'provisionClientAccount' : IDL.Func([IDL.Text, IDL.Text], [], []),
+    'repairMissingLinkedPrincipals' : IDL.Func([], [IDL.Nat], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'sendOtp' : IDL.Func(
         [IDL.Text],
