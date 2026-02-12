@@ -62,6 +62,19 @@ export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'adminLogin' : ActorMethod<[string], [] | [string]>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'clientPasswordLogin' : ActorMethod<
+    [string, string],
+    { 'success' : { 'clientId' : string, 'sessionToken' : string } } |
+      { 'rateLimited' : null } |
+      { 'invalidCredentials' : null }
+  >,
+  'clientSignup' : ActorMethod<
+    [[] | [string], [] | [string], string, string, string, string],
+    { 'invalidInput' : string } |
+      { 'mobileExists' : null } |
+      { 'emailExists' : null } |
+      { 'success' : string }
+  >,
   'createClientAccount' : ActorMethod<
     [
       string,
@@ -78,6 +91,18 @@ export interface _SERVICE {
   'getAllClients' : ActorMethod<[string], [] | [AllClientsResponse]>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getClientAccountStatus' : ActorMethod<
+    [string],
+    { 'unauthenticated' : null } |
+      {
+        'authenticated' : {
+          'clientId' : string,
+          'isFirstLogin' : boolean,
+          'linkedPrincipal' : [] | [Principal],
+          'profile' : UserProfile,
+        }
+      }
+  >,
   'getClientInvoicesBySessionToken' : ActorMethod<
     [string],
     { 'noSessionToken' : null } |
@@ -97,7 +122,20 @@ export interface _SERVICE {
     undefined
   >,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'sendOtp' : ActorMethod<
+    [string],
+    { 'invalidPhone' : null } |
+      { 'success' : null } |
+      { 'rateLimited' : null }
+  >,
   'validateAdminSession' : ActorMethod<[string], [] | [string]>,
+  'verifyOtp' : ActorMethod<
+    [string, string],
+    { 'expired' : null } |
+      { 'invalidOtp' : null } |
+      { 'notFound' : null } |
+      { 'success' : { 'clientId' : string, 'sessionToken' : string } }
+  >,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

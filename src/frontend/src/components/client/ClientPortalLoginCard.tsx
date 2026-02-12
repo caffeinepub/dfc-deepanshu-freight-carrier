@@ -90,6 +90,10 @@ export function ClientPortalLoginCard() {
     }
   };
 
+  const isPasswordFormValid = passwordForm.identifier.trim() && passwordForm.password.trim();
+  const isOtpPhoneValid = otpForm.phoneNumber.trim().length === 10;
+  const isOtpCodeValid = otpForm.otp.trim().length > 0;
+
   return (
     <Card className="bg-neutral-900 border-neutral-800 max-w-md mx-auto">
       <CardHeader>
@@ -123,6 +127,7 @@ export function ClientPortalLoginCard() {
                   onChange={(e) => setPasswordForm({ ...passwordForm, identifier: e.target.value })}
                   required
                   autoFocus
+                  disabled={clientLogin.isPending}
                   className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 h-12"
                 />
               </div>
@@ -138,6 +143,7 @@ export function ClientPortalLoginCard() {
                   value={passwordForm.password}
                   onChange={(e) => setPasswordForm({ ...passwordForm, password: e.target.value })}
                   required
+                  disabled={clientLogin.isPending}
                   className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 h-12"
                 />
               </div>
@@ -153,8 +159,8 @@ export function ClientPortalLoginCard() {
 
               <Button
                 type="submit"
-                disabled={clientLogin.isPending}
-                className="w-full bg-gold hover:bg-gold/90 text-black font-bold text-lg h-12 rounded-lg"
+                disabled={!isPasswordFormValid || clientLogin.isPending}
+                className="w-full bg-gold hover:bg-gold/90 text-black font-bold text-lg h-12 rounded-lg disabled:opacity-50"
               >
                 {clientLogin.isPending ? (
                   <>
@@ -187,6 +193,7 @@ export function ClientPortalLoginCard() {
                     maxLength={10}
                     required
                     autoFocus
+                    disabled={sendOtp.isPending}
                     className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 h-12"
                   />
                 </div>
@@ -202,8 +209,8 @@ export function ClientPortalLoginCard() {
 
                 <Button
                   type="submit"
-                  disabled={sendOtp.isPending}
-                  className="w-full bg-gold hover:bg-gold/90 text-black font-bold text-lg h-12 rounded-lg"
+                  disabled={!isOtpPhoneValid || sendOtp.isPending}
+                  className="w-full bg-gold hover:bg-gold/90 text-black font-bold text-lg h-12 rounded-lg disabled:opacity-50"
                 >
                   {sendOtp.isPending ? (
                     <>
@@ -239,6 +246,7 @@ export function ClientPortalLoginCard() {
                     maxLength={6}
                     required
                     autoFocus
+                    disabled={verifyOtp.isPending}
                     className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 h-12"
                   />
                 </div>
@@ -261,14 +269,15 @@ export function ClientPortalLoginCard() {
                       setOtpForm({ ...otpForm, otp: '' });
                       setOtpError('');
                     }}
-                    className="flex-1 border-neutral-700 hover:bg-neutral-800 text-white"
+                    disabled={verifyOtp.isPending}
+                    className="flex-1 border-neutral-700 hover:bg-neutral-800 text-white disabled:opacity-50"
                   >
                     Change Number
                   </Button>
                   <Button
                     type="submit"
-                    disabled={verifyOtp.isPending}
-                    className="flex-1 bg-gold hover:bg-gold/90 text-black font-bold"
+                    disabled={!isOtpCodeValid || verifyOtp.isPending}
+                    className="flex-1 bg-gold hover:bg-gold/90 text-black font-bold disabled:opacity-50"
                   >
                     {verifyOtp.isPending ? (
                       <>

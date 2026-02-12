@@ -1,18 +1,44 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "New project",
-  "architectural_notes": [],
+  "summary": "Enable Client Portal authentication UI: login and signup are currently hard-disabled in the frontend and need to be re-enabled so users can access the portal.",
+  "architectural_notes": [
+    "Client Portal Login UI appears intentionally disabled in frontend (e.g., disabled props + hard-coded 'Login (Unavailable)' messaging in ClientPortalLoginCard.tsx); similar issue reported for Signup UI."
+  ],
   "known_issues": [
-    "Server error/unavailable when loading Delivery History and Shipments (\"Failed to load... Please try again or contact support\")."
+    "Client Portal Login and Signup screens are disabled/blocked via frontend UI (not a server error), preventing users from authenticating."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-update-the-client-shipments-delivery-history-ui-error-handling-to-display-the-real-error-message-returned-by-react-query-when-available-instead-of-always-showing-only-the-generic-fallback-text-while-keeping-all-user-facing-text-in-english",
-      "title": "Update the Client Shipments/Delivery History UI error handling to display the real error message returned by React Query (when available) instead of always showing only the generic fallback text, while keeping all user-facing text in English.",
+      "id": "feature-re-enable-the-client-portal-login-ui-by-removing-the-hard-coded-disabled-state-and-unavailable-messaging-in-frontend-src-components-client-clientportallogincard-tsx-so-users-can-type-into-fields-and-submit-the-form",
+      "title": "Re-enable the Client Portal **Login** UI by removing the hard-coded disabled state and “Unavailable” messaging in `frontend/src/components/client/ClientPortalLoginCard.tsx` so users can type into fields and submit the form.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-re-enable-the-client-portal-otp-login-ui-in-frontend-src-components-client-clientportallogincard-tsx-by-removing-hard-coded-disabled-props-and-preventing-unavailable-ux-ensure-otp-flow-buttons-respect-pending-loading-states-instead-of-being-permanently-disabled",
+      "title": "Re-enable the Client Portal **OTP login** UI in `frontend/src/components/client/ClientPortalLoginCard.tsx` by removing hard-coded `disabled` props and preventing ‘Unavailable’ UX. Ensure OTP flow buttons respect pending/loading states instead of being permanently disabled.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-the-client-portal-signup-path-is-not-blocked-by-any-ui-level-disabled-blocked-state-and-that-errors-from-backend-are-shown-clearly-in-frontend-src-components-client-clientsignupcard-tsx",
+      "title": "Ensure the Client Portal **Signup** path is not blocked by any UI-level disabled/blocked state and that errors from backend are shown clearly in `frontend/src/components/client/ClientSignupCard.tsx`.",
       "reqIds": [
         "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-wire-the-frontend-client-auth-mutations-queries-to-the-backend-methods-so-that-successful-login-signup-results-in-a-persisted-client-session-and-the-client-portal-section-renders-the-authenticated-experience-as-designed-in-frontend-src-app-tsx",
+      "title": "Wire the frontend client auth mutations/queries to the backend methods so that successful login/signup results in a persisted client session and the Client Portal section renders the authenticated experience as designed in `frontend/src/App.tsx`.",
+      "reqIds": [
+        "REQ-5"
       ],
       "version": 1
     }
@@ -20,22 +46,26 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Implement the missing backend (Motoko) admin session APIs used by the frontend so Admin Login no longer fails with “Service unavailable. Please contact support.” when the app attempts to call `actor.adminLogin(...)` and validate tokens via `actor.getAllClients(...)`.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "status": "pending"
+      "summary": "Re-enable Client Portal Login UI (remove hard-coded disabled fields/button and warning so login can be used)",
+      "reqIds": [],
+      "status": "in_progress"
     },
     {
       "id": "AR-2",
-      "summary": "Implement the missing backend (Motoko) shipment/history APIs referenced by the frontend so the Client Dashboard can load shipments and delivery history without failing (including `getClientShipmentsBySessionToken(sessionToken)` and any other shipment methods that the frontend calls after login).",
+      "summary": "Re-enable Client Portal Signup UI (remove any hard-coded disabled/blocked state so signup works)",
+      "reqIds": [],
+      "status": "in_progress"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Implement backend client authentication APIs required for Client Portal login/signup so the frontend no longer needs to hide these flows. Add functions to `backend/main.mo` for: client signup, password login, send OTP, verify OTP, and retrieving client account status (as used by the frontend).",
       "reqIds": [
-        "REQ-2"
+        "REQ-4"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Fix service-unavailable errors for Admin Login and Client Shipments/Delivery History loading",
+  "projectName": "Re-enable Client Portal Login and Signup (remove hard-disabled UI and implement missing client auth APIs)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

@@ -1,109 +1,142 @@
 import { useState } from 'react';
-import { useGetAllClients } from '../../hooks/useQueries';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Client } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Users, Search, RefreshCw } from 'lucide-react';
-import { AdminClientDetail } from './AdminClientDetail';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Search, RefreshCw, Eye } from 'lucide-react';
+import { useGetAllClients } from '../../hooks/useQueries';
+import type { Client } from '../../lib/types';
 
-export function AdminClientsTable() {
-  const { data: clients, isLoading, refetch, isFetching } = useGetAllClients();
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+interface AdminClientsTableProps {
+  onSelectClient: (client: Client) => void;
+}
+
+export function AdminClientsTable({ onSelectClient }: AdminClientsTableProps) {
+  const { data: clientsData, isLoading, refetch, isFetching } = useGetAllClients();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredClients = clients?.filter(client =>
-    client.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.gstNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.mobile.includes(searchTerm)
+  const clients = clientsData?.clientAccounts || [];
+  const filteredClients = clients.filter(account =>
+    account.profile.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    account.identifier.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (selectedClient) {
-    return <AdminClientDetail client={selectedClient} onBack={() => setSelectedClient(null)} />;
+  if (isLoading) {
+    return (
+      <Card className="bg-neutral-900 border-neutral-800">
+        <CardContent className="py-8">
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full bg-neutral-800" />
+            <Skeleton className="h-10 w-full bg-neutral-800" />
+            <Skeleton className="h-10 w-full bg-neutral-800" />
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
     <Card className="bg-neutral-900 border-neutral-800">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-gold flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            All Clients
-          </CardTitle>
+          <div>
+            <CardTitle className="text-gold">Client Accounts</CardTitle>
+            <CardDescription className="text-white/70">
+              Manage client accounts and profiles
+            </CardDescription>
+          </div>
           <Button
-            variant="outline"
-            size="sm"
             onClick={() => refetch()}
             disabled={isFetching}
-            className="border-gold text-gold hover:bg-gold/10"
+            variant="outline"
+            size="sm"
+            className="border-neutral-700 hover:bg-neutral-800 text-white"
           >
-            {isFetching ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4" />
-            )}
+            <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+            Refresh
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="mb-4">
+        <div className="space-y-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/50" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 w-4 h-4" />
             <Input
-              placeholder="Search by company, GST, or mobile..."
+              type="text"
+              placeholder="Search by company name or identifier..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-neutral-950 border-neutral-700 text-white"
+              className="pl-10 bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50"
             />
           </div>
-        </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="w-6 h-6 text-gold animate-spin" />
-          </div>
-        ) : filteredClients && filteredClients.length > 0 ? (
-          <div className="border border-neutral-800 rounded-lg overflow-hidden">
+          <div className="rounded-md border border-neutral-800 overflow-hidden">
             <Table>
               <TableHeader>
-                <TableRow className="bg-neutral-950 border-neutral-800 hover:bg-neutral-950">
+                <TableRow className="border-neutral-800 hover:bg-neutral-800/50">
                   <TableHead className="text-gold">Company Name</TableHead>
-                  <TableHead className="text-gold">GST Number</TableHead>
+                  <TableHead className="text-gold">Identifier</TableHead>
                   <TableHead className="text-gold">Mobile</TableHead>
-                  <TableHead className="text-gold">Actions</TableHead>
+                  <TableHead className="text-gold">GST Number</TableHead>
+                  <TableHead className="text-gold text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredClients.map((client) => (
-                  <TableRow key={client.id.toString()} className="border-neutral-800">
-                    <TableCell className="text-white font-medium">{client.companyName}</TableCell>
-                    <TableCell className="text-white/90">{client.gstNumber}</TableCell>
-                    <TableCell className="text-white/70">{client.mobile}</TableCell>
-                    <TableCell>
-                      <Button
-                        size="sm"
-                        onClick={() => setSelectedClient(client)}
-                        className="bg-gold hover:bg-gold/90 text-black"
-                      >
-                        View Details
-                      </Button>
+                {filteredClients.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-white/50 py-8">
+                      {searchTerm ? 'No clients found matching your search' : 'No client accounts yet'}
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  filteredClients.map((account) => (
+                    <TableRow
+                      key={account.identifier}
+                      className="border-neutral-800 hover:bg-neutral-800/50"
+                    >
+                      <TableCell className="text-white font-medium">
+                        {account.profile.companyName}
+                      </TableCell>
+                      <TableCell className="text-white/70">
+                        {account.identifier}
+                      </TableCell>
+                      <TableCell className="text-white/70">
+                        {account.profile.mobile || account.mobile || 'N/A'}
+                      </TableCell>
+                      <TableCell className="text-white/70">
+                        {account.profile.gstNumber}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          onClick={() => {
+                            if (account.linkedPrincipal) {
+                              const client: Client = {
+                                id: account.linkedPrincipal,
+                                companyName: account.profile.companyName,
+                                gstNumber: account.profile.gstNumber,
+                                address: account.profile.address,
+                                mobile: account.profile.mobile,
+                              };
+                              onSelectClient(client);
+                            }
+                          }}
+                          variant="ghost"
+                          size="sm"
+                          className="text-gold hover:text-gold/80 hover:bg-neutral-800"
+                          disabled={!account.linkedPrincipal}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
-        ) : (
-          <div className="text-center py-8 text-white/50">
-            <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>
-              {searchTerm
-                ? 'No clients found matching your search.'
-                : 'No clients yet. Clients will appear here after they sign up or are created by admin.'}
-            </p>
-          </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );

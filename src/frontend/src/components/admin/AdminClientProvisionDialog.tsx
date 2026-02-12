@@ -79,7 +79,7 @@ export function AdminClientProvisionDialog() {
       await createAccount.mutateAsync({
         identifier,
         password: tempPassword,
-        linkedPrincipal: Principal.fromText(formData.clientPrincipalId.trim()),
+        linkedPrincipal: formData.clientPrincipalId.trim(),
         email: formData.email || undefined,
         mobile: formData.mobile || undefined,
         companyName: formData.companyName,
@@ -88,11 +88,10 @@ export function AdminClientProvisionDialog() {
       });
 
       // Step 2: Link the account to the client Principal
-      const linkedPrincipal = Principal.fromText(formData.clientPrincipalId.trim());
       await provisionAccount.mutateAsync({
         identifier,
         password: tempPassword,
-        linkedPrincipal,
+        linkedPrincipal: formData.clientPrincipalId.trim(),
       });
 
       setGeneratedPassword(tempPassword);
@@ -217,8 +216,6 @@ export function AdminClientProvisionDialog() {
               </div>
             </div>
 
-            <p className="text-xs text-white/50">* At least one of Email or Mobile is required</p>
-
             <div className="space-y-2">
               <Label htmlFor="companyName" className="text-white">
                 Company Name *
@@ -266,15 +263,18 @@ export function AdminClientProvisionDialog() {
             <Button
               type="submit"
               disabled={isPending}
-              className="w-full bg-gold hover:bg-gold/90 text-black font-semibold"
+              className="w-full bg-gold hover:bg-gold/90 text-black font-bold"
             >
               {isPending ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating and Linking Account...
+                  Creating Account...
                 </>
               ) : (
-                'Create and Link Account'
+                <>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Create Account
+                </>
               )}
             </Button>
           </form>
@@ -283,51 +283,53 @@ export function AdminClientProvisionDialog() {
             <Alert className="bg-green-900/20 border-green-800">
               <CheckCircle2 className="h-4 w-4 text-green-500" />
               <AlertDescription className="text-green-400">
-                Client account created and linked successfully!
-              </AlertDescription>
-            </Alert>
-
-            <Alert className="bg-yellow-900/20 border-yellow-800">
-              <AlertCircle className="h-4 w-4 text-yellow-500" />
-              <AlertDescription className="text-yellow-400">
-                <strong>Important:</strong> This temporary password will only be shown once. Make sure to copy it now.
+                Client account created successfully! Share the credentials below with the client.
               </AlertDescription>
             </Alert>
 
             <div className="space-y-2">
+              <Label className="text-white">Login Identifier</Label>
+              <div className="p-3 bg-neutral-950 border border-neutral-700 rounded-md text-white font-mono">
+                {formData.email || formData.mobile}
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <Label className="text-white">Temporary Password</Label>
               <div className="flex gap-2">
-                <Input
-                  type="text"
-                  value={generatedPassword}
-                  readOnly
-                  className="bg-neutral-950 border-neutral-700 text-white font-mono text-lg"
-                />
+                <div className="flex-1 p-3 bg-neutral-950 border border-neutral-700 rounded-md text-white font-mono">
+                  {generatedPassword}
+                </div>
                 <Button
-                  type="button"
                   onClick={handleCopyPassword}
                   variant="outline"
-                  className="border-neutral-700 hover:bg-neutral-800"
+                  className="border-neutral-700 hover:bg-neutral-800 text-white"
                 >
                   {copied ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <>
+                      <CheckCircle2 className="w-4 h-4 mr-2" />
+                      Copied
+                    </>
                   ) : (
-                    <Copy className="w-4 h-4" />
+                    <>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy
+                    </>
                   )}
                 </Button>
               </div>
             </div>
 
-            <Alert className="bg-blue-900/20 border-blue-800">
-              <AlertCircle className="h-4 w-4 text-blue-500" />
-              <AlertDescription className="text-blue-400 text-sm">
-                Share this password with the client. They will be prompted to change it on first login.
+            <Alert className="bg-yellow-900/20 border-yellow-800">
+              <AlertCircle className="h-4 w-4 text-yellow-500" />
+              <AlertDescription className="text-yellow-400 text-sm">
+                The client will be required to change this password on first login for security.
               </AlertDescription>
             </Alert>
 
             <Button
               onClick={handleClose}
-              className="w-full bg-gold hover:bg-gold/90 text-black font-semibold"
+              className="w-full bg-gold hover:bg-gold/90 text-black font-bold"
             >
               Done
             </Button>

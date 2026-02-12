@@ -1,42 +1,91 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-11T14:26:15.103Z",
-  "summary": "REQ-3 (error-message extraction for the Client Shipments UI) appears implemented via a new `getQueryErrorMessage` utility and usage in `ClientShipmentsTable`. The diff summary is truncated and does not provide evidence that the backend Motoko actor now exposes the required admin session APIs (REQ-1) or the client shipment/history APIs/variant responses (REQ-2), nor that Delivery History UI error handling was updated (REQ-3 scope includes shipments + delivery history).",
+  "generatedAt": "2026-02-12T02:45:09.549Z",
+  "summary": "Diff adds substantial new admin/dashboard functionality and introduces client auth hooks plus an updated ClientPortalLoginCard. However, the requested ClientSignupCard changes are not evidenced in the provided diff summary, and backend client-auth API implementations are not clearly visible due to truncation.",
   "missing_requirements": [
     {
-      "id": "REQ-1",
-      "requirement": "Implement backend admin session APIs so frontend calls to `actor.adminLogin(...)` and token validation via `actor.getAllClients(...)` no longer fail, including clear English errors for invalid password.",
-      "reason": "The provided `backend/main.mo` diff is truncated and does not show any `public` method definitions for `adminLogin` or `getAllClients`, nor any explicit admin-session-token validation/error behavior. Without those method signatures/implementations visible in the diff summary, this requirement cannot be verified as implemented.",
-      "evidence": [
-        "backend/main.mo (truncated)"
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "requirement": "Implement backend shipment/history APIs used by the frontend (including `getClientShipmentsBySessionToken(sessionToken)` and other post-login shipment methods) with variant-style responses compatible with `unwrapVariantResponse` (success/noSessionToken/notLinked).",
-      "reason": "The diff summary does not show any backend `public` APIs for `getClientShipmentsBySessionToken` or related shipment/history retrieval methods, nor evidence of the required variant response shapes. The backend file content is truncated before any such methods would be verifiable.",
-      "evidence": [
-        "backend/main.mo (truncated)"
-      ]
-    },
-    {
       "id": "REQ-3",
-      "requirement": "Update the Client Shipments/Delivery History UI error handling to display the real error message returned by React Query when available (with a safe English fallback).",
-      "reason": "Evidence is shown for improved error handling in `ClientShipmentsTable.tsx`, but the diff summary does not show corresponding changes for the Delivery History UI component(s). Since REQ-3 explicitly covers both Shipments and Delivery History, implementation for Delivery History cannot be verified from the provided diff summary.",
+      "requirement": "Ensure the Client Portal Signup path is not blocked by any UI-level disabled/blocked state and that errors from backend are shown clearly in frontend/src/components/client/ClientSignupCard.tsx.",
+      "reason": "The diff summary does not show any modification to frontend/src/components/client/ClientSignupCard.tsx, so there is no evidence that signup fields/buttons were re-enabled or that backend errors are rendered in the existing error alert area.",
       "evidence": [
-        "frontend/src/components/client/ClientShipmentsTable.tsx",
-        "frontend/src/utils/queryErrorMessage.ts"
+        "MODIFIED FILES list does not include frontend/src/components/client/ClientSignupCard.tsx"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "requirement": "Implement backend client authentication APIs in backend/main.mo for client signup, password login, send OTP, verify OTP, and retrieving client account status.",
+      "reason": "backend/main.mo is truncated and the visible portion shows new types/state (ClientAccount, ClientSession, OtpRecord, rate limiting) but does not show the required public methods (e.g., clientSignup, clientPasswordLogin, sendOtp, verifyOtp, client account status). Therefore implementation cannot be confirmed from the provided diff summary.",
+      "evidence": [
+        "backend/main.mo (truncated): shows types/maps and rate limit helpers but no visible public API methods"
       ]
     }
   ],
-  "hallucinated_features": [],
-  "confidence": 0.64,
+  "hallucinated_features": [
+    {
+      "description": "Admin dashboard enhancements (new/expanded tabbed interface and additional admin panels such as Revenue Analytics, Login History, Configuration UI).",
+      "reason": "BuildRequest explicitly lists redesigning the admin dashboard/admin auth as a non-goal; these admin UI additions are not requested by REQ-1..REQ-5.",
+      "evidence": [
+        "frontend/src/components/admin/AdminDashboard.tsx",
+        "frontend/src/components/admin/AdminRevenuePanel.tsx",
+        "frontend/src/components/admin/AdminLoginHistoryPanel.tsx"
+      ]
+    },
+    {
+      "description": "Admin client account provisioning flow (dialog that generates passwords, creates/provisions accounts, copy-to-clipboard, principal validation).",
+      "reason": "Not requested in REQ-1..REQ-5 (scope is client portal login/signup re-enable + backend client auth APIs).",
+      "evidence": [
+        "frontend/src/components/admin/AdminClientProvisionDialog.tsx"
+      ]
+    },
+    {
+      "description": "Admin clients table/search and multiple admin CRUD UI changes (clients/shipments/invoices tables and forms).",
+      "reason": "Not requested by the BuildRequest and falls under admin dashboard work (non-goal).",
+      "evidence": [
+        "frontend/src/components/admin/AdminClientsTable.tsx",
+        "frontend/src/components/admin/AdminClientForm.tsx",
+        "frontend/src/components/admin/AdminShipmentsTable.tsx",
+        "frontend/src/components/admin/AdminInvoicesTable.tsx"
+      ]
+    },
+    {
+      "description": "Google Maps script-loading optimization in AdminTrackingPanel (deferred script loading, cleanup, enabled prop behavior).",
+      "reason": "Not requested by REQ-1..REQ-5.",
+      "evidence": [
+        "frontend/src/components/AdminTrackingPanel.tsx"
+      ]
+    },
+    {
+      "description": "Local storage shipments seed/utility implementation.",
+      "reason": "Not requested by the BuildRequest.",
+      "evidence": [
+        "frontend/src/lib/shipmentsStorage.ts (mentioned in frontend-file-summaries.txt)"
+      ]
+    },
+    {
+      "description": "Introduction of a new frontend utility for client auth error messaging (getClientAuthErrorMessage).",
+      "reason": "Not explicitly requested (BuildRequest references using existing error handling utilities; this appears to add a new utility).",
+      "evidence": [
+        "frontend/src/utils/clientAuthErrors.ts"
+      ]
+    }
+  ],
+  "confidence": 0.66,
   "changed_files": [
     "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/client/ClientShipmentsTable.tsx",
-    "frontend/src/utils/queryErrorMessage.ts",
+    "frontend/src/components/AdminTrackingPanel.tsx",
+    "frontend/src/components/admin/AdminClientForm.tsx",
+    "frontend/src/components/admin/AdminClientProvisionDialog.tsx",
+    "frontend/src/components/admin/AdminClientsTable.tsx",
+    "frontend/src/components/admin/AdminDashboard.tsx",
+    "frontend/src/components/admin/AdminInvoicesTable.tsx",
+    "frontend/src/components/admin/AdminLoginHistoryPanel.tsx",
+    "frontend/src/components/admin/AdminRevenuePanel.tsx",
+    "frontend/src/components/admin/AdminShipmentsTable.tsx",
+    "frontend/src/components/client/ClientPortalLoginCard.tsx",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/utils/clientAuthErrors.ts",
     "project_state.json"
   ]
 }

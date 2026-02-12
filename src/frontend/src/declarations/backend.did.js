@@ -70,6 +70,39 @@ export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'adminLogin' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'clientPasswordLogin' : IDL.Func(
+      [IDL.Text, IDL.Text],
+      [
+        IDL.Variant({
+          'success' : IDL.Record({
+            'clientId' : IDL.Text,
+            'sessionToken' : IDL.Text,
+          }),
+          'rateLimited' : IDL.Null,
+          'invalidCredentials' : IDL.Null,
+        }),
+      ],
+      [],
+    ),
+  'clientSignup' : IDL.Func(
+      [
+        IDL.Opt(IDL.Text),
+        IDL.Opt(IDL.Text),
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+      ],
+      [
+        IDL.Variant({
+          'invalidInput' : IDL.Text,
+          'mobileExists' : IDL.Null,
+          'emailExists' : IDL.Null,
+          'success' : IDL.Text,
+        }),
+      ],
+      [],
+    ),
   'createClientAccount' : IDL.Func(
       [
         IDL.Text,
@@ -87,6 +120,21 @@ export const idlService = IDL.Service({
   'getAllClients' : IDL.Func([IDL.Text], [IDL.Opt(AllClientsResponse)], []),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getClientAccountStatus' : IDL.Func(
+      [IDL.Text],
+      [
+        IDL.Variant({
+          'unauthenticated' : IDL.Null,
+          'authenticated' : IDL.Record({
+            'clientId' : IDL.Text,
+            'isFirstLogin' : IDL.Bool,
+            'linkedPrincipal' : IDL.Opt(IDL.Principal),
+            'profile' : UserProfile,
+          }),
+        }),
+      ],
+      ['query'],
+    ),
   'getClientInvoicesBySessionToken' : IDL.Func(
       [IDL.Text],
       [
@@ -121,7 +169,33 @@ export const idlService = IDL.Service({
       [],
     ),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'sendOtp' : IDL.Func(
+      [IDL.Text],
+      [
+        IDL.Variant({
+          'invalidPhone' : IDL.Null,
+          'success' : IDL.Null,
+          'rateLimited' : IDL.Null,
+        }),
+      ],
+      [],
+    ),
   'validateAdminSession' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
+  'verifyOtp' : IDL.Func(
+      [IDL.Text, IDL.Text],
+      [
+        IDL.Variant({
+          'expired' : IDL.Null,
+          'invalidOtp' : IDL.Null,
+          'notFound' : IDL.Null,
+          'success' : IDL.Record({
+            'clientId' : IDL.Text,
+            'sessionToken' : IDL.Text,
+          }),
+        }),
+      ],
+      [],
+    ),
 });
 
 export const idlInitArgs = [];
@@ -186,6 +260,39 @@ export const idlFactory = ({ IDL }) => {
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'adminLogin' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'clientPasswordLogin' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [
+          IDL.Variant({
+            'success' : IDL.Record({
+              'clientId' : IDL.Text,
+              'sessionToken' : IDL.Text,
+            }),
+            'rateLimited' : IDL.Null,
+            'invalidCredentials' : IDL.Null,
+          }),
+        ],
+        [],
+      ),
+    'clientSignup' : IDL.Func(
+        [
+          IDL.Opt(IDL.Text),
+          IDL.Opt(IDL.Text),
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+        ],
+        [
+          IDL.Variant({
+            'invalidInput' : IDL.Text,
+            'mobileExists' : IDL.Null,
+            'emailExists' : IDL.Null,
+            'success' : IDL.Text,
+          }),
+        ],
+        [],
+      ),
     'createClientAccount' : IDL.Func(
         [
           IDL.Text,
@@ -203,6 +310,21 @@ export const idlFactory = ({ IDL }) => {
     'getAllClients' : IDL.Func([IDL.Text], [IDL.Opt(AllClientsResponse)], []),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getClientAccountStatus' : IDL.Func(
+        [IDL.Text],
+        [
+          IDL.Variant({
+            'unauthenticated' : IDL.Null,
+            'authenticated' : IDL.Record({
+              'clientId' : IDL.Text,
+              'isFirstLogin' : IDL.Bool,
+              'linkedPrincipal' : IDL.Opt(IDL.Principal),
+              'profile' : UserProfile,
+            }),
+          }),
+        ],
+        ['query'],
+      ),
     'getClientInvoicesBySessionToken' : IDL.Func(
         [IDL.Text],
         [
@@ -237,10 +359,36 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'sendOtp' : IDL.Func(
+        [IDL.Text],
+        [
+          IDL.Variant({
+            'invalidPhone' : IDL.Null,
+            'success' : IDL.Null,
+            'rateLimited' : IDL.Null,
+          }),
+        ],
+        [],
+      ),
     'validateAdminSession' : IDL.Func(
         [IDL.Text],
         [IDL.Opt(IDL.Text)],
         ['query'],
+      ),
+    'verifyOtp' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [
+          IDL.Variant({
+            'expired' : IDL.Null,
+            'invalidOtp' : IDL.Null,
+            'notFound' : IDL.Null,
+            'success' : IDL.Record({
+              'clientId' : IDL.Text,
+              'sessionToken' : IDL.Text,
+            }),
+          }),
+        ],
+        [],
       ),
   });
 };

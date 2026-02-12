@@ -1,129 +1,89 @@
 import { useState, FormEvent } from 'react';
-import { Principal } from '@icp-sdk/core/principal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAdminAddOrUpdateClient } from '../../hooks/useQueries';
-import { AdminClientProvisionDialog } from './AdminClientProvisionDialog';
-import { toast } from 'sonner';
-import { Loader2, UserPlus } from 'lucide-react';
+import { Loader2, Save, AlertCircle } from 'lucide-react';
+import type { Client } from '../../lib/types';
 
-export function AdminClientForm() {
+interface AdminClientFormProps {
+  client?: Client;
+  onSuccess?: () => void;
+}
+
+export function AdminClientForm({ client, onSuccess }: AdminClientFormProps) {
   const [formData, setFormData] = useState({
-    clientPrincipal: '',
-    companyName: '',
-    gstNumber: '',
-    address: '',
-    mobile: ''
+    principalId: client?.id.toString() || '',
+    companyName: client?.companyName || '',
+    gstNumber: client?.gstNumber || '',
+    address: client?.address || '',
+    mobile: client?.mobile || '',
   });
-  const [principalError, setPrincipalError] = useState('');
+  const [error, setError] = useState('');
 
-  const addOrUpdateClient = useAdminAddOrUpdateClient();
-
-  const validatePrincipal = (value: string): boolean => {
-    if (!value.trim()) {
-      setPrincipalError('');
-      return false;
-    }
-
-    try {
-      Principal.fromText(value.trim());
-      setPrincipalError('');
-      return true;
-    } catch (error) {
-      setPrincipalError('Invalid Principal ID format');
-      return false;
-    }
-  };
-
-  const handlePrincipalChange = (value: string) => {
-    setFormData({ ...formData, clientPrincipal: value });
-    if (value.trim()) {
-      validatePrincipal(value);
-    } else {
-      setPrincipalError('');
-    }
-  };
+  const updateClient = useAdminAddOrUpdateClient();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setError('');
 
-    if (!validatePrincipal(formData.clientPrincipal)) {
-      toast.error('Please enter a valid Client Principal ID');
+    // Validate Principal ID format
+    if (!formData.principalId.trim()) {
+      setError('Client Principal ID is required');
       return;
     }
 
     try {
-      const clientIdString = formData.clientPrincipal.trim();
-      const clientPrincipal = Principal.fromText(clientIdString);
-      
-      await addOrUpdateClient.mutateAsync({
-        clientId: clientPrincipal,
-        profile: {
-          companyName: formData.companyName,
-          gstNumber: formData.gstNumber,
-          address: formData.address,
-          mobile: formData.mobile
-        }
+      await updateClient.mutateAsync({
+        principalId: formData.principalId.trim(),
+        companyName: formData.companyName,
+        gstNumber: formData.gstNumber,
+        address: formData.address,
+        mobile: formData.mobile,
       });
 
-      toast.success('Client profile saved successfully');
-      
-      // Clear form
-      setFormData({
-        clientPrincipal: '',
-        companyName: '',
-        gstNumber: '',
-        address: '',
-        mobile: ''
-      });
-      setPrincipalError('');
-    } catch (error) {
-      console.error('Failed to save client:', error);
-      toast.error('Failed to save client profile');
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error: any) {
+      setError(error.message || 'Failed to update client profile');
     }
   };
 
+  const clientPrincipal = client?.id.toString() || '';
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h3 className="text-xl font-semibold text-gold mb-4">Create Client Account with Login</h3>
-        <p className="text-white/70 text-sm mb-4">
-          Provision a new client account with email/mobile login credentials and temporary password.
-        </p>
-        <AdminClientProvisionDialog />
-      </div>
-
-      <Separator className="bg-neutral-700" />
-
-      <div>
-        <h3 className="text-xl font-semibold text-gold mb-4">Update Client Profile by Principal</h3>
-        <p className="text-white/70 text-sm mb-4">
-          Update profile information for an existing client using their Principal ID.
-        </p>
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <Card className="bg-neutral-900 border-neutral-800">
+      <CardHeader>
+        <CardTitle className="text-gold">
+          {client ? 'Update Client Profile' : 'Add Client Profile'}
+        </CardTitle>
+        <CardDescription className="text-white/70">
+          {client ? 'Update the profile information for this client' : 'Add profile information for a new client'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="clientPrincipal" className="text-white">
+            <Label htmlFor="principalId" className="text-white">
               Client Principal ID *
             </Label>
             <Input
-              id="clientPrincipal"
+              id="principalId"
               type="text"
-              placeholder="Enter client's Principal ID"
-              value={formData.clientPrincipal}
-              onChange={(e) => handlePrincipalChange(e.target.value)}
+              placeholder="Enter Principal ID"
+              value={formData.principalId}
+              onChange={(e) => setFormData({ ...formData, principalId: e.target.value })}
               required
+              disabled={!!client}
               className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50"
             />
-            {principalError && (
-              <p className="text-sm text-red-500">{principalError}</p>
+            {client && (
+              <p className="text-xs text-white/50">Principal ID cannot be changed</p>
             )}
-            <p className="text-xs text-white/50">
-              The unique Principal ID for the client
-            </p>
           </div>
 
           <div className="space-y-2">
@@ -157,20 +117,6 @@ export function AdminClientForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="address" className="text-white">
-              Address *
-            </Label>
-            <Textarea
-              id="address"
-              placeholder="Enter complete address"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              required
-              className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 min-h-24"
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="mobile" className="text-white">
               Mobile Number *
             </Label>
@@ -185,25 +131,48 @@ export function AdminClientForm() {
             />
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="address" className="text-white">
+              Address *
+            </Label>
+            <Textarea
+              id="address"
+              placeholder="Enter complete address"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              required
+              className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 min-h-20"
+            />
+          </div>
+
+          {error && (
+            <Alert variant="destructive" className="bg-red-950/50 border-red-900">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-white/90">
+                {error}
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Button
             type="submit"
-            disabled={addOrUpdateClient.isPending || !!principalError}
-            className="w-full bg-gold hover:bg-gold/90 text-black font-semibold"
+            disabled={updateClient.isPending}
+            className="w-full bg-gold hover:bg-gold/90 text-black font-bold"
           >
-            {addOrUpdateClient.isPending ? (
+            {updateClient.isPending ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Saving...
               </>
             ) : (
               <>
-                <UserPlus className="w-4 h-4 mr-2" />
-                Save Client Profile
+                <Save className="w-4 h-4 mr-2" />
+                {client ? 'Update Profile' : 'Add Profile'}
               </>
             )}
           </Button>
         </form>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

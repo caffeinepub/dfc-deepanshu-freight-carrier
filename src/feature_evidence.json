@@ -2,11 +2,50 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-client-shipments-delivery-history-ui-error-handling-to-display-the-real-error-message-returned-by-react-query-when-available-instead-of-always-showing-only-the-generic-fallback-text-while-keeping-all-user-facing-text-in-english",
-      "featureTitle": "Update the Client Shipments/Delivery History UI error handling to display the real error message returned by React Query (when available) instead of always showing only the generic fallback text, while keeping all user-facing text in English.",
+      "featureId": "feature-re-enable-the-client-portal-login-ui-by-removing-the-hard-coded-disabled-state-and-unavailable-messaging-in-frontend-src-components-client-clientportallogincard-tsx-so-users-can-type-into-fields-and-submit-the-form",
+      "featureTitle": "Re-enable the Client Portal **Login** UI by removing the hard-coded disabled state and “Unavailable” messaging in `frontend/src/components/client/ClientPortalLoginCard.tsx` so users can type into fields and submit the form.",
       "files": [
-        "frontend/src/components/client/ClientShipmentsTable.tsx",
-        "frontend/src/utils/queryErrorMessage.ts"
+        "frontend/src/components/client/ClientPortalLoginCard.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "authorization@4.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-re-enable-the-client-portal-otp-login-ui-in-frontend-src-components-client-clientportallogincard-tsx-by-removing-hard-coded-disabled-props-and-preventing-unavailable-ux-ensure-otp-flow-buttons-respect-pending-loading-states-instead-of-being-permanently-disabled",
+      "featureTitle": "Re-enable the Client Portal **OTP login** UI in `frontend/src/components/client/ClientPortalLoginCard.tsx` by removing hard-coded `disabled` props and preventing ‘Unavailable’ UX. Ensure OTP flow buttons respect pending/loading states instead of being permanently disabled.",
+      "files": [
+        "frontend/src/components/client/ClientPortalLoginCard.tsx"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "authorization@4.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-ensure-the-client-portal-signup-path-is-not-blocked-by-any-ui-level-disabled-blocked-state-and-that-errors-from-backend-are-shown-clearly-in-frontend-src-components-client-clientsignupcard-tsx",
+      "featureTitle": "Ensure the Client Portal **Signup** path is not blocked by any UI-level disabled/blocked state and that errors from backend are shown clearly in `frontend/src/components/client/ClientSignupCard.tsx`.",
+      "files": [
+        "frontend/src/utils/clientAuthErrors.ts"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -19,6 +58,26 @@
       ],
       "testIds": [
         "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-wire-the-frontend-client-auth-mutations-queries-to-the-backend-methods-so-that-successful-login-signup-results-in-a-persisted-client-session-and-the-client-portal-section-renders-the-authenticated-experience-as-designed-in-frontend-src-app-tsx",
+      "featureTitle": "Wire the frontend client auth mutations/queries to the backend methods so that successful login/signup results in a persisted client session and the Client Portal section renders the authenticated experience as designed in `frontend/src/App.tsx`.",
+      "files": [
+        "frontend/src/hooks/useQueries.ts"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "authorization@4.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
       ],
       "confidence": "high"
     }

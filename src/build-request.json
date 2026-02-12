@@ -1,72 +1,110 @@
 {
   "kind": "build_request",
-  "title": "Fix service-unavailable errors for Admin Login and Client Shipments/Delivery History loading",
-  "priority": "high",
+  "title": "Re-enable Client Portal Login and Signup (remove hard-disabled UI and implement missing client auth APIs)",
+  "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Implement the missing backend (Motoko) admin session APIs used by the frontend so Admin Login no longer fails with “Service unavailable. Please contact support.” when the app attempts to call `actor.adminLogin(...)` and validate tokens via `actor.getAllClients(...)`.",
-      "target": "backend",
+      "text": "Re-enable the Client Portal **Login** UI by removing the hard-coded disabled state and “Unavailable” messaging in `frontend/src/components/client/ClientPortalLoginCard.tsx` so users can type into fields and submit the form.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-5"
         ],
         "quotes": [
-          "unavailable. Please contact support."
+          "Yes sign up par bhi ye problem hai"
         ]
       },
       "acceptanceCriteria": [
-        "`adminLogin(password, token)` exists on the backend canister and does not produce method-not-found / not-a-function errors from the frontend.",
-        "On successful admin login, the frontend stores `admin_session_token` and the Admin section proceeds past the login card without showing the 'Service unavailable' alert.",
-        "When an invalid password is provided, the backend returns/throws a clear, user-actionable English error (not a generic trap), and the frontend displays it."
+        "In Client Portal Login (Password tab), the identifier and password inputs are enabled and editable.",
+        "The Login button is enabled when form validation passes and a login request is not pending.",
+        "The button label no longer says “Login (Unavailable)”.",
+        "The hard-coded yellow warning banner about login being unavailable is removed (or only shown when a real backend error indicates unavailability)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Implement the missing backend (Motoko) shipment/history APIs referenced by the frontend so the Client Dashboard can load shipments and delivery history without failing (including `getClientShipmentsBySessionToken(sessionToken)` and any other shipment methods that the frontend calls after login).",
-      "target": "backend",
+      "text": "Re-enable the Client Portal **OTP login** UI in `frontend/src/components/client/ClientPortalLoginCard.tsx` by removing hard-coded `disabled` props and preventing ‘Unavailable’ UX. Ensure OTP flow buttons respect pending/loading states instead of being permanently disabled.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-5"
         ],
         "quotes": [
-          "Failed to load delivery history. Please try again or contact support.\n\nFailed to load shipments. Please try again or contact support."
+          "Yes sign up par bhi ye problem hai"
         ]
       },
       "acceptanceCriteria": [
-        "The Client Dashboard no longer shows the red error alerts for shipments/delivery history when the user is authenticated with a valid `sessionToken`.",
-        "Backend responses for client shipment retrieval are compatible with the frontend’s `unwrapVariantResponse` expectations (variant-style success/noSessionToken/notLinked), so the query resolves to an array of shipments on success.",
-        "If the `sessionToken` is missing/expired, the backend returns the appropriate variant (e.g., `noSessionToken`) and the frontend handles it without crashing."
+        "In the OTP tab, the phone number input and Send OTP button are enabled (except during pending mutation states).",
+        "After OTP is sent, the OTP input and Verify button are enabled (except during pending mutation states).",
+        "No OTP UI element is permanently disabled via hard-coded `disabled` props."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Update the Client Shipments/Delivery History UI error handling to display the real error message returned by React Query (when available) instead of always showing only the generic fallback text, while keeping all user-facing text in English.",
+      "text": "Ensure the Client Portal **Signup** path is not blocked by any UI-level disabled/blocked state and that errors from backend are shown clearly in `frontend/src/components/client/ClientSignupCard.tsx`.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-5"
         ],
         "quotes": [
-          "Failed to load delivery history. Please try again or contact support.\n\nFailed to load shipments. Please try again or contact support."
+          "Yes sign up par bhi ye problem hai"
         ]
       },
       "acceptanceCriteria": [
-        "When shipment/history loading fails, the UI renders a user-friendly message derived from the thrown error (e.g., session expired, account not linked, service unavailable), not only the fixed generic string.",
-        "The UI continues to show a safe generic fallback message if the error is missing/empty/too technical.",
-        "No changes are made to read-only paths listed in `frontend.immutablePaths`."
+        "All Signup fields are enabled and editable.",
+        "Signup submit button is enabled when not pending and disables only while the signup request is pending.",
+        "If signup fails, an English, user-readable error message is shown in the existing error alert area."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Implement backend client authentication APIs required for Client Portal login/signup so the frontend no longer needs to hide these flows. Add functions to `backend/main.mo` for: client signup, password login, send OTP, verify OTP, and retrieving client account status (as used by the frontend).",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-5"
+        ],
+        "quotes": [
+          "Yes sign up par bhi ye problem hai"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend exposes callable methods for client signup and client login that return a session token on success (and do not require admin privileges).",
+        "Backend exposes callable methods for send OTP and verify OTP that allow completing an OTP login and issuing a session token on success.",
+        "Backend exposes a callable method to retrieve client account status for the current session token (e.g., `isFirstLogin`).",
+        "On invalid credentials/OTP/token, backend returns a deterministic error (trap or variant) that the frontend can convert into a user-friendly English message via existing error handling utilities."
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Wire the frontend client auth mutations/queries to the backend methods so that successful login/signup results in a persisted client session and the Client Portal section renders the authenticated experience as designed in `frontend/src/App.tsx`.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-5"
+        ],
+        "quotes": [
+          "Yes sign up par bhi ye problem hai"
+        ]
+      },
+      "acceptanceCriteria": [
+        "After a successful password login or OTP login, a client session token is saved via `frontend/src/hooks/ClientSessionProvider.tsx` and `useClientSession()` reports `isAuthenticated=true`.",
+        "After successful signup, the UI switches to the Login tab (existing behavior) and the new account can subsequently log in if backend supports it.",
+        "When authenticated, the app proceeds to load client account status and then shows the password-change screen on first login or the client dashboard otherwise (existing `App.tsx` logic)."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in `backend/main.mo` (no additional backend services).",
-    "Use English for any user-facing text.",
-    "Do not edit files under `frontend/src/components/ui` or any other `frontend.immutablePaths` entries; compose existing UI components instead."
+    "Do not edit any files under `frontend/src/components/ui` (shadcn components are read-only).",
+    "Do not modify any paths listed in `frontend.immutablePaths` in SYSTEM_CONTEXT.",
+    "Backend must remain a single Motoko actor in `backend/main.mo`; only add `backend/migration.mo` if state schema changes require a migration."
   ],
   "nonGoals": [
-    "Adding new product features unrelated to fixing the failing admin login and shipment/history loading flows.",
-    "Integrating third-party auth providers beyond existing Internet Identity support.",
-    "Adding external databases or non-Motoko backend services."
+    "Redesigning the admin dashboard or admin authentication.",
+    "Adding third-party authentication providers (only existing auth patterns are allowed).",
+    "Adding external databases or non-Internet-Computer backend services."
   ],
   "imageRequirements": {
     "required": [],

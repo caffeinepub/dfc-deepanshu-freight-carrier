@@ -24,7 +24,7 @@ export function AdminTrackingPanel({ enabled = true }: AdminTrackingPanelProps) 
   const [mapError, setMapError] = useState<string | null>(null);
   const scriptLoadedRef = useRef(false);
 
-  const { data: shipments, isLoading, error } = useGetAllShipmentsForMap(enabled);
+  const { data: shipments, isLoading, error } = useGetAllShipmentsForMap();
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 

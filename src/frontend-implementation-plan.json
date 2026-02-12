@@ -1,26 +1,90 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Show real React Query errors for Client Shipments and Delivery History",
+  "title": "Re-enable Client Portal Login/OTP/Signup UI and wire client auth session handling",
   "requirements": [
     {
-      "id": "REQ-3",
-      "summary": "Improve Client Shipments/Delivery History error UI to surface actionable React Query error messages with safe English fallbacks.",
+      "id": "REQ-1",
+      "summary": "Re-enable Client Portal password login UI (remove hard-disabled/unavailable UX and use real pending/validation states).",
       "acceptanceCriteria": [
-        "When shipment/history loading fails, the UI renders a user-friendly message derived from the thrown error (e.g., session expired, account not linked, service unavailable), not only the fixed generic string.",
-        "The UI continues to show a safe generic fallback message if the error is missing/empty/too technical.",
-        "No changes are made to read-only paths listed in `frontend.immutablePaths`."
+        "In Client Portal Login (Password tab), the identifier and password inputs are enabled and editable.",
+        "The Login button is enabled when form validation passes and a login request is not pending.",
+        "The button label no longer says “Login (Unavailable)”.",
+        "The hard-coded yellow warning banner about login being unavailable is removed (or only shown when a real backend error indicates unavailability)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/queryErrorMessage.ts",
-          "operation": "create",
-          "description": "Add a small utility to turn React Query thrown errors into safe, user-facing English messages (prefer error.message when already user-friendly; otherwise map via existing getClientAuthErrorMessage; otherwise return a generic fallback)."
+          "path": "frontend/src/components/client/ClientPortalLoginCard.tsx",
+          "operation": "modify",
+          "description": "Remove hard-coded disabled props and the hard-coded 'unavailable' warning banner for the password login tab; use shadcn-ui (shadcn-ui component set) form primitives already in use (Button/Input/Alert/Tabs) to reflect real states (valid/invalid + pending). Update the submit button to enable only when identifier+password are present and clientLogin is not pending; show a loading label/spinner while pending; keep errors mapped via getClientAuthErrorMessage. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Re-enable Client Portal OTP login UI (remove permanent disabled/unavailable UX and use mutation pending states).",
+      "acceptanceCriteria": [
+        "In the OTP tab, the phone number input and Send OTP button are enabled (except during pending mutation states).",
+        "After OTP is sent, the OTP input and Verify button are enabled (except during pending mutation states).",
+        "No OTP UI element is permanently disabled via hard-coded `disabled` props."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/client/ClientPortalLoginCard.tsx",
+          "operation": "modify",
+          "description": "In the OTP tab, remove hard-coded disabled props and 'Unavailable' button labels. Disable inputs/buttons only when the corresponding mutation is pending (sendOtp.isPending / verifyOtp.isPending). Ensure the 'Change Number' button is enabled when not pending, and that OTP verify UI is reachable after send success. Use shadcn-ui (shadcn-ui component set) Button/Input/Alert/Tabs already present. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Ensure Client Portal signup UI is fully interactive and shows clear, user-readable backend errors.",
+      "acceptanceCriteria": [
+        "All Signup fields are enabled and editable.",
+        "Signup submit button is enabled when not pending and disables only while the signup request is pending.",
+        "If signup fails, an English, user-readable error message is shown in the existing error alert area."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/client/ClientSignupCard.tsx",
+          "operation": "modify",
+          "description": "Audit signup fields and submission controls to ensure there are no UI-level disabled/blocked states beyond disabling submit while clientSignup.isPending. Ensure any backend/React-Query errors are converted to an English, user-readable message via getClientAuthErrorMessage and displayed in the existing Alert area. Use existing shadcn-ui (shadcn-ui component set) form components already in use. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/client/ClientShipmentsTable.tsx",
+          "path": "frontend/src/utils/clientAuthErrors.ts",
           "operation": "modify",
-          "description": "Replace the fixed generic red-alert text for Shipments and Delivery History with a message produced from the React Query `error` (via the new queryErrorMessage helper), while preserving the existing special handling for linkage errors and keeping all user-facing text in English."
+          "description": "Extend/adjust error mapping so common client-signup failures coming from backend variant-style failures (e.g., invalid input / email exists / mobile exists / rate limit) reliably produce concise, user-readable English messages when surfaced by the signup mutation. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Wire client auth mutations/queries to backend methods and persist client session so authenticated Client Portal renders correctly.",
+      "acceptanceCriteria": [
+        "After a successful password login or OTP login, a client session token is saved via `frontend/src/hooks/ClientSessionProvider.tsx` and `useClientSession()` reports `isAuthenticated=true`.",
+        "After successful signup, the UI switches to the Login tab (existing behavior) and the new account can subsequently log in if backend supports it.",
+        "When authenticated, the app proceeds to load client account status and then shows the password-change screen on first login or the client dashboard otherwise (existing `App.tsx` logic)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Update/implement the client auth React Query hooks used by the Client Portal (useClientLogin, useClientSignup, useSendOtp, useVerifyOtp, useGetClientAccountStatus) to call the corresponding backend methods declared in frontend/src/backend.d.ts and to normalize variant responses into success/failure (throwing Errors with user-meaningful messages that existing UI mapping can display). On successful password login/OTP verify, persist the returned sessionToken using useClientSession().setClientToken and invalidate/refetch client-scoped queries (e.g., clientAccountStatus, clientShipments, clientInvoices) so the authenticated experience loads immediately."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Adjust useGetClientAccountStatus to unwrap the backend authenticated/unauthenticated variant and return the shape expected by App.tsx (including isFirstLogin and profile). If the backend indicates unauthenticated for the current token, return null (and optionally trigger session cleanup in a safe way) so App.tsx reliably falls back to the login/signup UI."
+        },
+        {
+          "path": "frontend/src/hooks/ClientSessionProvider.tsx",
+          "operation": "modify",
+          "description": "Ensure client session persistence behavior supports the updated auth flow (trim token on set, clear on invalid token situations where the app determines unauthenticated). Keep the public API stable (setClientToken/clearClientToken/isAuthenticated) so existing App.tsx logic continues to work."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Validate that Client Portal rendering logic aligns with the updated client account status query result (null when unauthenticated; object with isFirstLogin/profile when authenticated) and that the authenticated path triggers the designed first-login password change vs dashboard flow without relying on any hard-disabled UI states. Verify the component's usage instructions before implementing."
         }
       ]
     }

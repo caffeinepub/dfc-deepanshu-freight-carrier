@@ -64,13 +64,56 @@ export enum UserRole {
     user = "user",
     guest = "guest"
 }
+export enum Variant_invalidPhone_success_rateLimited {
+    invalidPhone = "invalidPhone",
+    success = "success",
+    rateLimited = "rateLimited"
+}
 export interface backendInterface {
     adminLogin(password: string): Promise<string | null>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    clientPasswordLogin(identifier: string, password: string): Promise<{
+        __kind__: "success";
+        success: {
+            clientId: string;
+            sessionToken: string;
+        };
+    } | {
+        __kind__: "rateLimited";
+        rateLimited: null;
+    } | {
+        __kind__: "invalidCredentials";
+        invalidCredentials: null;
+    }>;
+    clientSignup(email: string | null, mobile: string | null, password: string, companyName: string, gstNumber: string, address: string): Promise<{
+        __kind__: "invalidInput";
+        invalidInput: string;
+    } | {
+        __kind__: "mobileExists";
+        mobileExists: null;
+    } | {
+        __kind__: "emailExists";
+        emailExists: null;
+    } | {
+        __kind__: "success";
+        success: string;
+    }>;
     createClientAccount(identifier: string, password: string, linkedPrincipal: Principal, email: string | null, mobile: string | null, companyName: string, gstNumber: string, address: string): Promise<string | null>;
     getAllClients(sessionToken: string): Promise<AllClientsResponse | null>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getClientAccountStatus(sessionToken: string): Promise<{
+        __kind__: "unauthenticated";
+        unauthenticated: null;
+    } | {
+        __kind__: "authenticated";
+        authenticated: {
+            clientId: string;
+            isFirstLogin: boolean;
+            linkedPrincipal?: Principal;
+            profile: UserProfile;
+        };
+    }>;
     getClientInvoicesBySessionToken(sessionToken: string): Promise<{
         __kind__: "noSessionToken";
         noSessionToken: null;
@@ -95,5 +138,22 @@ export interface backendInterface {
     isCallerAdmin(): Promise<boolean>;
     provisionClientAccount(identifier: string, password: string, linkedPrincipal: Principal): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    sendOtp(phoneNumber: string): Promise<Variant_invalidPhone_success_rateLimited>;
     validateAdminSession(sessionToken: string): Promise<string | null>;
+    verifyOtp(phoneNumber: string, otp: string): Promise<{
+        __kind__: "expired";
+        expired: null;
+    } | {
+        __kind__: "invalidOtp";
+        invalidOtp: null;
+    } | {
+        __kind__: "notFound";
+        notFound: null;
+    } | {
+        __kind__: "success";
+        success: {
+            clientId: string;
+            sessionToken: string;
+        };
+    }>;
 }

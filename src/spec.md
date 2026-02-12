@@ -1,11 +1,13 @@
 # Specification
 
 ## Summary
-**Goal:** Fix “Service unavailable” failures by implementing missing Motoko backend APIs for admin login and client shipments/delivery history, and improve client UI error messaging to surface real errors when available.
+**Goal:** Re-enable Client Portal login and signup by removing hard-disabled frontend UI states and implementing/wiring the missing backend client authentication APIs so clients can authenticate and access the intended portal experience.
 
 **Planned changes:**
-- Add/complete Motoko admin session endpoints used by the frontend (including `adminLogin(...)` and token validation paths such as `getAllClients(...)`) so Admin Login no longer fails due to missing methods.
-- Add/complete Motoko shipment and delivery history endpoints used by the client dashboard (including `getClientShipmentsBySessionToken(sessionToken)` and any other shipment/history calls triggered after login), returning responses compatible with the frontend’s expected variant/unwrap handling.
-- Update Client Shipments/Delivery History frontend error handling to display a user-friendly message derived from the actual React Query error when available, with a safe generic English fallback.
+- Remove hard-coded disabled/unavailable UX from Client Portal Password login UI in `frontend/src/components/client/ClientPortalLoginCard.tsx` so inputs and submit behave based on validation and pending state.
+- Remove hard-coded disabled/unavailable UX from Client Portal OTP login UI in `frontend/src/components/client/ClientPortalLoginCard.tsx` so Send OTP / Verify OTP flows work and only disable during pending states.
+- Ensure Client Portal Signup UI in `frontend/src/components/client/ClientSignupCard.tsx` is fully editable, submit disables only while pending, and backend failures show clear English error messaging in the existing alert area.
+- Add required client auth methods to `backend/main.mo`: client signup, password login, send OTP, verify OTP, and client account status retrieval for the current session.
+- Wire frontend client auth mutations/queries to the new backend methods so successful login/signup persists a client session via `frontend/src/hooks/ClientSessionProvider.tsx` and the authenticated Client Portal flow in `frontend/src/App.tsx` proceeds as designed.
 
-**User-visible outcome:** Admins can sign in without the “Service unavailable” alert, and authenticated clients can load shipments and delivery history; if loading fails, the UI shows a clearer, actionable English error message when possible.
+**User-visible outcome:** Clients can sign up and log in (password or OTP) from the Client Portal without “Unavailable” blocks; after successful authentication, the session is saved and the portal loads the first-login/password-change screen or the client dashboard as appropriate.

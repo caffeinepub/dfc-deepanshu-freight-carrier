@@ -1,15 +1,14 @@
 import Map "mo:core/Map";
 import Text "mo:core/Text";
-import Array "mo:core/Array";
 import Time "mo:core/Time";
 import Nat "mo:core/Nat";
+import Int "mo:core/Int";
 import Principal "mo:core/Principal";
 import Runtime "mo:core/Runtime";
+import Array "mo:core/Array";
 import Iter "mo:core/Iter";
-
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
-import OutCall "http-outcalls/outcall";
 
 actor {
   public type Coordinates = {
@@ -108,6 +107,13 @@ actor {
     ipAddress : ?Text;
   };
 
+  public type OtpRecord = {
+    phoneNumber : Text;
+    otp : Text;
+    expiration : Time.Time;
+    verified : Bool;
+  };
+
   let shipments = Map.empty<Text, Shipment>();
   let invoices = Map.empty<Nat, Invoice>();
   let clients = Map.empty<Principal, Client>();
@@ -115,27 +121,29 @@ actor {
   let clientAccounts = Map.empty<Text, ClientAccount>();
   let clientSessions = Map.empty<Text, ClientSession>();
   let adminSessionTokens = Map.empty<Text, Time.Time>();
+  let otpRecords = Map.empty<Text, OtpRecord>();
 
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
   var msg91ApiKey : ?Text = null;
   var googleApiKey : ?Text = null;
-  var adminPassword = "JATINSHARMA2356";
-  let sessionTimeout : Int = 30 * 60 * 1_000_000_000; // 30 minutes
+  var adminPassword : Text = "JATINSHARMA2356";
+  let sessionTimeout : Int = 30 * 60 * 1_000_000_000;
 
   let loginAttempts = Map.empty<Text, (Nat, Time.Time)>();
   let maxLoginAttempts : Nat = 5;
-  let loginAttemptWindow : Int = 15 * 60 * 1_000_000_000; // 15 minutes
+  let loginAttemptWindow : Int = 15 * 60 * 1_000_000_000;
 
   let otpAttempts = Map.empty<Text, (Nat, Time.Time)>();
   let maxOtpAttempts : Nat = 3;
-  let otpAttemptWindow : Int = 5 * 60 * 1_000_000_000; // 5 minutes
+  let otpAttemptWindow : Int = 5 * 60 * 1_000_000_000;
 
-  let clientSessionTimeout : Int = 60 * 60 * 1_000_000_000; // 1 hour
+  let clientSessionTimeout : Int = 60 * 60 * 1_000_000_000;
+  let otpTimeout : Int = 5 * 60 * 1_000_000_000;
 
   let loginHistory = Map.empty<Nat, LoginHistoryEntry>();
-  var nextLoginHistoryId = 0;
+  var nextLoginHistoryId : Nat = 0;
 
   func checkRateLimit(identifier : Text) : Bool {
     let now = Time.now();
@@ -188,7 +196,7 @@ actor {
           adminSessionTokens.remove(token);
           false;
         } else {
-          adminSessionTokens.add(token, currentTime); // Refresh session activity
+          adminSessionTokens.add(token, currentTime);
           true;
         };
       };
@@ -204,7 +212,6 @@ actor {
           clientSessions.remove(sessionToken);
           null;
         } else {
-          // Refresh session expiration
           let refreshedSession = {
             session with
             expiration = currentTime + clientSessionTimeout;
@@ -288,13 +295,262 @@ actor {
     false;
   };
 
-  public query ({ caller }) func getClientShipmentsBySessionToken(
+  func generateOtp() : Text {
+    ((Int.abs(Time.now()) % 900000) + 100000).toText();
+  };
+
+  func generateSessionToken(identifier : Text) : Text {
+    identifier # "-session-" # Time.now().toText();
+  };
+
+  // Client Authentication APIs
+
+  public shared ({ caller }) func clientSignup(
+    email : ?Text,
+    mobile : ?Text,
+    password : Text,
+    companyName : Text,
+    gstNumber : Text,
+    address : Text,
+  ) : async {
+    #success : Text;
+    #emailExists;
+    #mobileExists;
+    #invalidInput : Text;
+  } {
+    // Anyone can sign up (including anonymous/guest)
+
+    let identifier = switch (email, mobile) {
+      case (?e, _) { normalizeIdentifier(e) };
+      case (null, ?m) { normalizeIdentifier(m) };
+      case (null, null) { return #invalidInput("Email or mobile required") };
+    };
+
+    if (identifier == "") {
+      return #invalidInput("Invalid identifier");
+    };
+
+    switch (email) {
+      case (?e) {
+        if (emailExists(e)) {
+          return #emailExists;
+        };
+      };
+      case (null) {};
+    };
+
+    switch (mobile) {
+      case (?m) {
+        if (mobileExists(m)) {
+          return #mobileExists;
+        };
+      };
+      case (null) {};
+    };
+
+    let mobileValue = switch (mobile) { case (?m) { m }; case (null) { "" } };
+    let profile : UserProfile = { companyName; gstNumber; address; mobile = mobileValue };
+
+    let newAccount : ClientAccount = {
+      identifier;
+      email;
+      mobile;
+      password;
+      profile;
+      isFirstLogin = true;
+      activeSessionToken = null;
+      role = #client;
+      createdAt = Time.now();
+      linkedPrincipal = null;
+    };
+
+    clientAccounts.add(identifier, newAccount);
+    #success(identifier);
+  };
+
+  public shared ({ caller }) func clientPasswordLogin(
+    identifier : Text,
+    password : Text,
+  ) : async {
+    #success : { sessionToken : Text; clientId : Text };
+    #invalidCredentials;
+    #rateLimited;
+  } {
+    // Anyone can attempt login (including anonymous/guest)
+
+    let normalizedId = normalizeIdentifier(identifier);
+
+    if (not checkRateLimit(normalizedId)) {
+      return #rateLimited;
+    };
+
+    switch (clientAccounts.get(normalizedId)) {
+      case (null) { #invalidCredentials };
+      case (?account) {
+        if (account.password != password) {
+          return #invalidCredentials;
+        };
+
+        let sessionToken = generateSessionToken(normalizedId);
+        let newSession : ClientSession = {
+          clientId = normalizedId;
+          sessionToken;
+          expiration = Time.now() + clientSessionTimeout;
+        };
+
+        clientSessions.add(sessionToken, newSession);
+
+        let updatedAccount = {
+          account with
+          activeSessionToken = ?sessionToken;
+          isFirstLogin = false;
+        };
+        clientAccounts.add(normalizedId, updatedAccount);
+
+        let historyEntry : LoginHistoryEntry = {
+          identifier = normalizedId;
+          clientId = normalizedId;
+          loginTime = Time.now();
+          ipAddress = null;
+        };
+        loginHistory.add(nextLoginHistoryId, historyEntry);
+        nextLoginHistoryId += 1;
+
+        #success({ sessionToken; clientId = normalizedId });
+      };
+    };
+  };
+
+  public shared ({ caller }) func sendOtp(
+    phoneNumber : Text,
+  ) : async {
+    #success;
+    #rateLimited;
+    #invalidPhone;
+  } {
+    // Anyone can request OTP (including anonymous/guest)
+
+    let normalizedPhone = normalizeIdentifier(phoneNumber);
+
+    if (normalizedPhone == "") {
+      return #invalidPhone;
+    };
+
+    if (not checkOtpRateLimit(normalizedPhone)) {
+      return #rateLimited;
+    };
+
+    let otp = generateOtp();
+    let otpRecord : OtpRecord = {
+      phoneNumber = normalizedPhone;
+      otp;
+      expiration = Time.now() + otpTimeout;
+      verified = false;
+    };
+
+    otpRecords.add(normalizedPhone, otpRecord);
+
+    // In production, send OTP via SMS service (MSG91)
+    // For now, just store it
+    #success;
+  };
+
+  public shared ({ caller }) func verifyOtp(
+    phoneNumber : Text,
+    otp : Text,
+  ) : async {
+    #success : { sessionToken : Text; clientId : Text };
+    #invalidOtp;
+    #expired;
+    #notFound;
+  } {
+    // Anyone can verify OTP (including anonymous/guest)
+
+    let normalizedPhone = normalizeIdentifier(phoneNumber);
+
+    switch (otpRecords.get(normalizedPhone)) {
+      case (null) { #notFound };
+      case (?record) {
+        let currentTime = Time.now();
+        if (currentTime > record.expiration) {
+          otpRecords.remove(normalizedPhone);
+          return #expired;
+        };
+
+        if (record.otp != otp) {
+          return #invalidOtp;
+        };
+
+        otpRecords.remove(normalizedPhone);
+
+        switch (clientAccounts.get(normalizedPhone)) {
+          case (null) { #notFound };
+          case (?account) {
+            let sessionToken = generateSessionToken(normalizedPhone);
+            let newSession : ClientSession = {
+              clientId = normalizedPhone;
+              sessionToken;
+              expiration = currentTime + clientSessionTimeout;
+            };
+
+            clientSessions.add(sessionToken, newSession);
+
+            let updatedAccount = {
+              account with
+              activeSessionToken = ?sessionToken;
+              isFirstLogin = false;
+            };
+            clientAccounts.add(normalizedPhone, updatedAccount);
+
+            #success({ sessionToken; clientId = normalizedPhone });
+          };
+        };
+      };
+    };
+  };
+
+  public query func getClientAccountStatus(
+    sessionToken : Text,
+  ) : async {
+    #authenticated : {
+      clientId : Text;
+      profile : UserProfile;
+      isFirstLogin : Bool;
+      linkedPrincipal : ?Principal;
+    };
+    #unauthenticated;
+  } {
+    // Anyone can check their session status (including anonymous/guest)
+
+    switch (isValidClientSession(sessionToken)) {
+      case (null) { #unauthenticated };
+      case (?clientId) {
+        switch (clientAccounts.get(clientId)) {
+          case (null) { #unauthenticated };
+          case (?account) {
+            #authenticated({
+              clientId;
+              profile = account.profile;
+              isFirstLogin = account.isFirstLogin;
+              linkedPrincipal = account.linkedPrincipal;
+            });
+          };
+        };
+      };
+    };
+  };
+
+  // Client Portal Access (Session-based, no caller verification needed for queries)
+
+  public query func getClientShipmentsBySessionToken(
     sessionToken : Text,
   ) : async {
     #success : [Shipment];
     #noSessionToken;
     #notLinked : Text;
   } {
+    // Session token validation is sufficient - no caller check needed
+
     if (sessionToken == "") {
       return #noSessionToken;
     };
@@ -324,13 +580,15 @@ actor {
     };
   };
 
-  public query ({ caller }) func getClientInvoicesBySessionToken(
+  public query func getClientInvoicesBySessionToken(
     sessionToken : Text,
   ) : async {
     #success : [Invoice];
     #noSessionToken;
     #notLinked : Text;
   } {
+    // Session token validation is sufficient - no caller check needed
+
     if (sessionToken == "") {
       return #noSessionToken;
     };
@@ -360,6 +618,8 @@ actor {
     };
   };
 
+  // Admin-only Client Management
+
   public shared ({ caller }) func createClientAccount(
     identifier : Text,
     password : Text,
@@ -374,12 +634,7 @@ actor {
       Runtime.trap("Unauthorized: Only admins can create client accounts");
     };
 
-    let profile : UserProfile = { 
-      companyName; 
-      gstNumber; 
-      address; 
-      mobile = switch (mobile) { case (?m) { m }; case (null) { "" } } 
-    };
+    let profile : UserProfile = { companyName; gstNumber; address; mobile = switch (mobile) { case (?m) { m }; case (null) { "" } } };
 
     let newAccount : ClientAccount = {
       identifier;
@@ -405,7 +660,7 @@ actor {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can provision client accounts");
     };
-      
+
     let existingAccount = clientAccounts.get(identifier);
     switch (existingAccount) {
       case (null) {
@@ -428,6 +683,8 @@ actor {
       };
     };
   };
+
+  // User Profile Management (Principal-based)
 
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
@@ -477,12 +734,16 @@ actor {
     clients.add(caller, client);
   };
 
+  // Admin Authentication
+
   public type AdminSession = {
     token : Text;
     expiration : Time.Time;
   };
 
   public shared ({ caller }) func adminLogin(password : Text) : async ?Text {
+    // Anyone can attempt admin login, but must provide correct password
+
     if (password != adminPassword) {
       Runtime.trap("Invalid admin password");
     };
@@ -496,15 +757,19 @@ actor {
     ?token;
   };
 
-  public query ({ caller }) func validateAdminSession(
+  public query func validateAdminSession(
     sessionToken : Text,
   ) : async ?Text {
+    // Anyone can validate a session token
+
     if (isValidSession(sessionToken)) {
       ?sessionToken;
     } else {
       null;
     };
   };
+
+  // Admin Data Access
 
   public type AllClientsResponse = {
     state : Text;
@@ -514,6 +779,10 @@ actor {
   };
 
   public shared ({ caller }) func getAllClients(sessionToken : Text) : async ?AllClientsResponse {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can access all clients");
+    };
+
     if (not isValidSession(sessionToken)) {
       return null;
     };
