@@ -1,62 +1,67 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T03:24:08.606Z",
+  "generatedAt": "2026-02-12T03:43:16.311Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 2,
+    "total": 4,
+    "implemented": 3,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix backend client signup and auto-repair logic so it never traps with \"blob too long for principal\" when generating linkedPrincipal for email/mobile identifiers, including: clientSignup, autoRepairClientAccount, and repairMissingLinkedPrincipals.",
+        "summary": "Fix the admin login flow by aligning the frontend call signature with the backend `adminLogin` API so that a correct password can successfully authenticate and open the Admin Dashboard.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useAdminSession.ts",
+          "frontend/src/components/auth/AdminLoginCard.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useAdminSession.ts"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Update the backend admin password to the intended value shown by the user so that the admin can log in using the expected password.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
-        "id": "REQ-2",
-        "summary": "Update the client signup UI to use the validated/normalized identifier value from validateClientIdentifier (e.g., digit-only mobile normalization) when deciding whether to send email vs mobile and when submitting the signup mutation payload.",
+        "id": "REQ-3",
+        "summary": "Fix admin session persistence/validation in the frontend so that after reload the app validates an existing admin session token using the backend session validation API (rather than calling a privileged data endpoint purely for validation) and logs the user out if the token is invalid/expired.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/clientIdentifier.ts",
-          "frontend/src/components/client/ClientSignupCard.tsx"
+          "frontend/src/hooks/useAdminSession.ts"
         ],
         "matchedFiles": [
-          "frontend/src/utils/clientIdentifier.ts",
-          "frontend/src/components/client/ClientSignupCard.tsx"
+          "frontend/src/hooks/useAdminSession.ts"
         ]
       },
       {
-        "id": "REQ-3",
-        "summary": "Improve client-facing error messaging for unexpected backend traps during signup: map the specific error text \"blob too long for principal\" to a user-friendly English message and avoid showing raw trap text in the UI.",
+        "id": "REQ-4",
+        "summary": "Ensure admin-login error messaging shown in the Admin Login UI is accurate and user-actionable (e.g., show 'Invalid admin password' only when the backend explicitly rejects the password; show 'Service unavailable' for API/method/signature issues).",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/clientAuthErrors.ts"
+          "frontend/src/hooks/useAdminSession.ts",
+          "frontend/src/components/auth/AdminLoginCard.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/clientAuthErrors.ts"
+          "frontend/src/hooks/useAdminSession.ts"
         ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
+    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/components/client/ClientSignupCard.tsx",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useQueries.ts",
-    "frontend/src/utils/clientAuthErrors.ts",
-    "frontend/src/utils/clientIdentifier.ts",
+    "frontend/src/hooks/useAdminSession.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

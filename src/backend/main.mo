@@ -8,7 +8,9 @@ import Iter "mo:core/Iter";
 import AccessControl "authorization/access-control";
 import Runtime "mo:core/Runtime";
 import MixinAuthorization "authorization/MixinAuthorization";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   public type Coordinates = {
     latitude : Float;
@@ -125,7 +127,7 @@ actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
-  var adminPassword : Text = "JATINSHARMA2356";
+  var adminPassword : Text = "jatinkrs01";
   let sessionTimeout : Int = 30 * 60 * 1_000_000_000;
 
   let loginAttempts = Map.empty<Text, (Nat, Time.Time)>();
@@ -762,3 +764,4 @@ actor {
     };
   };
 };
+

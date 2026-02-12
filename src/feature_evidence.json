@@ -2,11 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-update-the-client-signup-ui-to-use-the-validated-normalized-identifier-value-from-validateclientidentifier-e-g-digit-only-mobile-normalization-when-deciding-whether-to-send-email-vs-mobile-and-when-submitting-the-signup-mutation-payload",
-      "featureTitle": "Update the client signup UI to use the validated/normalized identifier value from validateClientIdentifier (e.g., digit-only mobile normalization) when deciding whether to send email vs mobile and when submitting the signup mutation payload.",
+      "featureId": "feature-fix-the-admin-login-flow-by-aligning-the-frontend-call-signature-with-the-backend-adminlogin-api-so-that-a-correct-password-can-successfully-authenticate-and-open-the-admin-dashboard",
+      "featureTitle": "Fix the admin login flow by aligning the frontend call signature with the backend `adminLogin` API so that a correct password can successfully authenticate and open the Admin Dashboard.",
       "files": [
-        "frontend/src/components/client/ClientSignupCard.tsx",
-        "frontend/src/utils/clientIdentifier.ts"
+        "frontend/src/hooks/useAdminSession.ts"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -18,15 +17,15 @@
         "http-outcalls@3.0.0"
       ],
       "testIds": [
-        "REQ-2"
+        "REQ-1"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-improve-client-facing-error-messaging-for-unexpected-backend-traps-during-signup-map-the-specific-error-text-blob-too-long-for-principal-to-a-user-friendly-english-message-and-avoid-showing-raw-trap-text-in-the-ui",
-      "featureTitle": "Improve client-facing error messaging for unexpected backend traps during signup: map the specific error text \"blob too long for principal\" to a user-friendly English message and avoid showing raw trap text in the UI.",
+      "featureId": "feature-fix-admin-session-persistence-validation-in-the-frontend-so-that-after-reload-the-app-validates-an-existing-admin-session-token-using-the-backend-session-validation-api-rather-than-calling-a-privileged-data-endpoint-purely-for-validation-and-logs-the-user-out-if-the-token-is-invalid-expired",
+      "featureTitle": "Fix admin session persistence/validation in the frontend so that after reload the app validates an existing admin session token using the backend session validation API (rather than calling a privileged data endpoint purely for validation) and logs the user out if the token is invalid/expired.",
       "files": [
-        "frontend/src/utils/clientAuthErrors.ts"
+        "frontend/src/hooks/useAdminSession.ts"
       ],
       "components": [
         "core-infrastructure@1.0.2",
@@ -39,6 +38,26 @@
       ],
       "testIds": [
         "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-ensure-admin-login-error-messaging-shown-in-the-admin-login-ui-is-accurate-and-user-actionable-e-g-show-invalid-admin-password-only-when-the-backend-explicitly-rejects-the-password-show-service-unavailable-for-api-method-signature-issues",
+      "featureTitle": "Ensure admin-login error messaging shown in the Admin Login UI is accurate and user-actionable (e.g., show 'Invalid admin password' only when the backend explicitly rejects the password; show 'Service unavailable' for API/method/signature issues).",
+      "files": [
+        "frontend/src/hooks/useAdminSession.ts"
+      ],
+      "components": [
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "authorization@4.0.0",
+        "http-outcalls@3.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
       ],
       "confidence": "high"
     }

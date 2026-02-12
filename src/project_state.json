@@ -4,38 +4,46 @@
   "summary": "New project",
   "architectural_notes": [],
   "known_issues": [
-    "User reports an unspecified problem after deployment (\"Ab yah kya problem hai\"); details unknown."
+    "Admin panel login is not working (user reports unable to log in)."
   ],
   "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-update-the-client-signup-ui-to-use-the-validated-normalized-identifier-value-from-validateclientidentifier-e-g-digit-only-mobile-normalization-when-deciding-whether-to-send-email-vs-mobile-and-when-submitting-the-signup-mutation-payload",
-      "title": "Update the client signup UI to use the validated/normalized identifier value from validateClientIdentifier (e.g., digit-only mobile normalization) when deciding whether to send email vs mobile and when submitting the signup mutation payload.",
+      "id": "feature-fix-the-admin-login-flow-by-aligning-the-frontend-call-signature-with-the-backend-adminlogin-api-so-that-a-correct-password-can-successfully-authenticate-and-open-the-admin-dashboard",
+      "title": "Fix the admin login flow by aligning the frontend call signature with the backend `adminLogin` API so that a correct password can successfully authenticate and open the Admin Dashboard.",
       "reqIds": [
-        "REQ-2"
+        "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-improve-client-facing-error-messaging-for-unexpected-backend-traps-during-signup-map-the-specific-error-text-blob-too-long-for-principal-to-a-user-friendly-english-message-and-avoid-showing-raw-trap-text-in-the-ui",
-      "title": "Improve client-facing error messaging for unexpected backend traps during signup: map the specific error text \"blob too long for principal\" to a user-friendly English message and avoid showing raw trap text in the UI.",
+      "id": "feature-fix-admin-session-persistence-validation-in-the-frontend-so-that-after-reload-the-app-validates-an-existing-admin-session-token-using-the-backend-session-validation-api-rather-than-calling-a-privileged-data-endpoint-purely-for-validation-and-logs-the-user-out-if-the-token-is-invalid-expired",
+      "title": "Fix admin session persistence/validation in the frontend so that after reload the app validates an existing admin session token using the backend session validation API (rather than calling a privileged data endpoint purely for validation) and logs the user out if the token is invalid/expired.",
       "reqIds": [
         "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-ensure-admin-login-error-messaging-shown-in-the-admin-login-ui-is-accurate-and-user-actionable-e-g-show-invalid-admin-password-only-when-the-backend-explicitly-rejects-the-password-show-service-unavailable-for-api-method-signature-issues",
+      "title": "Ensure admin-login error messaging shown in the Admin Login UI is accurate and user-actionable (e.g., show 'Invalid admin password' only when the backend explicitly rejects the password; show 'Service unavailable' for API/method/signature issues).",
+      "reqIds": [
+        "REQ-4"
       ],
       "version": 1
     }
   ],
   "new_feature_requests": [
     {
-      "id": "AR-1",
-      "summary": "Fix backend client signup and auto-repair logic so it never traps with \"blob too long for principal\" when generating linkedPrincipal for email/mobile identifiers, including: clientSignup, autoRepairClientAccount, and repairMissingLinkedPrincipals.",
+      "id": "AR-2",
+      "summary": "Update the backend admin password to the intended value shown by the user so that the admin can log in using the expected password.",
       "reqIds": [
-        "REQ-1"
+        "REQ-2"
       ],
       "status": "pending"
     }
   ],
-  "projectName": "Fix client signup failure: \"blob too long for principal\"",
+  "projectName": "Fix admin panel login (password + API signature mismatch)",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

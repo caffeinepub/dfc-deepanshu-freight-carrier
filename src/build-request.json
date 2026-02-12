@@ -1,73 +1,89 @@
 {
   "kind": "build_request",
-  "title": "Fix client signup failure: \"blob too long for principal\"",
+  "title": "Fix admin panel login (password + API signature mismatch)",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix backend client signup and auto-repair logic so it never traps with \"blob too long for principal\" when generating linkedPrincipal for email/mobile identifiers, including: clientSignup, autoRepairClientAccount, and repairMissingLinkedPrincipals.",
-      "target": "backend",
+      "text": "Fix the admin login flow by aligning the frontend call signature with the backend `adminLogin` API so that a correct password can successfully authenticate and open the Admin Dashboard.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-5"
+          "recent-messages"
         ],
         "quotes": [
-          "Ab yah kya problem hai"
+          "Admin panel login nahin ho raha"
         ]
       },
       "acceptanceCriteria": [
-        "Signing up with a typical email address (e.g., name@gmail.com) succeeds without any backend trap/reject errors.",
-        "Signing up with a 10-digit mobile number succeeds without any backend trap/reject errors.",
-        "clientPasswordLogin and verifyOtp auto-repair paths do not trap when linking accounts missing linkedPrincipal.",
-        "Admin bulk repair (repairMissingLinkedPrincipals) completes without trapping, even when identifiers are long (emails).",
-        "No backend state migration is required (no schema/type changes)."
+        "Submitting the correct admin password results in a successful login and the Admin Dashboard becomes accessible.",
+        "No Candid/agent errors occur due to argument-count or type mismatches when calling `adminLogin`.",
+        "The frontend stores the returned/issued admin session token (from the backend) and uses it for subsequent admin API calls."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Update the client signup UI to use the validated/normalized identifier value from validateClientIdentifier (e.g., digit-only mobile normalization) when deciding whether to send email vs mobile and when submitting the signup mutation payload.",
-      "target": "frontend",
+      "text": "Update the backend admin password to the intended value shown by the user so that the admin can log in using the expected password.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "Screenshot_20260212_090700.jpg"
         ],
         "quotes": [
-          "Ab yah kya problem hai"
+          "ADMIN PANEL KA PASSWORD GALAT BATA RAHA HAI",
+          "Password change karo JATINSHARMA2580"
         ]
       },
       "acceptanceCriteria": [
-        "If a user enters a mobile number with spaces/dashes, the signup request uses the normalized 10-digit number.",
-        "If a user enters an email with leading/trailing whitespace, the signup request uses the trimmed/normalized email.",
-        "The signup form no longer produces backend errors caused by sending an unnormalized identifier type (email vs mobile)."
+        "The backend admin password matches `JATINSHARMA2580`.",
+        "Attempting admin login with an incorrect password fails with a clear English error message.",
+        "Attempting admin login with `JATINSHARMA2580` succeeds."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Improve client-facing error messaging for unexpected backend traps during signup: map the specific error text \"blob too long for principal\" to a user-friendly English message and avoid showing raw trap text in the UI.",
+      "text": "Fix admin session persistence/validation in the frontend so that after reload the app validates an existing admin session token using the backend session validation API (rather than calling a privileged data endpoint purely for validation) and logs the user out if the token is invalid/expired.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "recent-messages"
         ],
         "quotes": [
-          "Ab yah kya problem hai"
+          "Admin panel login nahin ho raha"
         ]
       },
       "acceptanceCriteria": [
-        "If the backend ever returns an error containing \"blob too long for principal\", the UI displays a clear English message (e.g., \"Signup failed due to a server error. Please try again.\") instead of the raw text.",
-        "Other existing error mappings remain unchanged."
+        "On page load, if `admin_session_token` exists, the app validates it via a dedicated backend validation method (e.g., `validateAdminSession`).",
+        "If the stored token is invalid or expired, the app clears it and shows the Admin Login UI.",
+        "If the stored token is valid, the app remains authenticated and the Admin Dashboard is accessible without re-entering the password."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Ensure admin-login error messaging shown in the Admin Login UI is accurate and user-actionable (e.g., show 'Invalid admin password' only when the backend explicitly rejects the password; show 'Service unavailable' for API/method/signature issues).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "Screenshot_20260212_090700.jpg"
+        ],
+        "quotes": [
+          "Invalid password. Please try again."
+        ]
+      },
+      "acceptanceCriteria": [
+        "If the backend rejects the password, the UI shows an English message indicating the password is incorrect.",
+        "If login fails due to method/signature/service issues, the UI shows an English 'Service unavailable' style message rather than implying the password is wrong.",
+        "The error state clears on the next submit attempt."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor (all logic in backend/main.mo).",
-    "Do not edit files under frontend/src/components/ui or any other immutablePaths listed in SYSTEM_CONTEXT.",
-    "Use English for any user-facing text."
+    "Backend must remain a single-actor Motoko canister (all logic in `backend/main.mo`).",
+    "Do not edit files under `frontend/src/components/ui` or other paths listed as immutable in SYSTEM_CONTEXT."
   ],
   "nonGoals": [
-    "Adding new authentication providers (only existing password/OTP flows).",
-    "Introducing external databases or additional backend services.",
-    "UI redesign beyond what is necessary to fix signup and error messaging."
+    "Adding Internet Identity-based admin authentication or role management beyond the existing single-password admin model.",
+    "Implementing external databases or third-party auth providers."
   ],
   "imageRequirements": {
     "required": [],

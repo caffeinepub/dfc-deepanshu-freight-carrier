@@ -25,14 +25,15 @@ export function useAdminSession() {
     const validateToken = async () => {
       setIsValidating(true);
       try {
-        // Try to call a protected method to validate the token
-        await (actor as ExtendedActor).getAllClients(adminToken);
-      } catch (error: any) {
-        console.error('Token validation failed:', error);
-        // Clear token if validation fails
-        if (error?.message?.includes('Invalid') || error?.message?.includes('expired')) {
+        // Use the dedicated validation method
+        const result = await (actor as ExtendedActor).validateAdminSession(adminToken);
+        if (!result) {
+          // Token is invalid or expired
           clearAdminToken();
         }
+      } catch (error: any) {
+        console.error('Token validation failed:', error);
+        clearAdminToken();
       } finally {
         setIsValidating(false);
       }
@@ -46,15 +47,22 @@ export function useAdminSession() {
       throw new Error('Service unavailable. Please try again later.');
     }
 
-    const token = `admin_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-
     try {
       // Check if adminLogin method exists
       if (typeof (actor as ExtendedActor).adminLogin !== 'function') {
         throw new Error('Service unavailable. Please contact support.');
       }
 
-      await (actor as ExtendedActor).adminLogin(password, token);
+      // Call backend adminLogin with only password argument
+      // Backend returns the token (string | null)
+      const token = await (actor as ExtendedActor).adminLogin(password);
+      
+      if (!token) {
+        // Backend returned null - invalid password
+        throw new Error('Invalid admin password');
+      }
+
+      // Store the token returned from backend
       localStorage.setItem(ADMIN_TOKEN_KEY, token);
       setAdminToken(token);
       return token;
@@ -69,8 +77,12 @@ export function useAdminSession() {
         throw new Error('Service unavailable. Please contact support.');
       }
       
+      // Backend trap with "Invalid admin password" - preserve it
+      if (errorMessage.includes('Invalid admin password')) {
+        throw new Error('Invalid admin password');
+      }
+      
       // Preserve already-English, user-actionable backend error messages
-      // These are controlled error messages from the backend
       if (
         errorMessage.includes('Invalid password') ||
         errorMessage.includes('Incorrect password') ||
@@ -79,7 +91,6 @@ export function useAdminSession() {
         errorMessage.includes('Too many') ||
         errorMessage.includes('rate limit')
       ) {
-        // Backend already provided a clear English message - use it directly
         throw new Error(errorMessage);
       }
       
@@ -88,7 +99,9 @@ export function useAdminSession() {
         errorMessage.includes('canister') ||
         errorMessage.includes('service') ||
         errorMessage.includes('network') ||
-        errorMessage.includes('timeout')
+        errorMessage.includes('timeout') ||
+        errorMessage.includes('Candid') ||
+        errorMessage.includes('argument')
       ) {
         throw new Error('Service unavailable. Please try again later.');
       }
@@ -99,7 +112,6 @@ export function useAdminSession() {
       }
       
       // For any other backend error, preserve the original message if it looks user-friendly
-      // (doesn't contain technical jargon)
       if (
         !errorMessage.includes('trap') &&
         !errorMessage.includes('reject') &&

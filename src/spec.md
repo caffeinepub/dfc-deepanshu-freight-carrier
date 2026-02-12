@@ -1,11 +1,12 @@
 # Specification
 
 ## Summary
-**Goal:** Fix client signup failures caused by the backend trapping with "blob too long for principal", and ensure the signup UI submits a normalized identifier and shows friendly errors.
+**Goal:** Restore working Admin Panel login by fixing the frontend/backend `adminLogin` call mismatch, setting the correct admin password, and improving session persistence and error messaging.
 
 **Planned changes:**
-- Update backend signup and account auto-repair flows (clientSignup, autoRepairClientAccount, repairMissingLinkedPrincipals) to generate linkedPrincipal for email/mobile identifiers without trapping on long values.
-- Update signup UI to use the validated/normalized identifier returned by validateClientIdentifier when choosing email vs mobile flow and when submitting the signup payload.
-- Map backend errors containing "blob too long for principal" to a user-friendly English message during signup, without exposing raw trap text; keep other error mappings unchanged.
+- Align the frontend `adminLogin` API call signature with the backend Motoko `adminLogin` method so correct credentials can authenticate without Candid/agent argument/type errors.
+- Update the backend admin password to `JATINSHARMA2580`, and ensure incorrect passwords fail with a clear English error.
+- Adjust frontend admin session persistence so on reload it validates `admin_session_token` via a dedicated backend session validation method (e.g., `validateAdminSession`), clearing the token and returning to Admin Login when invalid/expired.
+- Improve Admin Login UI error messaging to distinguish between invalid password vs service/method/signature failures, and clear the error state on the next submit attempt.
 
-**User-visible outcome:** Users can sign up successfully with a typical email or a 10-digit mobile number (even if entered with spaces/dashes or extra whitespace), and if the server encounters the specific principal-length error, the UI shows a clear English message instead of the raw trap text.
+**User-visible outcome:** Admin can sign in to the Admin Dashboard using password `JATINSHARMA2580`; after refresh the session stays logged in when valid (or logs out cleanly when expired), and login errors are accurate and actionable.
