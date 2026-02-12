@@ -1,56 +1,28 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T03:43:16.311Z",
+  "generatedAt": "2026-02-12T15:38:26.363Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 4,
-    "implemented": 3,
+    "total": 2,
+    "implemented": 0,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix the admin login flow by aligning the frontend call signature with the backend `adminLogin` API so that a correct password can successfully authenticate and open the Admin Dashboard.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useAdminSession.ts",
-          "frontend/src/components/auth/AdminLoginCard.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useAdminSession.ts"
-        ]
-      },
-      {
-        "id": "REQ-2",
-        "summary": "Update the backend admin password to the intended value shown by the user so that the admin can log in using the expected password.",
+        "summary": "Update the backend admin password so that the Admin Login accepts the exact password `JATINSHARMA2580` and no longer rejects it as invalid.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
-        "id": "REQ-3",
-        "summary": "Fix admin session persistence/validation in the frontend so that after reload the app validates an existing admin session token using the backend session validation API (rather than calling a privileged data endpoint purely for validation) and logs the user out if the token is invalid/expired.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useAdminSession.ts"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useAdminSession.ts"
-        ]
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Ensure admin-login error messaging shown in the Admin Login UI is accurate and user-actionable (e.g., show 'Invalid admin password' only when the backend explicitly rejects the password; show 'Service unavailable' for API/method/signature issues).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/hooks/useAdminSession.ts",
-          "frontend/src/components/auth/AdminLoginCard.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/hooks/useAdminSession.ts"
-        ]
+        "id": "REQ-2",
+        "summary": "Ensure the admin password change persists correctly across upgrades for already-deployed canisters (i.e., upgrading the canister must not keep/reset the admin password to the old value).",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
       }
     ]
   },
@@ -59,9 +31,11 @@
     "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
-    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/hooks/useAdminSession.ts",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

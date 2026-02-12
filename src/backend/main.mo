@@ -127,7 +127,7 @@ actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
-  var adminPassword : Text = "jatinkrs01";
+  var adminPassword : Text = "JATINSHARMA2580";
   let sessionTimeout : Int = 30 * 60 * 1_000_000_000;
 
   let loginAttempts = Map.empty<Text, (Nat, Time.Time)>();
@@ -764,4 +764,3 @@ actor {
     };
   };
 };
-

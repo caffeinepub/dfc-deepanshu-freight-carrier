@@ -1,65 +1,6 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Fix admin login signature, session validation, and UI error messaging",
-  "requirements": [
-    {
-      "id": "REQ-1",
-      "summary": "Align the frontend admin login call with the backend `adminLogin` signature and persist the returned session token for subsequent admin calls.",
-      "acceptanceCriteria": [
-        "Submitting the correct admin password results in a successful login and the Admin Dashboard becomes accessible.",
-        "No Candid/agent errors occur due to argument-count or type mismatches when calling `adminLogin`.",
-        "The frontend stores the returned/issued admin session token (from the backend) and uses it for subsequent admin API calls."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useAdminSession.ts",
-          "operation": "modify",
-          "description": "Update `login()` to call the backend `adminLogin(password: string)` with the correct argument list, use the returned token (string | null) as the sole source of truth, persist it to `localStorage` under `admin_session_token`, and update hook state so the Admin Dashboard unlocks after a successful login."
-        },
-        {
-          "path": "frontend/src/components/auth/AdminLoginCard.tsx",
-          "operation": "modify",
-          "description": "Ensure the admin login UI continues to call `useAdminSession().login(password)` and that it correctly reacts to successful login (dashboard accessible) without requiring any client-side generated token assumptions."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Validate persisted admin sessions via the dedicated backend validation method and clear invalid/expired tokens on reload.",
-      "acceptanceCriteria": [
-        "On page load, if `admin_session_token` exists, the app validates it via a dedicated backend validation method (e.g., `validateAdminSession`).",
-        "If the stored token is invalid or expired, the app clears it and shows the Admin Login UI.",
-        "If the stored token is valid, the app remains authenticated and the Admin Dashboard is accessible without re-entering the password."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useAdminSession.ts",
-          "operation": "modify",
-          "description": "Replace the current token validation approach (calling a privileged admin data method) with a dedicated validation call using `validateAdminSession(sessionToken)`; if validation returns null or indicates invalid/expired, clear `admin_session_token` and reset auth state; if valid, keep/refresh the stored token as appropriate."
-        }
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "summary": "Improve admin login error mapping so the UI shows actionable messages and does not mislabel service/signature failures as password issues.",
-      "acceptanceCriteria": [
-        "If the backend rejects the password, the UI shows an English message indicating the password is incorrect.",
-        "If login fails due to method/signature/service issues, the UI shows an English 'Service unavailable' style message rather than implying the password is wrong.",
-        "The error state clears on the next submit attempt."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useAdminSession.ts",
-          "operation": "modify",
-          "description": "Refine error handling in `login()` to: (1) treat a `null` `adminLogin` result as an explicit incorrect-password case (e.g., 'Invalid admin password'); (2) detect Candid/agent/signature/argument mismatch style failures and map them to an English 'Service unavailable' message; (3) avoid falling back to password-related messaging for technical failures."
-        },
-        {
-          "path": "frontend/src/components/auth/AdminLoginCard.tsx",
-          "operation": "modify",
-          "description": "Confirm the error UI behavior remains accurate: clear any prior error at the start of each submit attempt and display the error message thrown from `useAdminSession.login()` without re-mapping it to a generic password error."
-        }
-      ]
-    }
-  ]
+  "title": "Admin password fix (frontend-only scope)",
+  "requirements": []
 }

@@ -1,102 +1,59 @@
 {
   "kind": "build_request",
-  "title": "Fix admin panel login (password + API signature mismatch)",
+  "title": "Fix admin login by updating backend admin password to JATINSHARMA2580",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix the admin login flow by aligning the frontend call signature with the backend `adminLogin` API so that a correct password can successfully authenticate and open the Admin Dashboard.",
-      "target": "both",
+      "text": "Update the backend admin password so that the Admin Login accepts the exact password `JATINSHARMA2580` and no longer rejects it as invalid.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "recent-messages"
+          "msg-11",
+          "msg-15"
         ],
         "quotes": [
-          "Admin panel login nahin ho raha"
+          "JATINSHARMA2580",
+          "Haan final"
         ]
       },
       "acceptanceCriteria": [
-        "Submitting the correct admin password results in a successful login and the Admin Dashboard becomes accessible.",
-        "No Candid/agent errors occur due to argument-count or type mismatches when calling `adminLogin`.",
-        "The frontend stores the returned/issued admin session token (from the backend) and uses it for subsequent admin API calls."
+        "Calling `adminLogin(\"JATINSHARMA2580\")` returns a non-null session token.",
+        "Attempting to log in via the Admin Login UI using password `JATINSHARMA2580` successfully authenticates and opens the admin dashboard.",
+        "Attempting to log in with any other password fails with an 'Invalid admin password' error message in the UI."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Update the backend admin password to the intended value shown by the user so that the admin can log in using the expected password.",
+      "text": "Ensure the admin password change persists correctly across upgrades for already-deployed canisters (i.e., upgrading the canister must not keep/reset the admin password to the old value).",
       "target": "backend",
       "source": {
         "messageIds": [
-          "Screenshot_20260212_090700.jpg"
+          "msg-12",
+          "msg-15"
         ],
         "quotes": [
-          "ADMIN PANEL KA PASSWORD GALAT BATA RAHA HAI",
-          "Password change karo JATINSHARMA2580"
+          "Is problem ko theek kar do only is problem ko",
+          "Haan final"
         ]
       },
       "acceptanceCriteria": [
-        "The backend admin password matches `JATINSHARMA2580`.",
-        "Attempting admin login with an incorrect password fails with a clear English error message.",
-        "Attempting admin login with `JATINSHARMA2580` succeeds."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Fix admin session persistence/validation in the frontend so that after reload the app validates an existing admin session token using the backend session validation API (rather than calling a privileged data endpoint purely for validation) and logs the user out if the token is invalid/expired.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "recent-messages"
-        ],
-        "quotes": [
-          "Admin panel login nahin ho raha"
-        ]
-      },
-      "acceptanceCriteria": [
-        "On page load, if `admin_session_token` exists, the app validates it via a dedicated backend validation method (e.g., `validateAdminSession`).",
-        "If the stored token is invalid or expired, the app clears it and shows the Admin Login UI.",
-        "If the stored token is valid, the app remains authenticated and the Admin Dashboard is accessible without re-entering the password."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Ensure admin-login error messaging shown in the Admin Login UI is accurate and user-actionable (e.g., show 'Invalid admin password' only when the backend explicitly rejects the password; show 'Service unavailable' for API/method/signature issues).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "Screenshot_20260212_090700.jpg"
-        ],
-        "quotes": [
-          "Invalid password. Please try again."
-        ]
-      },
-      "acceptanceCriteria": [
-        "If the backend rejects the password, the UI shows an English message indicating the password is incorrect.",
-        "If login fails due to method/signature/service issues, the UI shows an English 'Service unavailable' style message rather than implying the password is wrong.",
-        "The error state clears on the next submit attempt."
+        "After an upgrade deployment, the Admin Login still accepts `JATINSHARMA2580`.",
+        "No migration/upgrade logic resets the admin password to a different value than `JATINSHARMA2580`."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single-actor Motoko canister (all logic in `backend/main.mo`).",
-    "Do not edit files under `frontend/src/components/ui` or other paths listed as immutable in SYSTEM_CONTEXT."
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "Do not modify any files under frontend/src/components/ui or any other frontend immutable paths."
   ],
   "nonGoals": [
-    "Adding Internet Identity-based admin authentication or role management beyond the existing single-password admin model.",
-    "Implementing external databases or third-party auth providers."
+    "Do not add new authentication methods (e.g., Internet Identity, third-party auth).",
+    "Do not redesign the admin UI beyond what is required to confirm the password fix.",
+    "Do not change client login/OTP flows."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }
