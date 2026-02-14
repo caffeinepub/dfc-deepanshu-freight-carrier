@@ -1,6 +1,27 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Admin password fix (frontend-only scope)",
-  "requirements": []
+  "title": "Fix admin login UI error messaging to match backend invalid-password vs service-unavailable",
+  "requirements": [
+    {
+      "id": "REQ-4",
+      "summary": "Ensure admin login displays the exact invalid-password message only for explicit invalid-password responses, and shows a service-unavailable message for backend/candid/method-mismatch errors.",
+      "acceptanceCriteria": [
+        "When the backend returns invalid-password, the admin login card displays exactly: \"Invalid password. Please try again.\"",
+        "When the backend is unavailable or the method is missing/mismatched, the admin login card displays an English service-unavailable message (not the invalid-password message)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useAdminSession.ts",
+          "operation": "modify",
+          "description": "Adjust admin login error classification so that only an explicit AdminLoginResult.invalidPassword results in throwing the exact message \"Invalid password. Please try again.\"; for backend/candid/method-mismatch/network/unknown errors, throw a service-unavailable-style English message instead (and do not fall back to invalid-password)."
+        },
+        {
+          "path": "frontend/src/components/auth/AdminLoginCard.tsx",
+          "operation": "modify",
+          "description": "Update AdminLoginCard error handling so it does not default to the invalid-password message when an error lacks a message; instead default to a service-unavailable-style English message and continue to display exactly the error message surfaced by useAdminSession."
+        }
+      ]
+    }
+  ]
 }

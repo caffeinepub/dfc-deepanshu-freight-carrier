@@ -10,6 +10,8 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export type AdminLoginResult = { 'invalidPassword' : null } |
+  { 'success' : string };
 export interface AllClientsResponse {
   'clientAccounts' : Array<ClientAccount>,
   'state' : string,
@@ -60,7 +62,7 @@ export type UserRole = { 'admin' : null } |
   { 'guest' : null };
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
-  'adminLogin' : ActorMethod<[string], [] | [string]>,
+  'adminLogin' : ActorMethod<[string], AdminLoginResult>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'clientPasswordLogin' : ActorMethod<
     [string, string],
@@ -116,7 +118,7 @@ export interface _SERVICE {
       { 'success' : null } |
       { 'rateLimited' : null }
   >,
-  'validateAdminSession' : ActorMethod<[string], [] | [string]>,
+  'validateAdminSession' : ActorMethod<[string], boolean>,
   'verifyOtp' : ActorMethod<
     [string, string],
     { 'expired' : null } |

@@ -1,28 +1,48 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T15:38:26.363Z",
+  "generatedAt": "2026-02-14T04:42:00.591Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 2,
-    "implemented": 0,
+    "total": 4,
+    "implemented": 1,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Update the backend admin password so that the Admin Login accepts the exact password `JATINSHARMA2580` and no longer rejects it as invalid.",
+        "summary": "Fix backend admin authentication so that admin login accepts the exact password `JATINSHARMA2580` and returns a non-empty admin session token when the password is correct, and returns an explicit invalid-password result when it is not. The password check must ignore accidental leading/trailing whitespace in the submitted password.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Ensure the admin password change persists correctly across upgrades for already-deployed canisters (i.e., upgrading the canister must not keep/reset the admin password to the old value).",
+        "summary": "Ensure the backend exposes the admin session APIs expected by the frontend contract and that they behave consistently: `adminLogin(password)` for issuing tokens and `validateAdminSession(token)` for validating them. A token returned from `adminLogin` must be accepted by `validateAdminSession` until it expires, and validation must refresh the token’s last-seen timestamp in a way that matches the backend’s session timeout rules.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Make the admin password value persist correctly across canister upgrades so upgrades do not revert/retain an unintended previous admin password. If a state schema change or upgrade handling is required under the project migration policy, add/adjust the backend upgrade/migration logic to preserve existing state while ensuring the stored admin password is set to `JATINSHARMA2580` after upgrade.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-4",
+        "summary": "Keep the admin login UI error message behavior consistent with the existing frontend handling: show exactly \"Invalid password. Please try again.\" only when the backend explicitly returns invalid-password; show a service/unavailable-style message for backend/candid/method-mismatch errors (English only).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useAdminSession.ts",
+          "frontend/src/components/auth/AdminLoginCard.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useAdminSession.ts",
+          "frontend/src/components/auth/AdminLoginCard.tsx"
+        ]
       }
     ]
   },
@@ -31,11 +51,10 @@
     "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
+    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/backend.d.ts",
-    "frontend/src/backend.ts",
-    "frontend/src/declarations/backend.did.d.ts",
-    "frontend/src/declarations/backend.did.js",
+    "frontend/src/components/auth/AdminLoginCard.tsx",
+    "frontend/src/hooks/useAdminSession.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

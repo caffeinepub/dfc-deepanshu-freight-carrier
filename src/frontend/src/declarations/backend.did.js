@@ -8,6 +8,10 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const AdminLoginResult = IDL.Variant({
+  'invalidPassword' : IDL.Null,
+  'success' : IDL.Text,
+});
 export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
   'user' : IDL.Null,
@@ -68,7 +72,7 @@ export const AllClientsResponse = IDL.Record({
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-  'adminLogin' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], []),
+  'adminLogin' : IDL.Func([IDL.Text], [AdminLoginResult], ['query']),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'clientPasswordLogin' : IDL.Func(
       [IDL.Text, IDL.Text],
@@ -175,7 +179,7 @@ export const idlService = IDL.Service({
       ],
       [],
     ),
-  'validateAdminSession' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], ['query']),
+  'validateAdminSession' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
   'verifyOtp' : IDL.Func(
       [IDL.Text, IDL.Text],
       [
@@ -196,6 +200,10 @@ export const idlService = IDL.Service({
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
+  const AdminLoginResult = IDL.Variant({
+    'invalidPassword' : IDL.Null,
+    'success' : IDL.Text,
+  });
   const UserRole = IDL.Variant({
     'admin' : IDL.Null,
     'user' : IDL.Null,
@@ -253,7 +261,7 @@ export const idlFactory = ({ IDL }) => {
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-    'adminLogin' : IDL.Func([IDL.Text], [IDL.Opt(IDL.Text)], []),
+    'adminLogin' : IDL.Func([IDL.Text], [AdminLoginResult], ['query']),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'clientPasswordLogin' : IDL.Func(
         [IDL.Text, IDL.Text],
@@ -360,11 +368,7 @@ export const idlFactory = ({ IDL }) => {
         ],
         [],
       ),
-    'validateAdminSession' : IDL.Func(
-        [IDL.Text],
-        [IDL.Opt(IDL.Text)],
-        ['query'],
-      ),
+    'validateAdminSession' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
     'verifyOtp' : IDL.Func(
         [IDL.Text, IDL.Text],
         [

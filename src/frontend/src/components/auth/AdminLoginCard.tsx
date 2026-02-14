@@ -22,8 +22,8 @@ export function AdminLoginCard() {
       await login(password);
       // On success, the session hook will update and trigger re-render
     } catch (err: any) {
-      // Display the user-friendly error message from useAdminSession
-      const errorMessage = err?.message || 'Login failed. Please try again.';
+      // Display the exact error message from useAdminSession
+      const errorMessage = err?.message || 'Service unavailable. Please try again later.';
       setError(errorMessage);
     } finally {
       setIsLoading(false);

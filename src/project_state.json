@@ -1,19 +1,26 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Project includes an admin login; current focus is fixing the issue where the admin password update does not take effect (login shows \"Invalid admin password\" even after setting it to JATINSHARMA2580).",
-  "architectural_notes": [
-    "Admin password appears to be managed/validated in the backend; password update must propagate to the auth check used by admin login."
-  ],
+  "summary": "New project",
+  "architectural_notes": [],
   "known_issues": [
-    "Admin login rejects password JATINSHARMA2580 with \"Invalid admin password\"; backend admin password update likely not applied."
+    "Admin login still fails even when entering the correct password (user reports issue persists)."
   ],
   "isFixRequest": true,
-  "existing_features": [],
+  "existing_features": [
+    {
+      "id": "feature-keep-the-admin-login-ui-error-message-behavior-consistent-with-the-existing-frontend-handling-show-exactly-invalid-password-please-try-again-only-when-the-backend-explicitly-returns-invalid-password-show-a-service-unavailable-style-message-for-backend-candid-method-mismatch-errors-english-only",
+      "title": "Keep the admin login UI error message behavior consistent with the existing frontend handling: show exactly \"Invalid password. Please try again.\" only when the backend explicitly returns invalid-password; show a service/unavailable-style message for backend/candid/method-mismatch errors (English only).",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    }
+  ],
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Update the backend admin password so that the Admin Login accepts the exact password `JATINSHARMA2580` and no longer rejects it as invalid.",
+      "summary": "Fix backend admin authentication so that admin login accepts the exact password `JATINSHARMA2580` and returns a non-empty admin session token when the password is correct, and returns an explicit invalid-password result when it is not. The password check must ignore accidental leading/trailing whitespace in the submitted password.",
       "reqIds": [
         "REQ-1"
       ],
@@ -21,14 +28,22 @@
     },
     {
       "id": "AR-2",
-      "summary": "Ensure the admin password change persists correctly across upgrades for already-deployed canisters (i.e., upgrading the canister must not keep/reset the admin password to the old value).",
+      "summary": "Ensure the backend exposes the admin session APIs expected by the frontend contract and that they behave consistently: `adminLogin(password)` for issuing tokens and `validateAdminSession(token)` for validating them. A token returned from `adminLogin` must be accepted by `validateAdminSession` until it expires, and validation must refresh the token’s last-seen timestamp in a way that matches the backend’s session timeout rules.",
       "reqIds": [
         "REQ-2"
       ],
       "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Make the admin password value persist correctly across canister upgrades so upgrades do not revert/retain an unintended previous admin password. If a state schema change or upgrade handling is required under the project migration policy, add/adjust the backend upgrade/migration logic to preserve existing state while ensuring the stored admin password is set to `JATINSHARMA2580` after upgrade.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "status": "pending"
     }
   ],
-  "projectName": "Fix admin login by updating backend admin password to JATINSHARMA2580",
+  "projectName": "Fix admin login rejecting correct password",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

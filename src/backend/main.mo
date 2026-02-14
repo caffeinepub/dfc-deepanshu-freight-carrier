@@ -709,29 +709,29 @@ actor {
     expiration : Time.Time;
   };
 
-  public shared ({ caller }) func adminLogin(password : Text) : async ?Text {
-    // Anyone can attempt admin login, but must provide correct password
+  public type AdminLoginResult = {
+    #success : Text;
+    #invalidPassword;
+  };
 
-    if (password != adminPassword) {
-      Runtime.trap("Invalid admin password");
+  public query ({ caller }) func adminLogin(password : Text) : async AdminLoginResult {
+    let cleanPassword = password.trim(#predicate(func(c) { c == ' ' }));
+    let cleanStoredPassword = adminPassword.trim(#predicate(func(c) { c == ' ' }));
+
+    if (cleanPassword != cleanStoredPassword) {
+      return #invalidPassword;
     };
 
     let token = "admin-session-" # Time.now().toText();
     adminSessionTokens.add(token, Time.now());
     AccessControl.assignRole(accessControlState, caller, caller, #admin);
-    ?token;
+    #success(token);
   };
 
   public query func validateAdminSession(
     sessionToken : Text,
-  ) : async ?Text {
-    // Anyone can validate a session token
-
-    if (isValidSession(sessionToken)) {
-      ?sessionToken;
-    } else {
-      null;
-    };
+  ) : async Bool {
+    isValidSession(sessionToken);
   };
 
   // Admin Data Access

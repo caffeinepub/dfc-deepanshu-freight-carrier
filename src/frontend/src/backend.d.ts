@@ -44,6 +44,13 @@ export interface Invoice {
     invoiceNo: bigint;
     amount: bigint;
 }
+export type AdminLoginResult = {
+    __kind__: "invalidPassword";
+    invalidPassword: null;
+} | {
+    __kind__: "success";
+    success: string;
+};
 export interface UserProfile {
     gstNumber: string;
     address: string;
@@ -70,7 +77,7 @@ export enum Variant_invalidPhone_success_rateLimited {
     rateLimited = "rateLimited"
 }
 export interface backendInterface {
-    adminLogin(password: string): Promise<string | null>;
+    adminLogin(password: string): Promise<AdminLoginResult>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     clientPasswordLogin(identifier: string, password: string): Promise<{
         __kind__: "success";
@@ -139,7 +146,7 @@ export interface backendInterface {
     repairMissingLinkedPrincipals(): Promise<bigint>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     sendOtp(phoneNumber: string): Promise<Variant_invalidPhone_success_rateLimited>;
-    validateAdminSession(sessionToken: string): Promise<string | null>;
+    validateAdminSession(sessionToken: string): Promise<boolean>;
     verifyOtp(phoneNumber: string, otp: string): Promise<{
         __kind__: "expired";
         expired: null;

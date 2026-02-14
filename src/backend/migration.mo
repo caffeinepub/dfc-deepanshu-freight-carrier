@@ -1,8 +1,7 @@
 module {
-  type OldActor = { var adminPassword : Text };
-  type NewActor = { var adminPassword : Text };
+  type Actor = { adminPassword : Text };
 
-  public func run(old : OldActor) : NewActor {
-    old;
+  public func run(_ : Actor) : Actor {
+    { adminPassword = "JATINSHARMA2580" };
   };
 };

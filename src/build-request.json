@@ -1,59 +1,97 @@
 {
   "kind": "build_request",
-  "title": "Fix admin login by updating backend admin password to JATINSHARMA2580",
+  "title": "Fix admin login rejecting correct password",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Update the backend admin password so that the Admin Login accepts the exact password `JATINSHARMA2580` and no longer rejects it as invalid.",
+      "text": "Fix backend admin authentication so that admin login accepts the exact password `JATINSHARMA2580` and returns a non-empty admin session token when the password is correct, and returns an explicit invalid-password result when it is not. The password check must ignore accidental leading/trailing whitespace in the submitted password.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-11",
-          "msg-15"
+          "msg-1"
         ],
         "quotes": [
-          "JATINSHARMA2580",
-          "Haan final"
+          "Sahi password dalne ke bad bhi yah problem a rahi hai please problem ko theek karo"
         ]
       },
       "acceptanceCriteria": [
-        "Calling `adminLogin(\"JATINSHARMA2580\")` returns a non-null session token.",
-        "Attempting to log in via the Admin Login UI using password `JATINSHARMA2580` successfully authenticates and opens the admin dashboard.",
-        "Attempting to log in with any other password fails with an 'Invalid admin password' error message in the UI."
+        "Calling `adminLogin(\"JATINSHARMA2580\")` returns a success variant containing a non-empty token.",
+        "Calling `adminLogin(\"  JATINSHARMA2580  \")` returns a success variant containing a non-empty token.",
+        "Calling `adminLogin(\"wrong\")` returns an invalid-password variant (not a trap).",
+        "No successful login attempt returns an empty/blank token."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Ensure the admin password change persists correctly across upgrades for already-deployed canisters (i.e., upgrading the canister must not keep/reset the admin password to the old value).",
+      "text": "Ensure the backend exposes the admin session APIs expected by the frontend contract and that they behave consistently: `adminLogin(password)` for issuing tokens and `validateAdminSession(token)` for validating them. A token returned from `adminLogin` must be accepted by `validateAdminSession` until it expires, and validation must refresh the token’s last-seen timestamp in a way that matches the backend’s session timeout rules.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-12",
-          "msg-15"
-        ],
-        "quotes": [
-          "Is problem ko theek kar do only is problem ko",
-          "Haan final"
+          "msg-1"
         ]
       },
       "acceptanceCriteria": [
-        "After an upgrade deployment, the Admin Login still accepts `JATINSHARMA2580`.",
-        "No migration/upgrade logic resets the admin password to a different value than `JATINSHARMA2580`."
+        "The canister exposes `adminLogin : (Text) -> (AdminLoginResult)` and `validateAdminSession : (Text) -> (Bool)` in Candid so the frontend actor can call them.",
+        "After a successful `adminLogin`, calling `validateAdminSession(token)` returns `true`.",
+        "Calling `validateAdminSession(\"invalid-token\")` returns `false` (not a trap).",
+        "After the session timeout elapses without validation, `validateAdminSession(token)` returns `false`."
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Make the admin password value persist correctly across canister upgrades so upgrades do not revert/retain an unintended previous admin password. If a state schema change or upgrade handling is required under the project migration policy, add/adjust the backend upgrade/migration logic to preserve existing state while ensuring the stored admin password is set to `JATINSHARMA2580` after upgrade.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ]
+      },
+      "acceptanceCriteria": [
+        "After a canister upgrade, the admin password remains usable for login as `JATINSHARMA2580`.",
+        "Upgrade does not wipe unrelated in-memory state that should be preserved per current app behavior (e.g., existing accounts/shipments/invoices that are already being preserved today)."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Keep the admin login UI error message behavior consistent with the existing frontend handling: show exactly \"Invalid password. Please try again.\" only when the backend explicitly returns invalid-password; show a service/unavailable-style message for backend/candid/method-mismatch errors (English only).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Sahi password dalne ke bad bhi yah problem a rahi hai please problem ko theek karo"
+        ]
+      },
+      "acceptanceCriteria": [
+        "When the backend returns invalid-password, the admin login card displays exactly: \"Invalid password. Please try again.\"",
+        "When the backend is unavailable or the method is missing/mismatched, the admin login card displays an English service-unavailable message (not the invalid-password message)."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
-    "Do not modify any files under frontend/src/components/ui or any other frontend immutable paths."
+    "Backend must remain a single Motoko actor in `backend/main.mo` (no additional backend services).",
+    "Do not modify files under `frontend/src/components/ui` or other paths listed as immutable in SYSTEM_CONTEXT; compose them instead.",
+    "Use English for all user-facing UI text."
   ],
   "nonGoals": [
-    "Do not add new authentication methods (e.g., Internet Identity, third-party auth).",
-    "Do not redesign the admin UI beyond what is required to confirm the password fix.",
-    "Do not change client login/OTP flows."
+    "Adding Internet Identity admin authentication (keep password-based admin auth).",
+    "Changing client portal authentication flows (password/OTP) beyond what is necessary to avoid regressions.",
+    "Adding external databases or third-party auth providers."
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
   }
 }
