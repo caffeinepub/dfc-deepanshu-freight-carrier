@@ -1,84 +1,89 @@
 {
   "kind": "build_request",
-  "title": "Fix admin login rejecting correct password",
+  "title": "Fix admin panel login 'Service unavailable' and restore working admin authentication",
   "priority": "high",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Fix backend admin authentication so that admin login accepts the exact password `JATINSHARMA2580` and returns a non-empty admin session token when the password is correct, and returns an explicit invalid-password result when it is not. The password check must ignore accidental leading/trailing whitespace in the submitted password.",
+      "text": "Fix backend admin authentication so that calling `adminLogin(password)` accepts the exact admin password `JATINSHARMA2580` (ignoring accidental leading/trailing whitespace in the submitted password), returns a non-empty admin session token on success, and returns an explicit invalid-password result when the password is incorrect.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-10"
         ],
         "quotes": [
-          "Sahi password dalne ke bad bhi yah problem a rahi hai please problem ko theek karo"
+          "Admin panel mein service unavailable please try again later\nOnly bus yahi dikkat a rahi hai admin panel login nahin ho raha hai sirf admin pahle inko check karo aur yah problem theek kar do bus"
         ]
       },
       "acceptanceCriteria": [
-        "Calling `adminLogin(\"JATINSHARMA2580\")` returns a success variant containing a non-empty token.",
-        "Calling `adminLogin(\"  JATINSHARMA2580  \")` returns a success variant containing a non-empty token.",
-        "Calling `adminLogin(\"wrong\")` returns an invalid-password variant (not a trap).",
-        "No successful login attempt returns an empty/blank token."
+        "When `adminLogin(\"JATINSHARMA2580\")` is called, the backend returns a success variant that contains a non-empty token string.",
+        "When `adminLogin(\"  JATINSHARMA2580  \")` is called, the backend returns the same success behavior (whitespace trimmed).",
+        "When `adminLogin(\"wrong\")` is called, the backend returns an explicit invalid-password variant (not a trap)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Ensure the backend exposes the admin session APIs expected by the frontend contract and that they behave consistently: `adminLogin(password)` for issuing tokens and `validateAdminSession(token)` for validating them. A token returned from `adminLogin` must be accepted by `validateAdminSession` until it expires, and validation must refresh the token’s last-seen timestamp in a way that matches the backend’s session timeout rules.",
+      "text": "Ensure the backend exposes the admin session APIs expected by the frontend contract and that they behave consistently: `adminLogin(password)` for issuing tokens and `validateAdminSession(token)` for validating them. A token returned from `adminLogin` must be accepted by `validateAdminSession` until it expires, and validation must refresh the token’s last-seen timestamp according to the backend’s session timeout rules.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-10"
+        ],
+        "quotes": [
+          "Admin panel mein service unavailable please try again later\nOnly bus yahi dikkat a rahi hai admin panel login nahin ho raha hai sirf admin pahle inko check karo aur yah problem theek kar do bus"
         ]
       },
       "acceptanceCriteria": [
-        "The canister exposes `adminLogin : (Text) -> (AdminLoginResult)` and `validateAdminSession : (Text) -> (Bool)` in Candid so the frontend actor can call them.",
-        "After a successful `adminLogin`, calling `validateAdminSession(token)` returns `true`.",
-        "Calling `validateAdminSession(\"invalid-token\")` returns `false` (not a trap).",
-        "After the session timeout elapses without validation, `validateAdminSession(token)` returns `false`."
+        "`validateAdminSession(token)` returns `true` for a freshly issued admin token, and `false` for an unknown token.",
+        "Calling `validateAdminSession(token)` updates the token’s timestamp so the session remains valid while being periodically validated within the timeout window.",
+        "After exceeding the configured session timeout without validation, `validateAdminSession(token)` returns `false` and the token is removed/treated as expired."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Make the admin password value persist correctly across canister upgrades so upgrades do not revert/retain an unintended previous admin password. If a state schema change or upgrade handling is required under the project migration policy, add/adjust the backend upgrade/migration logic to preserve existing state while ensuring the stored admin password is set to `JATINSHARMA2580` after upgrade.",
+      "text": "Make the admin password value persist correctly across canister upgrades so upgrades do not revert/retain an unintended previous admin password. If upgrade handling is required under the project migration policy, add/adjust the backend upgrade/migration logic to preserve existing state while ensuring the stored admin password is set to `JATINSHARMA2580` after upgrade.",
       "target": "backend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-10"
+        ],
+        "quotes": [
+          "admin panel login nahin ho raha hai sirf admin pahle inko check karo aur yah problem theek kar do bus"
         ]
       },
       "acceptanceCriteria": [
-        "After a canister upgrade, the admin password remains usable for login as `JATINSHARMA2580`.",
-        "Upgrade does not wipe unrelated in-memory state that should be preserved per current app behavior (e.g., existing accounts/shipments/invoices that are already being preserved today)."
+        "After an upgrade, the admin password used by `adminLogin` remains correct and does not unexpectedly change due to initialization defaults.",
+        "If migration logic is applied, it does not wipe other existing in-canister state (e.g., clients/shipments/invoices) and the admin password is `JATINSHARMA2580` after upgrade."
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Keep the admin login UI error message behavior consistent with the existing frontend handling: show exactly \"Invalid password. Please try again.\" only when the backend explicitly returns invalid-password; show a service/unavailable-style message for backend/candid/method-mismatch errors (English only).",
+      "text": "Verify the admin login flow works end-to-end in the UI using the existing `AdminLoginCard` + `useAdminSession` behavior: entering the correct password successfully authenticates and shows the admin dashboard; entering an incorrect password shows exactly \"Invalid password. Please try again.\"; backend/method/candid failures show a service-unavailable style message in English.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-10"
         ],
         "quotes": [
-          "Sahi password dalne ke bad bhi yah problem a rahi hai please problem ko theek karo"
+          "Admin panel mein service unavailable please try again later"
         ]
       },
       "acceptanceCriteria": [
-        "When the backend returns invalid-password, the admin login card displays exactly: \"Invalid password. Please try again.\"",
-        "When the backend is unavailable or the method is missing/mismatched, the admin login card displays an English service-unavailable message (not the invalid-password message)."
+        "With a working backend, entering the correct password results in the admin session token being stored in `localStorage` under `admin_session_token` and the UI transitions into the authenticated admin experience.",
+        "Entering a wrong password shows exactly: \"Invalid password. Please try again.\"",
+        "If the backend is unreachable or the admin methods are missing/mismatched, the UI displays: \"Service unavailable. Please try again later.\" (English-only)."
       ]
     }
   ],
   "constraints": [
     "Backend must remain a single Motoko actor in `backend/main.mo` (no additional backend services).",
-    "Do not modify files under `frontend/src/components/ui` or other paths listed as immutable in SYSTEM_CONTEXT; compose them instead.",
-    "Use English for all user-facing UI text."
+    "Do not edit any frontend files under `frontend/src/components/ui` or the immutable hook paths listed in SYSTEM_CONTEXT.",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Adding Internet Identity admin authentication (keep password-based admin auth).",
-    "Changing client portal authentication flows (password/OTP) beyond what is necessary to avoid regressions.",
-    "Adding external databases or third-party auth providers."
+    "Adding new authentication providers (e.g., Internet Identity admin login) beyond the existing password-based admin login.",
+    "Implementing real-time features or external databases/services.",
+    "Changing client (non-admin) authentication flows unless required to fix the admin login regression."
   ],
   "imageRequirements": {
     "required": [],

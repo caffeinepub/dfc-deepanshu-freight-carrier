@@ -44,5 +44,6 @@
   "frontend/src/components/admin/AdminGoogleGeocodingPanel.tsx": "Google Geocoding API configuration panel with corrected import using useStoreGoogleApiKey instead of useSetGoogleApiKey.",
   "frontend/src/components/admin/AdminLoginHistoryPanel.tsx": "Admin login history panel component that renders a table displaying client login records (identifier, formatted login time, IP address) using entry.identifier as key (not clientId) with skeleton loading, error state, and an English empty state message using shadcn-ui table primitives.",
   "frontend/src/lib/types.ts": "Local type definitions for missing backend types including UserProfile, Client, ClientAccountStatus, and LoginHistoryEntry, with re-exports of backend types for convenience.",
-  "frontend/src/utils/queryErrorMessage.ts": "Utility function that extracts user-friendly error messages from React Query errors, leveraging existing clientAuthErrors mapping for auth-related errors and providing safe fallbacks for technical errors."
+  "frontend/src/utils/queryErrorMessage.ts": "Utility function that extracts user-friendly error messages from React Query errors, leveraging existing clientAuthErrors mapping for auth-related errors and providing safe fallbacks for technical errors.",
+  "frontend/src/hooks/useActor.ts": "Actor initialization hook that creates backend actor instances with optional Internet Identity authentication, removing the problematic _initializeAccessControlWithSecret call that was causing admin login failures."
 }

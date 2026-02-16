@@ -1,7 +1,8 @@
 module {
-  type Actor = { adminPassword : Text };
+  type OldActor = { adminPassword : Text };
+  type NewActor = {};
 
-  public func run(_ : Actor) : Actor {
-    { adminPassword = "JATINSHARMA2580" };
+  public func run(old : OldActor) : NewActor {
+    {}; // Remove obsolete admin password state
   };
 };

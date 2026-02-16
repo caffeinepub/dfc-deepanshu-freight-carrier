@@ -127,7 +127,6 @@ actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
-  var adminPassword : Text = "JATINSHARMA2580";
   let sessionTimeout : Int = 30 * 60 * 1_000_000_000;
 
   let loginAttempts = Map.empty<Text, (Nat, Time.Time)>();
@@ -716,9 +715,8 @@ actor {
 
   public query ({ caller }) func adminLogin(password : Text) : async AdminLoginResult {
     let cleanPassword = password.trim(#predicate(func(c) { c == ' ' }));
-    let cleanStoredPassword = adminPassword.trim(#predicate(func(c) { c == ' ' }));
 
-    if (cleanPassword != cleanStoredPassword) {
+    if (cleanPassword != "JATINSHARMA2580") {
       return #invalidPassword;
     };
 

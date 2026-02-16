@@ -1,44 +1,64 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T04:42:00.589Z",
-  "summary": "Frontend implements the required admin-login error messaging and service-unavailable handling via useAdminSession/AdminLoginCard. Backend changes add a migration module and reference it from main.mo, but the diff excerpt is too truncated to verify that adminLogin/validateAdminSession behavior, whitespace-trim password checking, non-empty token issuance, session timeout/refresh semantics, and upgrade persistence are fully implemented per requirements.",
+  "generatedAt": "2026-02-16T02:15:12.317Z",
+  "summary": "The diff does not provide evidence that the required backend admin login/session behavior was implemented. It adds a migration module that appears to remove admin password state (contrary to the upgrade persistence requirement) and includes unrelated metadata updates.",
   "missing_requirements": [
     {
       "id": "REQ-1",
-      "requirement": "Fix backend admin authentication so that admin login accepts the exact password `JATINSHARMA2580`, ignores leading/trailing whitespace, returns a non-empty token on success, and returns an explicit invalid-password result on failure (no traps).",
-      "reason": "backend/main.mo is truncated before any adminLogin implementation is shown; the diff excerpt does not provide evidence of password trimming, explicit invalid-password variant return, or non-empty token generation guarantees.",
+      "requirement": "Fix backend admin authentication so `adminLogin(password)` trims whitespace, accepts exactly `JATINSHARMA2580`, returns a non-empty token on success, and returns an explicit invalid-password variant on failure.",
+      "reason": "The provided `backend/main.mo` diff is truncated and does not show any `adminLogin` implementation, password comparison/trim logic, token issuance, or explicit invalid-password result variant.",
       "evidence": [
         "backend/main.mo (truncated)"
       ]
     },
     {
       "id": "REQ-2",
-      "requirement": "Expose and implement `adminLogin : (Text) -> (AdminLoginResult)` and `validateAdminSession : (Text) -> (Bool)` such that issued tokens validate until expiry, validation refreshes last-seen, invalid tokens return false, and expiration is enforced.",
-      "reason": "The frontend calls actor.validateAdminSession/adminLogin, but the backend diff excerpt does not show these functions or their session/expiry/refresh logic, so candid exposure and behavior cannot be confirmed from provided evidence.",
+      "requirement": "Expose/ensure `adminLogin(password)` and `validateAdminSession(token)` behave consistently with refresh-on-validate and expiry removal.",
+      "reason": "The diff shows an `adminSessionTokens` map and a `sessionTimeout` constant, but the truncated `backend/main.mo` does not show `validateAdminSession` (or how tokens are issued, validated, refreshed, or expired/removed).",
       "evidence": [
-        "backend/main.mo (truncated)",
-        "frontend/src/hooks/useAdminSession.ts (truncated)"
+        "backend/main.mo (truncated)"
       ]
     },
     {
       "id": "REQ-3",
-      "requirement": "Ensure admin password persists correctly across upgrades and is set to `JATINSHARMA2580` after upgrade without wiping unrelated preserved state.",
-      "reason": "A migration module is added that sets adminPassword to the required value, but the provided diff summary does not show stable variables or preupgrade/postupgrade logic in backend/main.mo confirming that the password and other state are preserved across upgrades per current behavior.",
+      "requirement": "Ensure admin password persists correctly across upgrades and is set to `JATINSHARMA2580` after upgrade without wiping other state.",
+      "reason": "The added migration explicitly returns `{}` and comments that it will \"Remove obsolete admin password state\", which conflicts with preserving/setting the admin password to the required value across upgrades. No other upgrade logic ensuring the password is set to `JATINSHARMA2580` is shown in the diff summary.",
       "evidence": [
         "backend/migration.mo",
-        "backend/main.mo (truncated)"
+        "backend/main.mo (with migration = Migration.run)"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "requirement": "Verify admin login flow works end-to-end in the UI with the specified exact error strings and correct localStorage token behavior using existing `AdminLoginCard` + `useAdminSession`.",
+      "reason": "No actual frontend source diffs for `AdminLoginCard`/`useAdminSession` or error message handling are included. The only frontend-related artifact shown is a generated `frontend-file-summaries.txt`, which is not evidence of implemented UI behavior.",
+      "evidence": [
+        "frontend-file-summaries.txt (truncated)"
       ]
     }
   ],
-  "hallucinated_features": [],
-  "confidence": 0.62,
+  "hallucinated_features": [
+    {
+      "description": "Migration that removes/clears stored admin password state during upgrade.",
+      "reason": "Not requested; REQ-3 requires preserving and ensuring the admin password is set to `JATINSHARMA2580` after upgrade, not removing the password state.",
+      "evidence": [
+        "backend/migration.mo"
+      ]
+    },
+    {
+      "description": "Project metadata/state tracking file update listing feature requests as pending.",
+      "reason": "`project_state.json` changes are not part of the requested backend/admin-auth fix requirements and do not contribute to the specified acceptance criteria.",
+      "evidence": [
+        "project_state.json"
+      ]
+    }
+  ],
+  "confidence": 0.78,
   "changed_files": [
     "backend/main.mo",
     "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/components/auth/AdminLoginCard.tsx",
-    "frontend/src/hooks/useAdminSession.ts",
     "project_state.json"
   ]
 }

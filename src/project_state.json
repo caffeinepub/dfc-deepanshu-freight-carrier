@@ -4,23 +4,14 @@
   "summary": "New project",
   "architectural_notes": [],
   "known_issues": [
-    "Admin login still fails even when entering the correct password (user reports issue persists)."
+    "Admin panel login shows 'Service unavailable, please try again later' and login is not working."
   ],
   "isFixRequest": true,
-  "existing_features": [
-    {
-      "id": "feature-keep-the-admin-login-ui-error-message-behavior-consistent-with-the-existing-frontend-handling-show-exactly-invalid-password-please-try-again-only-when-the-backend-explicitly-returns-invalid-password-show-a-service-unavailable-style-message-for-backend-candid-method-mismatch-errors-english-only",
-      "title": "Keep the admin login UI error message behavior consistent with the existing frontend handling: show exactly \"Invalid password. Please try again.\" only when the backend explicitly returns invalid-password; show a service/unavailable-style message for backend/candid/method-mismatch errors (English only).",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "version": 1
-    }
-  ],
+  "existing_features": [],
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Fix backend admin authentication so that admin login accepts the exact password `JATINSHARMA2580` and returns a non-empty admin session token when the password is correct, and returns an explicit invalid-password result when it is not. The password check must ignore accidental leading/trailing whitespace in the submitted password.",
+      "summary": "Fix backend admin authentication so that calling `adminLogin(password)` accepts the exact admin password `JATINSHARMA2580` (ignoring accidental leading/trailing whitespace in the submitted password), returns a non-empty admin session token on success, and returns an explicit invalid-password result when the password is incorrect.",
       "reqIds": [
         "REQ-1"
       ],
@@ -28,7 +19,7 @@
     },
     {
       "id": "AR-2",
-      "summary": "Ensure the backend exposes the admin session APIs expected by the frontend contract and that they behave consistently: `adminLogin(password)` for issuing tokens and `validateAdminSession(token)` for validating them. A token returned from `adminLogin` must be accepted by `validateAdminSession` until it expires, and validation must refresh the token’s last-seen timestamp in a way that matches the backend’s session timeout rules.",
+      "summary": "Ensure the backend exposes the admin session APIs expected by the frontend contract and that they behave consistently: `adminLogin(password)` for issuing tokens and `validateAdminSession(token)` for validating them. A token returned from `adminLogin` must be accepted by `validateAdminSession` until it expires, and validation must refresh the token’s last-seen timestamp according to the backend’s session timeout rules.",
       "reqIds": [
         "REQ-2"
       ],
@@ -36,14 +27,22 @@
     },
     {
       "id": "AR-3",
-      "summary": "Make the admin password value persist correctly across canister upgrades so upgrades do not revert/retain an unintended previous admin password. If a state schema change or upgrade handling is required under the project migration policy, add/adjust the backend upgrade/migration logic to preserve existing state while ensuring the stored admin password is set to `JATINSHARMA2580` after upgrade.",
+      "summary": "Make the admin password value persist correctly across canister upgrades so upgrades do not revert/retain an unintended previous admin password. If upgrade handling is required under the project migration policy, add/adjust the backend upgrade/migration logic to preserve existing state while ensuring the stored admin password is set to `JATINSHARMA2580` after upgrade.",
       "reqIds": [
         "REQ-3"
       ],
       "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Verify the admin login flow works end-to-end in the UI using the existing `AdminLoginCard` + `useAdminSession` behavior: entering the correct password successfully authenticates and shows the admin dashboard; entering an incorrect password shows exactly \"Invalid password. Please try again.\"; backend/method/candid failures show a service-unavailable style message in English.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "status": "pending"
     }
   ],
-  "projectName": "Fix admin login rejecting correct password",
+  "projectName": "Fix admin panel login 'Service unavailable' and restore working admin authentication",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

@@ -1,48 +1,46 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T04:42:00.591Z",
+  "generatedAt": "2026-02-16T02:15:12.320Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
     "total": 4,
-    "implemented": 1,
+    "implemented": 0,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Fix backend admin authentication so that admin login accepts the exact password `JATINSHARMA2580` and returns a non-empty admin session token when the password is correct, and returns an explicit invalid-password result when it is not. The password check must ignore accidental leading/trailing whitespace in the submitted password.",
+        "summary": "Fix backend admin authentication so that calling `adminLogin(password)` accepts the exact admin password `JATINSHARMA2580` (ignoring accidental leading/trailing whitespace in the submitted password), returns a non-empty admin session token on success, and returns an explicit invalid-password result when the password is incorrect.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-2",
-        "summary": "Ensure the backend exposes the admin session APIs expected by the frontend contract and that they behave consistently: `adminLogin(password)` for issuing tokens and `validateAdminSession(token)` for validating them. A token returned from `adminLogin` must be accepted by `validateAdminSession` until it expires, and validation must refresh the token’s last-seen timestamp in a way that matches the backend’s session timeout rules.",
+        "summary": "Ensure the backend exposes the admin session APIs expected by the frontend contract and that they behave consistently: `adminLogin(password)` for issuing tokens and `validateAdminSession(token)` for validating them. A token returned from `adminLogin` must be accepted by `validateAdminSession` until it expires, and validation must refresh the token’s last-seen timestamp according to the backend’s session timeout rules.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-3",
-        "summary": "Make the admin password value persist correctly across canister upgrades so upgrades do not revert/retain an unintended previous admin password. If a state schema change or upgrade handling is required under the project migration policy, add/adjust the backend upgrade/migration logic to preserve existing state while ensuring the stored admin password is set to `JATINSHARMA2580` after upgrade.",
+        "summary": "Make the admin password value persist correctly across canister upgrades so upgrades do not revert/retain an unintended previous admin password. If upgrade handling is required under the project migration policy, add/adjust the backend upgrade/migration logic to preserve existing state while ensuring the stored admin password is set to `JATINSHARMA2580` after upgrade.",
         "status": "unknown",
         "plannedFiles": [],
         "matchedFiles": []
       },
       {
         "id": "REQ-4",
-        "summary": "Keep the admin login UI error message behavior consistent with the existing frontend handling: show exactly \"Invalid password. Please try again.\" only when the backend explicitly returns invalid-password; show a service/unavailable-style message for backend/candid/method-mismatch errors (English only).",
-        "status": "implemented",
+        "summary": "Verify the admin login flow works end-to-end in the UI using the existing `AdminLoginCard` + `useAdminSession` behavior: entering the correct password successfully authenticates and shows the admin dashboard; entering an incorrect password shows exactly \"Invalid password. Please try again.\"; backend/method/candid failures show a service-unavailable style message in English.",
+        "status": "missing",
         "plannedFiles": [
           "frontend/src/hooks/useAdminSession.ts",
-          "frontend/src/components/auth/AdminLoginCard.tsx"
+          "frontend/src/components/auth/AdminLoginCard.tsx",
+          "frontend/src/App.tsx"
         ],
-        "matchedFiles": [
-          "frontend/src/hooks/useAdminSession.ts",
-          "frontend/src/components/auth/AdminLoginCard.tsx"
-        ]
+        "matchedFiles": []
       }
     ]
   },
@@ -53,8 +51,6 @@
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/auth/AdminLoginCard.tsx",
-    "frontend/src/hooks/useAdminSession.ts",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",
