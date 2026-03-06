@@ -1,0 +1,40 @@
+{
+  "kind": "build_request",
+  "title": "Fix Admin Login Authentication Failure",
+  "priority": "high",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Fix the admin login authentication so that valid credentials are accepted and the admin dashboard is accessible without showing 'Login failed. Please try again.' for correct passwords.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Login failed please try again isko theek karo"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Entering the correct admin password and clicking 'Sign in' successfully authenticates and opens the admin dashboard.",
+        "The 'Login failed. Please try again.' error message does NOT appear when valid credentials are submitted.",
+        "The error message still appears correctly when an incorrect password is entered.",
+        "The admin session token is persisted in localStorage after successful login.",
+        "The backend adminLogin function returns a successful session token for the correct password."
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not modify files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui.",
+    "Preserve the existing dark/gold visual theme of the Admin Login card."
+  ],
+  "nonGoals": [
+    "Changing the admin login UI layout or styling.",
+    "Adding new authentication methods.",
+    "Modifying client portal login functionality."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

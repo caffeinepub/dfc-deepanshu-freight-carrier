@@ -1,0 +1,30 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Fix Admin Login Authentication Failure",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Fix the admin login authentication so that valid credentials are accepted and the admin dashboard is accessible without showing 'Login failed. Please try again.' for correct passwords",
+      "acceptanceCriteria": [
+        "Entering the correct admin password and clicking 'Sign in' successfully authenticates and opens the admin dashboard.",
+        "The 'Login failed. Please try again.' error message does NOT appear when valid credentials are submitted.",
+        "The error message still appears correctly when an incorrect password is entered.",
+        "The admin session token is persisted in localStorage after successful login.",
+        "The backend adminLogin function returns a successful session token for the correct password."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useAdminSession.ts",
+          "operation": "modify",
+          "description": "Fix the login function to correctly handle the backend adminLogin variant response. The backend returns a discriminated union with __kind__ property ('success', 'invalidPassword', or 'serverError'). Update the login logic to properly check for response.__kind__ === 'success' and extract the session token from response.success (which is a string), then store it in localStorage. Ensure error cases ('invalidPassword' and 'serverError') throw appropriate error messages. Verify the validateSession function correctly handles the boolean response from validateAdminSession backend method."
+        },
+        {
+          "path": "frontend/src/components/auth/AdminLoginCard.tsx",
+          "operation": "modify",
+          "description": "Review the error handling in the login form submission to ensure mutation errors are properly caught and displayed. Verify the error state from useAdminSession is correctly rendered in the Alert component. Ensure the loading state disables the submit button and shows 'Signing in...' text. Confirm the form calls the login function with the password string and handles both success (redirecting to dashboard) and error (displaying the error message) cases correctly."
+        }
+      ]
+    }
+  ]
+}

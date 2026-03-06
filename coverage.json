@@ -1,0 +1,44 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-03-01T02:59:40.451Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 1,
+    "implemented": 1,
+    "items": [
+      {
+        "id": "REQ-1",
+        "summary": "Fix the admin login authentication so that valid credentials are accepted and the admin dashboard is accessible without showing 'Login failed. Please try again.' for correct passwords.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useAdminSession.ts",
+          "frontend/src/components/auth/AdminLoginCard.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useAdminSession.ts",
+          "frontend/src/components/auth/AdminLoginCard.tsx"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "backend/main.mo",
+    "build-request.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/auth/AdminLoginCard.tsx",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useAdminSession.ts",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}
