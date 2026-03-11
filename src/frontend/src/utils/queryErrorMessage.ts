@@ -3,11 +3,11 @@
  * for display in the UI. Leverages existing clientAuthErrors mapping when appropriate.
  */
 
-import { getClientAuthErrorMessage } from './clientAuthErrors';
+import { getClientAuthErrorMessage } from "./clientAuthErrors";
 
 /**
  * Converts a React Query error into a safe, user-facing English message.
- * 
+ *
  * Strategy:
  * 1. Extract the error message from various error formats
  * 2. Use getClientAuthErrorMessage for auth-related errors
@@ -17,17 +17,17 @@ import { getClientAuthErrorMessage } from './clientAuthErrors';
 export function getQueryErrorMessage(error: unknown): string {
   // Handle null/undefined
   if (!error) {
-    return 'An unexpected error occurred. Please try again.';
+    return "An unexpected error occurred. Please try again.";
   }
 
   // Extract error message from various formats
-  let errorMessage = '';
-  
+  let errorMessage = "";
+
   if (error instanceof Error) {
     errorMessage = error.message;
-  } else if (typeof error === 'string') {
+  } else if (typeof error === "string") {
     errorMessage = error;
-  } else if (typeof error === 'object' && 'message' in error) {
+  } else if (typeof error === "object" && "message" in error) {
     errorMessage = String((error as any).message);
   } else {
     errorMessage = String(error);
@@ -35,26 +35,26 @@ export function getQueryErrorMessage(error: unknown): string {
 
   // Empty or whitespace-only message
   if (!errorMessage.trim()) {
-    return 'An unexpected error occurred. Please try again.';
+    return "An unexpected error occurred. Please try again.";
   }
 
   // Use existing auth error mapping for auth-related errors
   // This handles session expiration, linkage errors, rate limiting, etc.
   const authErrorPatterns = [
-    'session',
-    'token',
-    'authentication',
-    'login',
-    'password',
-    'OTP',
-    'linked principal',
-    'account not found',
-    'credentials',
-    'rate limit',
+    "session",
+    "token",
+    "authentication",
+    "login",
+    "password",
+    "OTP",
+    "linked principal",
+    "account not found",
+    "credentials",
+    "rate limit",
   ];
 
   const isAuthError = authErrorPatterns.some((pattern) =>
-    errorMessage.toLowerCase().includes(pattern.toLowerCase())
+    errorMessage.toLowerCase().includes(pattern.toLowerCase()),
   );
 
   if (isAuthError) {
@@ -63,47 +63,47 @@ export function getQueryErrorMessage(error: unknown): string {
 
   // Service unavailability
   if (
-    errorMessage.includes('not a function') ||
-    errorMessage.includes('has no method') ||
-    errorMessage.includes('method not found') ||
-    errorMessage.includes('Service unavailable')
+    errorMessage.includes("not a function") ||
+    errorMessage.includes("has no method") ||
+    errorMessage.includes("method not found") ||
+    errorMessage.includes("Service unavailable")
   ) {
-    return 'Service unavailable. Please contact support.';
+    return "Service unavailable. Please contact support.";
   }
 
   // Network/connection errors
   if (
-    errorMessage.includes('network') ||
-    errorMessage.includes('fetch failed') ||
-    errorMessage.includes('connection')
+    errorMessage.includes("network") ||
+    errorMessage.includes("fetch failed") ||
+    errorMessage.includes("connection")
   ) {
-    return 'Network error. Please check your connection and try again.';
+    return "Network error. Please check your connection and try again.";
   }
 
   // Actor/backend not available
   if (
-    errorMessage.includes('Actor not available') ||
-    errorMessage.includes('Backend not available')
+    errorMessage.includes("Actor not available") ||
+    errorMessage.includes("Backend not available")
   ) {
-    return 'Service is initializing. Please wait a moment and try again.';
+    return "Service is initializing. Please wait a moment and try again.";
   }
 
   // If the error message is already user-friendly (no technical jargon), use it
   const technicalTerms = [
-    'trap',
-    'reject',
-    'canister',
-    'call failed',
-    'actor',
-    'candid',
-    'wasm',
-    'principal',
-    'undefined',
-    'null',
+    "trap",
+    "reject",
+    "canister",
+    "call failed",
+    "actor",
+    "candid",
+    "wasm",
+    "principal",
+    "undefined",
+    "null",
   ];
 
   const hasTechnicalJargon = technicalTerms.some((term) =>
-    errorMessage.toLowerCase().includes(term.toLowerCase())
+    errorMessage.toLowerCase().includes(term.toLowerCase()),
   );
 
   // If it looks user-friendly and reasonably short, use it
@@ -112,6 +112,6 @@ export function getQueryErrorMessage(error: unknown): string {
   }
 
   // Generic fallback for truly technical/unknown errors
-  console.error('Unmapped query error:', errorMessage);
-  return 'An error occurred while loading data. Please try again or contact support.';
+  console.error("Unmapped query error:", errorMessage);
+  return "An error occurred while loading data. Please try again or contact support.";
 }

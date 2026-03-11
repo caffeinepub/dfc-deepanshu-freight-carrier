@@ -10,8 +10,6 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
-export type AdminLoginResult = { 'invalidPassword' : null } |
-  { 'success' : string };
 export interface AllClientsResponse {
   'clientAccounts' : Array<ClientAccount>,
   'state' : string,
@@ -43,6 +41,12 @@ export interface Invoice {
 export type InvoiceStatus = { 'pending' : null } |
   { 'paid' : null } |
   { 'overdue' : null };
+export interface LoginHistoryEntry {
+  'loginTime' : Time,
+  'clientId' : string,
+  'identifier' : string,
+  'ipAddress' : [] | [string],
+}
 export interface Shipment {
   'status' : string,
   'client' : Principal,
@@ -62,7 +66,13 @@ export type UserRole = { 'admin' : null } |
   { 'guest' : null };
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
-  'adminLogin' : ActorMethod<[string], AdminLoginResult>,
+  'adminLogin' : ActorMethod<
+    [string],
+    { 'serverError' : null } |
+      { 'invalidPassword' : null } |
+      { 'success' : string }
+  >,
+  'adminLogout' : ActorMethod<[string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'clientPasswordLogin' : ActorMethod<
     [string, string],
@@ -78,10 +88,30 @@ export interface _SERVICE {
       { 'success' : string }
   >,
   'createClientAccount' : ActorMethod<
-    [string, string, [] | [string], [] | [string], string, string, string],
+    [
+      string,
+      string,
+      string,
+      [] | [string],
+      [] | [string],
+      string,
+      string,
+      string,
+    ],
     [] | [string]
   >,
+  'createInvoice' : ActorMethod<
+    [string, bigint, bigint, string, Time, Principal],
+    undefined
+  >,
+  'createShipment' : ActorMethod<
+    [string, string, string, string, Principal, [] | [Coordinates]],
+    undefined
+  >,
+  'deleteInvoice' : ActorMethod<[string, bigint], undefined>,
+  'deleteShipment' : ActorMethod<[string, string], undefined>,
   'getAllClients' : ActorMethod<[string], [] | [AllClientsResponse]>,
+  'getAllShipmentsForMap' : ActorMethod<[string], Array<Shipment>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
   'getClientAccountStatus' : ActorMethod<
@@ -107,16 +137,31 @@ export interface _SERVICE {
       { 'notLinked' : string } |
       { 'success' : Array<Shipment> }
   >,
+  'getInvoicesByClient' : ActorMethod<[string], Array<Invoice>>,
+  'getLoginHistory' : ActorMethod<[string], Array<LoginHistoryEntry>>,
+  'getRevenueData' : ActorMethod<
+    [string],
+    Array<{ 'date' : string, 'amount' : bigint }>
+  >,
+  'getShipmentsByClient' : ActorMethod<[string], Array<Shipment>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'provisionClientAccount' : ActorMethod<[string, string], undefined>,
-  'repairMissingLinkedPrincipals' : ActorMethod<[], bigint>,
+  'provisionClientAccount' : ActorMethod<[string, string, string], undefined>,
+  'repairMissingLinkedPrincipals' : ActorMethod<[string], bigint>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'sendOtp' : ActorMethod<
     [string],
     { 'invalidPhone' : null } |
       { 'success' : null } |
       { 'rateLimited' : null }
+  >,
+  'updateInvoice' : ActorMethod<
+    [string, bigint, bigint, string, Time],
+    undefined
+  >,
+  'updateShipment' : ActorMethod<
+    [string, string, string, string, [] | [Coordinates]],
+    undefined
   >,
   'validateAdminSession' : ActorMethod<[string], boolean>,
   'verifyOtp' : ActorMethod<

@@ -1,34 +1,57 @@
-import { useState, FormEvent } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ShieldCheck, Loader2, AlertCircle } from 'lucide-react';
-import { useAdminSession } from '@/hooks/useAdminSession';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAdminSession } from "@/hooks/useAdminSession";
+import { AlertCircle, Loader2, ShieldCheck } from "lucide-react";
+import { type FormEvent, useState } from "react";
+
+const ADMIN_EMAIL = "jatinsharmas336@gmail.com";
 
 export function AdminLoginCard() {
-  const { login } = useAdminSession();
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const { login, isActorFetching } = useAdminSession();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
+
+    if (!email.trim() || !password.trim()) {
+      setError("Please enter both email and password.");
+      return;
+    }
+
+    // Only the admin email is allowed here
+    if (email.trim().toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      setError(
+        "This email is not an admin account. Please use the Client Portal to login as a client.",
+      );
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       await login(password);
-      // On success, the session hook will update and trigger re-render
+      // On success the adminToken state updates and the parent re-renders to show the dashboard
     } catch (err: any) {
-      // Display the exact error message from useAdminSession
-      const errorMessage = err?.message || 'Service unavailable. Please try again later.';
-      setError(errorMessage);
+      setError(err?.message ?? "Login failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  const isDisabled = isLoading;
 
   return (
     <Card className="bg-neutral-900 border-neutral-800 max-w-md mx-auto">
@@ -40,7 +63,7 @@ export function AdminLoginCard() {
           <div>
             <CardTitle className="text-gold text-2xl">Admin Login</CardTitle>
             <CardDescription className="text-white/70 text-base mt-1">
-              Enter password to access admin dashboard
+              Enter your admin credentials to access the dashboard
             </CardDescription>
           </div>
         </div>
@@ -48,34 +71,72 @@ export function AdminLoginCard() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-white">
+            <Label htmlFor="admin-email" className="text-white">
+              Email
+            </Label>
+            <Input
+              id="admin-email"
+              type="email"
+              placeholder="Enter admin email"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (error) setError("");
+              }}
+              required
+              autoFocus
+              disabled={isDisabled}
+              data-ocid="admin.input"
+              className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 h-12 disabled:opacity-50"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="admin-password" className="text-white">
               Password
             </Label>
             <Input
-              id="password"
+              id="admin-password"
               type="password"
               placeholder="Enter admin password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (error) setError("");
+              }}
               required
-              autoFocus
-              className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 h-12"
+              disabled={isDisabled}
+              data-ocid="admin.input"
+              className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 h-12 disabled:opacity-50"
             />
           </div>
 
           {error && (
-            <Alert variant="destructive" className="bg-red-950/50 border-red-900">
-              <AlertCircle className="h-4 w-4" />
+            <Alert
+              className="bg-neutral-800 border-gold/50"
+              data-ocid="admin.error_state"
+            >
+              <AlertCircle className="h-4 w-4 text-gold" />
               <AlertDescription className="text-white/90">
                 {error}
               </AlertDescription>
             </Alert>
           )}
 
+          {isActorFetching && !isLoading && !error && (
+            <Alert className="bg-blue-950/50 border-blue-900">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <AlertDescription className="text-white/90">
+                Initializing service...
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Button
             type="submit"
-            disabled={isLoading || !password}
-            className="w-full bg-gold hover:bg-gold/90 text-black font-bold text-lg h-12 rounded-lg"
+            disabled={isDisabled || !email.trim() || !password.trim()}
+            data-ocid="admin.submit_button"
+            className="w-full bg-gold hover:bg-gold/90 text-black font-bold text-lg h-12 rounded-lg disabled:opacity-50"
           >
             {isLoading ? (
               <>
@@ -83,7 +144,7 @@ export function AdminLoginCard() {
                 Signing in...
               </>
             ) : (
-              'Sign in'
+              "Sign in"
             )}
           </Button>
         </form>

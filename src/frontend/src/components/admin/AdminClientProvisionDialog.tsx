@@ -1,4 +1,5 @@
-import { useState, FormEvent } from 'react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -6,28 +7,38 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useCreateClientAccount, useProvisionClientAccount } from '../../hooks/useQueries';
-import { Loader2, UserPlus, Copy, CheckCircle2, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
-import { Principal } from '@icp-sdk/core/principal';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Principal } from "@icp-sdk/core/principal";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Copy,
+  Loader2,
+  UserPlus,
+} from "lucide-react";
+import { type FormEvent, useState } from "react";
+import { toast } from "sonner";
+import {
+  useCreateClientAccount,
+  useProvisionClientAccount,
+} from "../../hooks/useQueries";
 
 export function AdminClientProvisionDialog() {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
-    mobile: '',
-    companyName: '',
-    gstNumber: '',
-    address: '',
-    clientPrincipalId: '',
+    email: "",
+    mobile: "",
+    companyName: "",
+    gstNumber: "",
+    address: "",
+    clientPrincipalId: "",
   });
-  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(
+    null,
+  );
   const [copied, setCopied] = useState(false);
   const [principalError, setPrincipalError] = useState<string | null>(null);
 
@@ -35,8 +46,9 @@ export function AdminClientProvisionDialog() {
   const provisionAccount = useProvisionClientAccount();
 
   const generatePassword = (): string => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$%';
-    let password = 'DFC';
+    const chars =
+      "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$%";
+    let password = "DFC";
     for (let i = 0; i < 9; i++) {
       password += chars.charAt(Math.floor(Math.random() * chars.length));
     }
@@ -45,16 +57,18 @@ export function AdminClientProvisionDialog() {
 
   const validatePrincipal = (principalId: string): boolean => {
     if (!principalId.trim()) {
-      setPrincipalError('Client Principal ID is required');
+      setPrincipalError("Client Principal ID is required");
       return false;
     }
-    
+
     try {
       Principal.fromText(principalId.trim());
       setPrincipalError(null);
       return true;
-    } catch (error) {
-      setPrincipalError('Invalid Principal ID format. Please check and try again.');
+    } catch (_error) {
+      setPrincipalError(
+        "Invalid Principal ID format. Please check and try again.",
+      );
       return false;
     }
   };
@@ -63,7 +77,7 @@ export function AdminClientProvisionDialog() {
     e.preventDefault();
 
     if (!formData.email && !formData.mobile) {
-      toast.error('Please provide either email or mobile number');
+      toast.error("Please provide either email or mobile number");
       return;
     }
 
@@ -95,9 +109,9 @@ export function AdminClientProvisionDialog() {
       });
 
       setGeneratedPassword(tempPassword);
-      toast.success('Client account created and linked successfully');
+      toast.success("Client account created and linked successfully");
     } catch (error: any) {
-      console.error('Failed to create and provision client account:', error);
+      console.error("Failed to create and provision client account:", error);
       // Error toasts are handled by the mutation hooks
     }
   };
@@ -106,7 +120,7 @@ export function AdminClientProvisionDialog() {
     if (generatedPassword) {
       navigator.clipboard.writeText(generatedPassword);
       setCopied(true);
-      toast.success('Password copied to clipboard');
+      toast.success("Password copied to clipboard");
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -114,12 +128,12 @@ export function AdminClientProvisionDialog() {
   const handleClose = () => {
     setOpen(false);
     setFormData({
-      email: '',
-      mobile: '',
-      companyName: '',
-      gstNumber: '',
-      address: '',
-      clientPrincipalId: '',
+      email: "",
+      mobile: "",
+      companyName: "",
+      gstNumber: "",
+      address: "",
+      clientPrincipalId: "",
     });
     setGeneratedPassword(null);
     setCopied(false);
@@ -138,9 +152,12 @@ export function AdminClientProvisionDialog() {
       </DialogTrigger>
       <DialogContent className="bg-neutral-900 border-neutral-800 text-white max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-gold text-xl">Create New Client Account</DialogTitle>
+          <DialogTitle className="text-gold text-xl">
+            Create New Client Account
+          </DialogTitle>
           <DialogDescription className="text-white/70">
-            Provision a new client account with login credentials and link it to a client Principal
+            Provision a new client account with login credentials and link it to
+            a client Principal
           </DialogDescription>
         </DialogHeader>
 
@@ -149,8 +166,10 @@ export function AdminClientProvisionDialog() {
             <Alert className="bg-blue-900/20 border-blue-800">
               <AlertCircle className="h-4 w-4 text-blue-500" />
               <AlertDescription className="text-blue-400 text-sm">
-                <strong>Important:</strong> You must provide the Client Principal ID to link this login account. 
-                This ensures shipments and invoices created for that client will be visible after login.
+                <strong>Important:</strong> You must provide the Client
+                Principal ID to link this login account. This ensures shipments
+                and invoices created for that client will be visible after
+                login.
               </AlertDescription>
             </Alert>
 
@@ -164,7 +183,10 @@ export function AdminClientProvisionDialog() {
                 placeholder="e.g., rrkah-fqaaa-aaaaa-aaaaq-cai"
                 value={formData.clientPrincipalId}
                 onChange={(e) => {
-                  setFormData({ ...formData, clientPrincipalId: e.target.value });
+                  setFormData({
+                    ...formData,
+                    clientPrincipalId: e.target.value,
+                  });
                   setPrincipalError(null);
                 }}
                 onBlur={() => {
@@ -174,14 +196,15 @@ export function AdminClientProvisionDialog() {
                 }}
                 required
                 className={`bg-neutral-950 border-neutral-700 text-white font-mono ${
-                  principalError ? 'border-red-500' : ''
+                  principalError ? "border-red-500" : ""
                 }`}
               />
               {principalError && (
                 <p className="text-red-500 text-sm">{principalError}</p>
               )}
               <p className="text-xs text-white/50">
-                The Principal ID of the client for whom you're creating this login account
+                The Principal ID of the client for whom you're creating this
+                login account
               </p>
             </div>
 
@@ -195,7 +218,9 @@ export function AdminClientProvisionDialog() {
                   type="email"
                   placeholder="client@example.com"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   className="bg-neutral-950 border-neutral-700 text-white"
                 />
               </div>
@@ -209,7 +234,9 @@ export function AdminClientProvisionDialog() {
                   type="tel"
                   placeholder="10-digit number"
                   value={formData.mobile}
-                  onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, mobile: e.target.value })
+                  }
                   maxLength={10}
                   className="bg-neutral-950 border-neutral-700 text-white"
                 />
@@ -225,7 +252,9 @@ export function AdminClientProvisionDialog() {
                 type="text"
                 placeholder="Enter company name"
                 value={formData.companyName}
-                onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, companyName: e.target.value })
+                }
                 required
                 className="bg-neutral-950 border-neutral-700 text-white"
               />
@@ -240,7 +269,9 @@ export function AdminClientProvisionDialog() {
                 type="text"
                 placeholder="Enter GST number"
                 value={formData.gstNumber}
-                onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, gstNumber: e.target.value })
+                }
                 required
                 className="bg-neutral-950 border-neutral-700 text-white"
               />
@@ -254,7 +285,9 @@ export function AdminClientProvisionDialog() {
                 id="address"
                 placeholder="Enter complete address"
                 value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, address: e.target.value })
+                }
                 required
                 className="bg-neutral-950 border-neutral-700 text-white min-h-20"
               />
@@ -283,7 +316,8 @@ export function AdminClientProvisionDialog() {
             <Alert className="bg-green-900/20 border-green-800">
               <CheckCircle2 className="h-4 w-4 text-green-500" />
               <AlertDescription className="text-green-400">
-                Client account created successfully! Share the credentials below with the client.
+                Client account created successfully! Share the credentials below
+                with the client.
               </AlertDescription>
             </Alert>
 
@@ -323,7 +357,8 @@ export function AdminClientProvisionDialog() {
             <Alert className="bg-yellow-900/20 border-yellow-800">
               <AlertCircle className="h-4 w-4 text-yellow-500" />
               <AlertDescription className="text-yellow-400 text-sm">
-                The client will be required to change this password on first login for security.
+                The client will be required to change this password on first
+                login for security.
               </AlertDescription>
             </Alert>
 

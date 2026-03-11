@@ -5,13 +5,17 @@ interface WhatsAppReminderData {
   companyName: string;
 }
 
-export function generateWhatsAppReminderLink(data: WhatsAppReminderData): string {
+export function generateWhatsAppReminderLink(
+  data: WhatsAppReminderData,
+): string {
   // Remove any non-digit characters from mobile number
-  const cleanMobile = data.mobile.replace(/\D/g, '');
-  
+  const cleanMobile = data.mobile.replace(/\D/g, "");
+
   // Ensure mobile starts with country code (91 for India)
-  const formattedMobile = cleanMobile.startsWith('91') ? cleanMobile : `91${cleanMobile}`;
-  
+  const formattedMobile = cleanMobile.startsWith("91")
+    ? cleanMobile
+    : `91${cleanMobile}`;
+
   // Create the reminder message
   const message = `Dear ${data.companyName},
 
@@ -28,13 +32,13 @@ Thank you!`;
 
   // Encode the message for URL
   const encodedMessage = encodeURIComponent(message);
-  
+
   // Return WhatsApp deep link
   return `https://wa.me/${formattedMobile}?text=${encodedMessage}`;
 }
 
 export function generateWhatsAppSupportLink(): string {
-  const supportNumber = '9817783604';
+  const supportNumber = "9817783604";
   const message = `Hello DFC Support,
 
 I need assistance with my account. Please help me with my query.

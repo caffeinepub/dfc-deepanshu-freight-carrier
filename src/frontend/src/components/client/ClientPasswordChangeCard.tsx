@@ -1,36 +1,44 @@
-import { useState, FormEvent } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useChangeClientPassword } from '../../hooks/useQueries';
-import { Loader2, Lock, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
-import { getClientAuthErrorMessage } from '../../utils/clientAuthErrors';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { AlertCircle, Loader2, Lock } from "lucide-react";
+import { type FormEvent, useState } from "react";
+import { toast } from "sonner";
+import { useChangeClientPassword } from "../../hooks/useQueries";
+import { getClientAuthErrorMessage } from "../../utils/clientAuthErrors";
 
 interface ClientPasswordChangeCardProps {
   onSuccess: () => void;
 }
 
-export function ClientPasswordChangeCard({ onSuccess }: ClientPasswordChangeCardProps) {
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [validationError, setValidationError] = useState('');
+export function ClientPasswordChangeCard({
+  onSuccess,
+}: ClientPasswordChangeCardProps) {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [validationError, setValidationError] = useState("");
 
   const changePassword = useChangeClientPassword();
 
   const validateForm = (): boolean => {
     if (newPassword.length < 8) {
-      setValidationError('New password must be at least 8 characters long');
+      setValidationError("New password must be at least 8 characters long");
       return false;
     }
     if (newPassword !== confirmPassword) {
-      setValidationError('Passwords do not match');
+      setValidationError("Passwords do not match");
       return false;
     }
-    setValidationError('');
+    setValidationError("");
     return true;
   };
 
@@ -46,7 +54,7 @@ export function ClientPasswordChangeCard({ onSuccess }: ClientPasswordChangeCard
       // Success toast is shown by the mutation
       onSuccess();
     } catch (error: any) {
-      console.error('Password change error:', error);
+      console.error("Password change error:", error);
       const userMessage = getClientAuthErrorMessage(error);
       toast.error(userMessage);
     }
@@ -61,7 +69,8 @@ export function ClientPasswordChangeCard({ onSuccess }: ClientPasswordChangeCard
             Change Password Required
           </CardTitle>
           <CardDescription className="text-white/70">
-            For security reasons, you must change your temporary password before accessing your account.
+            For security reasons, you must change your temporary password before
+            accessing your account.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -130,7 +139,7 @@ export function ClientPasswordChangeCard({ onSuccess }: ClientPasswordChangeCard
                   Changing Password...
                 </>
               ) : (
-                'Change Password'
+                "Change Password"
               )}
             </Button>
           </form>

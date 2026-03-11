@@ -1,29 +1,32 @@
-import { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ClientPortalLoginCard } from './ClientPortalLoginCard';
-import { ClientSignupCard } from './ClientSignupCard';
-import { LogIn, UserPlus } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LogIn, UserPlus } from "lucide-react";
+import { useState } from "react";
+import { ClientPortalLoginCard } from "./ClientPortalLoginCard";
+import { ClientSignupCard } from "./ClientSignupCard";
 
 export function ClientPortalAuthCard() {
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
 
   const handleSignupSuccess = () => {
-    setActiveTab('login');
+    setActiveTab("login");
   };
 
   return (
     <div className="max-w-md mx-auto">
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'login' | 'signup')}>
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as "login" | "signup")}
+      >
         <TabsList className="grid w-full grid-cols-2 bg-neutral-900 mb-6">
-          <TabsTrigger 
-            value="login" 
+          <TabsTrigger
+            value="login"
             className="data-[state=active]:bg-gold data-[state=active]:text-black"
           >
             <LogIn className="w-4 h-4 mr-2" />
             Log In
           </TabsTrigger>
-          <TabsTrigger 
-            value="signup" 
+          <TabsTrigger
+            value="signup"
             className="data-[state=active]:bg-gold data-[state=active]:text-black"
           >
             <UserPlus className="w-4 h-4 mr-2" />

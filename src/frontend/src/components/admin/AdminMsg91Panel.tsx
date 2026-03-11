@@ -1,22 +1,33 @@
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useSetMsg91ApiKey, useVerifyMsg91Token, useIsMsg91ApiKeyStored } from '../../hooks/useQueries';
-import { Loader2, Key, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { AlertCircle, CheckCircle2, Key, Loader2 } from "lucide-react";
+import { useState } from "react";
+import {
+  useIsMsg91ApiKeyStored,
+  useSetMsg91ApiKey,
+  useVerifyMsg91Token,
+} from "../../hooks/useQueries";
 
 export function AdminMsg91Panel() {
-  const [apiKey, setApiKey] = useState('');
-  const { data: isStored, isLoading: isCheckingStorage } = useIsMsg91ApiKeyStored();
+  const [apiKey, setApiKey] = useState("");
+  const { data: isStored, isLoading: isCheckingStorage } =
+    useIsMsg91ApiKeyStored();
   const setKey = useSetMsg91ApiKey();
   const verifyToken = useVerifyMsg91Token();
 
   const handleSave = async () => {
     if (!apiKey.trim()) return;
     await setKey.mutateAsync(apiKey);
-    setApiKey('');
+    setApiKey("");
   };
 
   const handleVerify = async () => {
@@ -87,7 +98,7 @@ export function AdminMsg91Panel() {
                 Saving...
               </>
             ) : (
-              'Save API Key'
+              "Save API Key"
             )}
           </Button>
           <Button
@@ -102,7 +113,7 @@ export function AdminMsg91Panel() {
                 Verifying...
               </>
             ) : (
-              'Verify Token'
+              "Verify Token"
             )}
           </Button>
         </div>

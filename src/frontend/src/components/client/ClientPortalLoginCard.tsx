@@ -1,24 +1,37 @@
-import { useState, FormEvent } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useClientLogin, useSendOtp, useVerifyOtp } from '../../hooks/useQueries';
-import { Loader2, LogIn, Smartphone, AlertCircle } from 'lucide-react';
-import { getClientAuthErrorMessage } from '../../utils/clientAuthErrors';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertCircle, Loader2, LogIn, Smartphone } from "lucide-react";
+import { type FormEvent, useState } from "react";
+import {
+  useClientLogin,
+  useSendOtp,
+  useVerifyOtp,
+} from "../../hooks/useQueries";
+import { getClientAuthErrorMessage } from "../../utils/clientAuthErrors";
 
 export function ClientPortalLoginCard() {
-  const [activeTab, setActiveTab] = useState<'password' | 'otp'>('password');
-  
+  const [activeTab, setActiveTab] = useState<"password" | "otp">("password");
+
   // Password login state
-  const [passwordForm, setPasswordForm] = useState({ identifier: '', password: '' });
-  const [passwordError, setPasswordError] = useState('');
-  
+  const [passwordForm, setPasswordForm] = useState({
+    identifier: "",
+    password: "",
+  });
+  const [passwordError, setPasswordError] = useState("");
+
   // OTP login state
-  const [otpForm, setOtpForm] = useState({ phoneNumber: '', otp: '' });
-  const [otpError, setOtpError] = useState('');
+  const [otpForm, setOtpForm] = useState({ phoneNumber: "", otp: "" });
+  const [otpError, setOtpError] = useState("");
   const [otpSent, setOtpSent] = useState(false);
 
   const clientLogin = useClientLogin();
@@ -27,10 +40,10 @@ export function ClientPortalLoginCard() {
 
   const handlePasswordLogin = async (e: FormEvent) => {
     e.preventDefault();
-    setPasswordError('');
+    setPasswordError("");
 
     if (!passwordForm.identifier.trim() || !passwordForm.password.trim()) {
-      setPasswordError('Please enter both email/mobile and password');
+      setPasswordError("Please enter both email/mobile and password");
       return;
     }
 
@@ -48,15 +61,15 @@ export function ClientPortalLoginCard() {
 
   const handleSendOtp = async (e: FormEvent) => {
     e.preventDefault();
-    setOtpError('');
+    setOtpError("");
 
     if (!otpForm.phoneNumber.trim()) {
-      setOtpError('Please enter your mobile number');
+      setOtpError("Please enter your mobile number");
       return;
     }
 
     if (otpForm.phoneNumber.length !== 10) {
-      setOtpError('Mobile number must be exactly 10 digits');
+      setOtpError("Mobile number must be exactly 10 digits");
       return;
     }
 
@@ -71,10 +84,10 @@ export function ClientPortalLoginCard() {
 
   const handleVerifyOtp = async (e: FormEvent) => {
     e.preventDefault();
-    setOtpError('');
+    setOtpError("");
 
     if (!otpForm.otp.trim()) {
-      setOtpError('Please enter the OTP');
+      setOtpError("Please enter the OTP");
       return;
     }
 
@@ -90,25 +103,37 @@ export function ClientPortalLoginCard() {
     }
   };
 
-  const isPasswordFormValid = passwordForm.identifier.trim() && passwordForm.password.trim();
+  const isPasswordFormValid =
+    passwordForm.identifier.trim() && passwordForm.password.trim();
   const isOtpPhoneValid = otpForm.phoneNumber.trim().length === 10;
   const isOtpCodeValid = otpForm.otp.trim().length > 0;
 
   return (
     <Card className="bg-neutral-900 border-neutral-800 max-w-md mx-auto">
       <CardHeader>
-        <CardTitle className="text-gold text-2xl">Client Portal Login</CardTitle>
+        <CardTitle className="text-gold text-2xl">
+          Client Portal Login
+        </CardTitle>
         <CardDescription className="text-white/70 text-base">
           Access your shipments and invoices
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'password' | 'otp')}>
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as "password" | "otp")}
+        >
           <TabsList className="grid w-full grid-cols-2 bg-neutral-800">
-            <TabsTrigger value="password" className="data-[state=active]:bg-gold data-[state=active]:text-black">
+            <TabsTrigger
+              value="password"
+              className="data-[state=active]:bg-gold data-[state=active]:text-black"
+            >
               Password
             </TabsTrigger>
-            <TabsTrigger value="otp" className="data-[state=active]:bg-gold data-[state=active]:text-black">
+            <TabsTrigger
+              value="otp"
+              className="data-[state=active]:bg-gold data-[state=active]:text-black"
+            >
               OTP
             </TabsTrigger>
           </TabsList>
@@ -124,7 +149,12 @@ export function ClientPortalLoginCard() {
                   type="text"
                   placeholder="Enter email or mobile"
                   value={passwordForm.identifier}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, identifier: e.target.value })}
+                  onChange={(e) =>
+                    setPasswordForm({
+                      ...passwordForm,
+                      identifier: e.target.value,
+                    })
+                  }
                   required
                   autoFocus
                   disabled={clientLogin.isPending}
@@ -141,7 +171,12 @@ export function ClientPortalLoginCard() {
                   type="password"
                   placeholder="Enter password"
                   value={passwordForm.password}
-                  onChange={(e) => setPasswordForm({ ...passwordForm, password: e.target.value })}
+                  onChange={(e) =>
+                    setPasswordForm({
+                      ...passwordForm,
+                      password: e.target.value,
+                    })
+                  }
                   required
                   disabled={clientLogin.isPending}
                   className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 h-12"
@@ -149,7 +184,10 @@ export function ClientPortalLoginCard() {
               </div>
 
               {passwordError && (
-                <Alert variant="destructive" className="bg-red-950/50 border-red-900">
+                <Alert
+                  variant="destructive"
+                  className="bg-red-950/50 border-red-900"
+                >
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="text-white/90">
                     {passwordError}
@@ -189,7 +227,9 @@ export function ClientPortalLoginCard() {
                     type="tel"
                     placeholder="Enter 10-digit mobile number"
                     value={otpForm.phoneNumber}
-                    onChange={(e) => setOtpForm({ ...otpForm, phoneNumber: e.target.value })}
+                    onChange={(e) =>
+                      setOtpForm({ ...otpForm, phoneNumber: e.target.value })
+                    }
                     maxLength={10}
                     required
                     autoFocus
@@ -199,7 +239,10 @@ export function ClientPortalLoginCard() {
                 </div>
 
                 {otpError && (
-                  <Alert variant="destructive" className="bg-red-950/50 border-red-900">
+                  <Alert
+                    variant="destructive"
+                    className="bg-red-950/50 border-red-900"
+                  >
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="text-white/90">
                       {otpError}
@@ -242,7 +285,9 @@ export function ClientPortalLoginCard() {
                     type="text"
                     placeholder="Enter 6-digit OTP"
                     value={otpForm.otp}
-                    onChange={(e) => setOtpForm({ ...otpForm, otp: e.target.value })}
+                    onChange={(e) =>
+                      setOtpForm({ ...otpForm, otp: e.target.value })
+                    }
                     maxLength={6}
                     required
                     autoFocus
@@ -252,7 +297,10 @@ export function ClientPortalLoginCard() {
                 </div>
 
                 {otpError && (
-                  <Alert variant="destructive" className="bg-red-950/50 border-red-900">
+                  <Alert
+                    variant="destructive"
+                    className="bg-red-950/50 border-red-900"
+                  >
                     <AlertCircle className="h-4 w-4" />
                     <AlertDescription className="text-white/90">
                       {otpError}
@@ -266,8 +314,8 @@ export function ClientPortalLoginCard() {
                     variant="outline"
                     onClick={() => {
                       setOtpSent(false);
-                      setOtpForm({ ...otpForm, otp: '' });
-                      setOtpError('');
+                      setOtpForm({ ...otpForm, otp: "" });
+                      setOtpError("");
                     }}
                     disabled={verifyOtp.isPending}
                     className="flex-1 border-neutral-700 hover:bg-neutral-800 text-white disabled:opacity-50"
@@ -285,7 +333,7 @@ export function ClientPortalLoginCard() {
                         Verifying...
                       </>
                     ) : (
-                      'Verify & Login'
+                      "Verify & Login"
                     )}
                   </Button>
                 </div>

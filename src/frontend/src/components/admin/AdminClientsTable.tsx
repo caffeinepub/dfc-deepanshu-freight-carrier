@@ -1,30 +1,56 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { Search, RefreshCw, Eye, Wrench } from 'lucide-react';
-import { useGetAllClients, useRepairUnlinkedClients } from '../../hooks/useQueries';
-import type { Client } from '../../lib/types';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Eye, RefreshCw, Search, Wrench } from "lucide-react";
+import { useState } from "react";
+import {
+  useGetAllClients,
+  useRepairUnlinkedClients,
+} from "../../hooks/useQueries";
+import type { Client } from "../../lib/types";
 
 interface AdminClientsTableProps {
   onSelectClient: (client: Client) => void;
 }
 
 export function AdminClientsTable({ onSelectClient }: AdminClientsTableProps) {
-  const { data: clientsData, isLoading, refetch, isFetching } = useGetAllClients();
+  const {
+    data: clientsData,
+    isLoading,
+    refetch,
+    isFetching,
+  } = useGetAllClients();
   const repairMutation = useRepairUnlinkedClients();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
 
   const clients = clientsData?.clientAccounts || [];
-  const filteredClients = clients.filter(account =>
-    account.profile.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    account.identifier.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredClients = clients.filter(
+    (account) =>
+      account.profile.companyName
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      account.identifier.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  const unlinkedCount = clients.filter(account => !account.linkedPrincipal).length;
+  const unlinkedCount = clients.filter(
+    (account) => !account.linkedPrincipal,
+  ).length;
 
   const handleRepair = async () => {
     await repairMutation.mutateAsync();
@@ -63,7 +89,9 @@ export function AdminClientsTable({ onSelectClient }: AdminClientsTableProps) {
                 size="sm"
                 className="bg-gold hover:bg-gold/90 text-black"
               >
-                <Wrench className={`w-4 h-4 mr-2 ${repairMutation.isPending ? 'animate-spin' : ''}`} />
+                <Wrench
+                  className={`w-4 h-4 mr-2 ${repairMutation.isPending ? "animate-spin" : ""}`}
+                />
                 Repair Unlinked ({unlinkedCount})
               </Button>
             )}
@@ -74,7 +102,9 @@ export function AdminClientsTable({ onSelectClient }: AdminClientsTableProps) {
               size="sm"
               className="border-neutral-700 hover:bg-neutral-800 text-white"
             >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isFetching ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`w-4 h-4 mr-2 ${isFetching ? "animate-spin" : ""}`}
+              />
               Refresh
             </Button>
           </div>
@@ -101,14 +131,21 @@ export function AdminClientsTable({ onSelectClient }: AdminClientsTableProps) {
                   <TableHead className="text-gold">Identifier</TableHead>
                   <TableHead className="text-gold">Mobile</TableHead>
                   <TableHead className="text-gold">GST Number</TableHead>
-                  <TableHead className="text-gold text-right">Actions</TableHead>
+                  <TableHead className="text-gold text-right">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredClients.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center text-white/50 py-8">
-                      {searchTerm ? 'No clients found matching your search' : 'No client accounts yet'}
+                    <TableCell
+                      colSpan={5}
+                      className="text-center text-white/50 py-8"
+                    >
+                      {searchTerm
+                        ? "No clients found matching your search"
+                        : "No client accounts yet"}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -124,7 +161,7 @@ export function AdminClientsTable({ onSelectClient }: AdminClientsTableProps) {
                         {account.identifier}
                       </TableCell>
                       <TableCell className="text-white/70">
-                        {account.profile.mobile || account.mobile || 'N/A'}
+                        {account.profile.mobile || account.mobile || "N/A"}
                       </TableCell>
                       <TableCell className="text-white/70">
                         {account.profile.gstNumber}

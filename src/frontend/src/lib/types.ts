@@ -1,5 +1,5 @@
-import { Principal } from '@icp-sdk/core/principal';
-import type { Shipment, Invoice, InvoiceStatus } from '../backend';
+import type { Principal } from "@icp-sdk/core/principal";
+import type { Invoice, InvoiceStatus, Shipment } from "../backend";
 
 // Local type definitions for missing backend types
 export interface UserProfile {

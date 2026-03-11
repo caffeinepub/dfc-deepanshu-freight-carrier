@@ -1,23 +1,24 @@
-import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
-import { useAdminSession } from '@/hooks/useAdminSession';
+import { Button } from "@/components/ui/button";
+import { useAdminSession } from "@/hooks/useAdminSession";
+import { LogOut } from "lucide-react";
 
 export function AdminLogoutButton() {
   const { logout } = useAdminSession();
 
   const handleLogout = async () => {
     await logout();
-    
+
     // Scroll to home section
-    const homeElement = document.getElementById('home');
+    const homeElement = document.getElementById("home");
     if (homeElement) {
       const headerOffset = 80;
       const elementPosition = homeElement.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-      
+      const offsetPosition =
+        elementPosition + window.pageYOffset - headerOffset;
+
       window.scrollTo({
         top: offsetPosition,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }
   };

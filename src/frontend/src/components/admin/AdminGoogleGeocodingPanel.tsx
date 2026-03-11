@@ -1,15 +1,25 @@
-import { useState, FormEvent } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useIsGoogleApiKeyConfigured, useStoreGoogleApiKey } from '@/hooks/useQueries';
-import { Loader2, Key, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  useIsGoogleApiKeyConfigured,
+  useStoreGoogleApiKey,
+} from "@/hooks/useQueries";
+import { AlertCircle, CheckCircle2, Key, Loader2 } from "lucide-react";
+import { type FormEvent, useState } from "react";
 
 export function AdminGoogleGeocodingPanel() {
-  const [apiKey, setApiKey] = useState('');
-  const { data: isConfigured, isLoading: isCheckingConfig } = useIsGoogleApiKeyConfigured();
+  const [apiKey, setApiKey] = useState("");
+  const { data: isConfigured, isLoading: isCheckingConfig } =
+    useIsGoogleApiKeyConfigured();
   const storeApiKey = useStoreGoogleApiKey();
 
   const handleSubmit = async (e: FormEvent) => {
@@ -17,7 +27,7 @@ export function AdminGoogleGeocodingPanel() {
     if (!apiKey.trim()) return;
 
     await storeApiKey.mutateAsync(apiKey);
-    setApiKey('');
+    setApiKey("");
   };
 
   return (
@@ -66,7 +76,7 @@ export function AdminGoogleGeocodingPanel() {
               className="bg-neutral-950 border-neutral-700 text-white"
             />
             <p className="text-xs text-white/50">
-              Get your API key from{' '}
+              Get your API key from{" "}
               <a
                 href="https://console.cloud.google.com/apis/credentials"
                 target="_blank"
@@ -89,13 +99,15 @@ export function AdminGoogleGeocodingPanel() {
                 Storing API Key...
               </>
             ) : (
-              'Store API Key'
+              "Store API Key"
             )}
           </Button>
         </form>
 
         <div className="mt-6 p-4 bg-neutral-950 rounded-lg space-y-2">
-          <h4 className="text-white font-semibold text-sm">Setup Instructions:</h4>
+          <h4 className="text-white font-semibold text-sm">
+            Setup Instructions:
+          </h4>
           <ol className="text-white/70 text-sm space-y-1 list-decimal list-inside">
             <li>Go to Google Cloud Console</li>
             <li>Enable Geocoding API for your project</li>

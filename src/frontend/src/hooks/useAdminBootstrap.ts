@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useActor } from './useActor';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useActor } from "./useActor";
 
 // Type assertion helper
 type ExtendedActor = any;
@@ -8,9 +8,9 @@ export function useIsAdminBootstrapped() {
   const { actor, isFetching: actorFetching } = useActor();
 
   return useQuery<boolean>({
-    queryKey: ['isAdminBootstrapped'],
+    queryKey: ["isAdminBootstrapped"],
     queryFn: async () => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return (actor as ExtendedActor).isAdminBootstrapped();
     },
     enabled: !!actor && !actorFetching,
@@ -25,11 +25,11 @@ export function useBootstrapFirstAdmin() {
 
   return useMutation({
     mutationFn: async () => {
-      if (!actor) throw new Error('Actor not available');
+      if (!actor) throw new Error("Actor not available");
       return (actor as ExtendedActor).bootstrapFirstAdmin();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['isAdminBootstrapped'] });
+      queryClient.invalidateQueries({ queryKey: ["isAdminBootstrapped"] });
     },
   });
 }

@@ -5,12 +5,11 @@ import Int "mo:core/Int";
 import Principal "mo:core/Principal";
 import Array "mo:core/Array";
 import Iter "mo:core/Iter";
-import AccessControl "authorization/access-control";
 import Runtime "mo:core/Runtime";
+import Nat "mo:core/Nat";
+import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
-import Migration "migration";
 
-(with migration = Migration.run)
 actor {
   public type Coordinates = {
     latitude : Float;
@@ -143,6 +142,8 @@ actor {
   let loginHistory = Map.empty<Nat, LoginHistoryEntry>();
   var nextLoginHistoryId : Nat = 0;
 
+  let adminPassword = "Jatin2580";
+
   func checkRateLimit(identifier : Text) : Bool {
     let now = Time.now();
     switch (loginAttempts.get(identifier)) {
@@ -185,7 +186,7 @@ actor {
     };
   };
 
-  func isValidSession(token : Text) : Bool {
+  func isValidAdminSession(token : Text) : Bool {
     switch (adminSessionTokens.get(token)) {
       case (null) { false };
       case (?timestamp) {
@@ -272,7 +273,6 @@ actor {
     identifier # "-session-" # Time.now().toText();
   };
 
-  // Auto-repair logic for client accounts missing linkedPrincipal
   func createClientRecord(clientAccount : ClientAccount, principal : Principal) {
     let client : Client = {
       id = principal;
@@ -291,25 +291,6 @@ actor {
     };
   };
 
-  // Bulk repair function for all client accounts missing linkedPrincipal
-  public shared ({ caller }) func repairMissingLinkedPrincipals() : async Nat {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can repair client accounts");
-    };
-
-    var count : Nat = 0;
-    for ((id, account) in clientAccounts.entries()) {
-      switch (account.linkedPrincipal) {
-        case (null) {
-          count += 1;
-        };
-        case (?_) {};
-      };
-    };
-    count;
-  };
-
-  // Client Authentication APIs
   public shared ({ caller }) func clientSignup(
     email : ?Text,
     mobile : ?Text,
@@ -448,8 +429,6 @@ actor {
 
     otpRecords.add(normalizedPhone, otpRecord);
 
-    // In production, send OTP via SMS service (MSG91)
-    // For now, just store it
     #success;
   };
 
@@ -502,7 +481,7 @@ actor {
     };
   };
 
-  public query func getClientAccountStatus(
+  public shared ({ caller }) func getClientAccountStatus(
     sessionToken : Text,
   ) : async {
     #authenticated : {
@@ -529,9 +508,7 @@ actor {
     };
   };
 
-  // Client Portal Access (Session-based, no caller verification needed for queries)
-
-  public query func getClientShipmentsBySessionToken(
+  public shared ({ caller }) func getClientShipmentsBySessionToken(
     sessionToken : Text,
   ) : async {
     #success : [Shipment];
@@ -560,7 +537,7 @@ actor {
     };
   };
 
-  public query func getClientInvoicesBySessionToken(
+  public shared ({ caller }) func getClientInvoicesBySessionToken(
     sessionToken : Text,
   ) : async {
     #success : [Invoice];
@@ -589,70 +566,6 @@ actor {
     };
   };
 
-  // Admin-only Client Management
-
-  public shared ({ caller }) func createClientAccount(
-    identifier : Text,
-    password : Text,
-    email : ?Text,
-    mobile : ?Text,
-    companyName : Text,
-    gstNumber : Text,
-    address : Text,
-  ) : async ?Text {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can create client accounts");
-    };
-
-    let profile : UserProfile = { companyName; gstNumber; address; mobile = switch (mobile) { case (?m) { m }; case (null) { "" } } };
-
-    let newAccount : ClientAccount = {
-      identifier;
-      email;
-      password;
-      profile;
-      isFirstLogin = true;
-      activeSessionToken = null;
-      role = #client;
-      createdAt = Time.now();
-      linkedPrincipal = null;
-      mobile;
-    };
-    clientAccounts.add(identifier, newAccount);
-    ?identifier;
-  };
-
-  public shared ({ caller }) func provisionClientAccount(
-    identifier : Text,
-    password : Text,
-  ) : async () {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can provision client accounts");
-    };
-
-    switch (clientAccounts.get(identifier)) {
-      case (null) {
-        Runtime.trap("Client account not found");
-      };
-      case (?account) {
-        let updatedAccount : ClientAccount = {
-          identifier = account.identifier;
-          password = password;
-          email = account.email;
-          mobile = account.mobile;
-          profile = account.profile;
-          isFirstLogin = account.isFirstLogin;
-          activeSessionToken = account.activeSessionToken;
-          role = account.role;
-          createdAt = account.createdAt;
-          linkedPrincipal = null;
-        };
-        clientAccounts.add(identifier, updatedAccount);
-      };
-    };
-  };
-
-  // User Profile Management (Principal-based)
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can access profiles");
@@ -701,38 +614,36 @@ actor {
     clients.add(caller, client);
   };
 
-  // Admin Authentication
-
   public type AdminSession = {
     token : Text;
     expiration : Time.Time;
   };
 
-  public type AdminLoginResult = {
+  public shared ({ caller }) func adminLogin(password : Text) : async {
     #success : Text;
     #invalidPassword;
-  };
-
-  public query ({ caller }) func adminLogin(password : Text) : async AdminLoginResult {
+    #serverError;
+  } {
     let cleanPassword = password.trim(#predicate(func(c) { c == ' ' }));
 
-    if (cleanPassword != "JATINSHARMA2580") {
+    if (cleanPassword != adminPassword) {
       return #invalidPassword;
     };
 
     let token = "admin-session-" # Time.now().toText();
     adminSessionTokens.add(token, Time.now());
-    AccessControl.assignRole(accessControlState, caller, caller, #admin);
     #success(token);
   };
 
-  public query func validateAdminSession(
+  public shared func validateAdminSession(
     sessionToken : Text,
   ) : async Bool {
-    isValidSession(sessionToken);
+    isValidAdminSession(sessionToken);
   };
 
-  // Admin Data Access
+  public shared ({ caller }) func adminLogout(token : Text) : async () {
+    adminSessionTokens.remove(token);
+  };
 
   public type AllClientsResponse = {
     state : Text;
@@ -742,11 +653,7 @@ actor {
   };
 
   public shared ({ caller }) func getAllClients(sessionToken : Text) : async ?AllClientsResponse {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only admins can access all clients");
-    };
-
-    if (not isValidSession(sessionToken)) {
+    if (not isValidAdminSession(sessionToken)) {
       return null;
     };
 
@@ -760,5 +667,261 @@ actor {
       shipments = allShipments;
       invoices = allInvoices;
     };
+  };
+
+  public shared ({ caller }) func createClientAccount(
+    sessionToken : Text,
+    identifier : Text,
+    password : Text,
+    email : ?Text,
+    mobile : ?Text,
+    companyName : Text,
+    gstNumber : Text,
+    address : Text,
+  ) : async ?Text {
+    if (not isValidAdminSession(sessionToken)) {
+      return null;
+    };
+
+    let profile : UserProfile = { companyName; gstNumber; address; mobile = switch (mobile) { case (?m) { m }; case (null) { "" } } };
+
+    let newAccount : ClientAccount = {
+      identifier;
+      email;
+      password;
+      profile;
+      isFirstLogin = true;
+      activeSessionToken = null;
+      role = #client;
+      createdAt = Time.now();
+      linkedPrincipal = null;
+      mobile;
+    };
+    clientAccounts.add(identifier, newAccount);
+    ?identifier;
+  };
+
+  public shared ({ caller }) func provisionClientAccount(
+    sessionToken : Text,
+    identifier : Text,
+    password : Text,
+  ) : async () {
+    if (not isValidAdminSession(sessionToken)) {
+      Runtime.trap("Invalid admin session");
+    };
+
+    switch (clientAccounts.get(identifier)) {
+      case (null) {
+        Runtime.trap("Client account not found");
+      };
+      case (?account) {
+        let updatedAccount : ClientAccount = {
+          identifier = account.identifier;
+          password = password;
+          email = account.email;
+          mobile = account.mobile;
+          profile = account.profile;
+          isFirstLogin = account.isFirstLogin;
+          activeSessionToken = account.activeSessionToken;
+          role = account.role;
+          createdAt = account.createdAt;
+          linkedPrincipal = null;
+        };
+        clientAccounts.add(identifier, updatedAccount);
+      };
+    };
+  };
+
+  public shared ({ caller }) func repairMissingLinkedPrincipals(sessionToken : Text) : async Nat {
+    if (not isValidAdminSession(sessionToken)) {
+      Runtime.trap("Invalid admin session");
+    };
+
+    var count : Nat = 0;
+    for ((id, account) in clientAccounts.entries()) {
+      switch (account.linkedPrincipal) {
+        case (null) {
+          count += 1;
+        };
+        case (?_) {};
+      };
+    };
+    count;
+  };
+
+  public shared ({ caller }) func createShipment(
+    sessionToken : Text,
+    trackingID : Text,
+    status : Text,
+    location : Text,
+    client : Principal,
+    coordinates : ?Coordinates,
+  ) : async () {
+    if (not isValidAdminSession(sessionToken)) {
+      Runtime.trap("Invalid admin session");
+    };
+
+    let shipment : Shipment = {
+      trackingID;
+      status;
+      location;
+      client;
+      coordinates;
+    };
+    shipments.add(trackingID, shipment);
+  };
+
+  public shared ({ caller }) func updateShipment(
+    sessionToken : Text,
+    trackingID : Text,
+    status : Text,
+    location : Text,
+    coordinates : ?Coordinates,
+  ) : async () {
+    if (not isValidAdminSession(sessionToken)) {
+      Runtime.trap("Invalid admin session");
+    };
+
+    switch (shipments.get(trackingID)) {
+      case (null) {
+        Runtime.trap("Shipment not found");
+      };
+      case (?existingShipment) {
+        let updatedShipment : Shipment = {
+          trackingID;
+          status;
+          location;
+          client = existingShipment.client;
+          coordinates;
+        };
+        shipments.add(trackingID, updatedShipment);
+      };
+    };
+  };
+
+  public shared ({ caller }) func deleteShipment(
+    sessionToken : Text,
+    trackingID : Text,
+  ) : async () {
+    if (not isValidAdminSession(sessionToken)) {
+      Runtime.trap("Invalid admin session");
+    };
+
+    shipments.remove(trackingID);
+  };
+
+  public shared ({ caller }) func createInvoice(
+    sessionToken : Text,
+    invoiceNo : Nat,
+    amount : Nat,
+    status : Text,
+    dueDate : Time.Time,
+    client : Principal,
+  ) : async () {
+    if (not isValidAdminSession(sessionToken)) {
+      Runtime.trap("Invalid admin session");
+    };
+
+    let invoiceStatus : InvoiceStatus = switch (status) {
+      case ("paid") { #paid };
+      case ("pending") { #pending };
+      case ("overdue") { #overdue };
+      case (_) { #pending };
+    };
+
+    let invoice : Invoice = {
+      invoiceNo;
+      amount;
+      status = invoiceStatus;
+      dueDate;
+      client;
+    };
+    invoices.add(invoiceNo, invoice);
+  };
+
+  public shared ({ caller }) func updateInvoice(
+    sessionToken : Text,
+    invoiceNo : Nat,
+    amount : Nat,
+    status : Text,
+    dueDate : Time.Time,
+  ) : async () {
+    if (not isValidAdminSession(sessionToken)) {
+      Runtime.trap("Invalid admin session");
+    };
+
+    switch (invoices.get(invoiceNo)) {
+      case (null) {
+        Runtime.trap("Invoice not found");
+      };
+      case (?existingInvoice) {
+        let invoiceStatus : InvoiceStatus = switch (status) {
+          case ("paid") { #paid };
+          case ("pending") { #pending };
+          case ("overdue") { #overdue };
+          case (_) { #pending };
+        };
+
+        let updatedInvoice : Invoice = {
+          invoiceNo;
+          amount;
+          status = invoiceStatus;
+          dueDate;
+          client = existingInvoice.client;
+        };
+        invoices.add(invoiceNo, updatedInvoice);
+      };
+    };
+  };
+
+  public shared ({ caller }) func deleteInvoice(
+    sessionToken : Text,
+    invoiceNo : Nat,
+  ) : async () {
+    if (not isValidAdminSession(sessionToken)) {
+      Runtime.trap("Invalid admin session");
+    };
+
+    invoices.remove(invoiceNo);
+  };
+
+  public shared ({ caller }) func getLoginHistory(sessionToken : Text) : async [LoginHistoryEntry] {
+    if (not isValidAdminSession(sessionToken)) {
+      Runtime.trap("Invalid admin session");
+    };
+
+    loginHistory.values().toArray();
+  };
+
+  public shared ({ caller }) func getRevenueData(sessionToken : Text) : async [{ date : Text; amount : Nat }] {
+    if (not isValidAdminSession(sessionToken)) {
+      Runtime.trap("Invalid admin session");
+    };
+
+    [];
+  };
+
+  public shared ({ caller }) func getAllShipmentsForMap(sessionToken : Text) : async [Shipment] {
+    if (not isValidAdminSession(sessionToken)) {
+      Runtime.trap("Invalid admin session");
+    };
+
+    shipments.values().toArray();
+  };
+
+  public shared ({ caller }) func getShipmentsByClient(sessionToken : Text) : async [Shipment] {
+    if (not isValidAdminSession(sessionToken)) {
+      Runtime.trap("Invalid admin session");
+    };
+
+    shipments.values().toArray();
+  };
+
+  public shared ({ caller }) func getInvoicesByClient(sessionToken : Text) : async [Invoice] {
+    if (not isValidAdminSession(sessionToken)) {
+      Runtime.trap("Invalid admin session");
+    };
+
+    invoices.values().toArray();
   };
 };

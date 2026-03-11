@@ -1,17 +1,17 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useActor } from './useActor';
-import { useAdminSession } from './useAdminSession';
-import { useClientSession } from './ClientSessionProvider';
-import { Principal } from '@icp-sdk/core/principal';
-import { toast } from 'sonner';
+import { Principal } from "@icp-sdk/core/principal";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import type {
-  Shipment,
-  Invoice,
-  UserProfile,
-  ClientAccount,
   AllClientsResponse,
+  ClientAccount,
+  Invoice,
+  Shipment,
+  UserProfile,
   Variant_invalidPhone_success_rateLimited,
-} from '../backend';
+} from "../backend";
+import { useClientSession } from "./ClientSessionProvider";
+import { useActor } from "./useActor";
+import { useAdminSession } from "./useAdminSession";
 
 // ============================================================================
 // Client Authentication Hooks
@@ -30,7 +30,7 @@ export function useClientSignup() {
       gstNumber: string;
       address: string;
     }) => {
-      if (!actor) throw new Error('Backend service is not available');
+      if (!actor) throw new Error("Backend service is not available");
 
       const result = await actor.clientSignup(
         data.email || null,
@@ -38,26 +38,26 @@ export function useClientSignup() {
         data.password,
         data.companyName,
         data.gstNumber,
-        data.address
+        data.address,
       );
 
-      if ('success' in result && result.__kind__ === 'success') {
+      if ("success" in result && result.__kind__ === "success") {
         return result.success;
       }
 
-      if ('emailExists' in result && result.__kind__ === 'emailExists') {
-        throw new Error('An account with this email already exists');
+      if ("emailExists" in result && result.__kind__ === "emailExists") {
+        throw new Error("An account with this email already exists");
       }
 
-      if ('mobileExists' in result && result.__kind__ === 'mobileExists') {
-        throw new Error('An account with this mobile number already exists');
+      if ("mobileExists" in result && result.__kind__ === "mobileExists") {
+        throw new Error("An account with this mobile number already exists");
       }
 
-      if ('invalidInput' in result && result.__kind__ === 'invalidInput') {
-        throw new Error(result.invalidInput || 'Invalid input provided');
+      if ("invalidInput" in result && result.__kind__ === "invalidInput") {
+        throw new Error(result.invalidInput || "Invalid input provided");
       }
 
-      throw new Error('Signup failed. Please try again.');
+      throw new Error("Signup failed. Please try again.");
     },
   });
 }
@@ -68,33 +68,39 @@ export function useClientLogin() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (credentials: { identifier: string; password: string }) => {
-      if (!actor) throw new Error('Backend service is not available');
+    mutationFn: async (credentials: {
+      identifier: string;
+      password: string;
+    }) => {
+      if (!actor) throw new Error("Backend service is not available");
 
       const result = await actor.clientPasswordLogin(
         credentials.identifier,
-        credentials.password
+        credentials.password,
       );
 
-      if ('success' in result && result.__kind__ === 'success') {
+      if ("success" in result && result.__kind__ === "success") {
         return result.success;
       }
 
-      if ('invalidCredentials' in result && result.__kind__ === 'invalidCredentials') {
-        throw new Error('Invalid email/mobile or password');
+      if (
+        "invalidCredentials" in result &&
+        result.__kind__ === "invalidCredentials"
+      ) {
+        throw new Error("Invalid email/mobile or password");
       }
 
-      if ('rateLimited' in result && result.__kind__ === 'rateLimited') {
-        throw new Error('Too many login attempts. Please try again later.');
+      if ("rateLimited" in result && result.__kind__ === "rateLimited") {
+        throw new Error("Too many login attempts. Please try again later.");
       }
 
-      throw new Error('Login failed. Please try again.');
+      throw new Error("Login failed. Please try again.");
     },
     onSuccess: (data) => {
       setClientToken(data.sessionToken);
-      queryClient.invalidateQueries({ queryKey: ['clientAccountStatus'] });
-      queryClient.invalidateQueries({ queryKey: ['clientShipments'] });
-      queryClient.invalidateQueries({ queryKey: ['clientInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ["clientAccountStatus"] });
+      queryClient.invalidateQueries({ queryKey: ["clientShipments"] });
+      queryClient.invalidateQueries({ queryKey: ["clientInvoices"] });
     },
   });
 }
@@ -104,23 +110,23 @@ export function useSendOtp() {
 
   return useMutation({
     mutationFn: async (phoneNumber: string) => {
-      if (!actor) throw new Error('Backend service is not available');
+      if (!actor) throw new Error("Backend service is not available");
 
       const result = await actor.sendOtp(phoneNumber);
 
-      if (result === 'success') {
+      if (result === "success") {
         return { success: true };
       }
 
-      if (result === 'rateLimited') {
-        throw new Error('Too many OTP requests. Please try again later.');
+      if (result === "rateLimited") {
+        throw new Error("Too many OTP requests. Please try again later.");
       }
 
-      if (result === 'invalidPhone') {
-        throw new Error('Invalid phone number');
+      if (result === "invalidPhone") {
+        throw new Error("Invalid phone number");
       }
 
-      throw new Error('Failed to send OTP. Please try again.');
+      throw new Error("Failed to send OTP. Please try again.");
     },
   });
 }
@@ -132,33 +138,33 @@ export function useVerifyOtp() {
 
   return useMutation({
     mutationFn: async (data: { phoneNumber: string; otp: string }) => {
-      if (!actor) throw new Error('Backend service is not available');
+      if (!actor) throw new Error("Backend service is not available");
 
       const result = await actor.verifyOtp(data.phoneNumber, data.otp);
 
-      if ('success' in result && result.__kind__ === 'success') {
+      if ("success" in result && result.__kind__ === "success") {
         return result.success;
       }
 
-      if ('invalidOtp' in result && result.__kind__ === 'invalidOtp') {
-        throw new Error('Invalid OTP. Please check and try again.');
+      if ("invalidOtp" in result && result.__kind__ === "invalidOtp") {
+        throw new Error("Invalid OTP. Please check and try again.");
       }
 
-      if ('expired' in result && result.__kind__ === 'expired') {
-        throw new Error('OTP has expired. Please request a new one.');
+      if ("expired" in result && result.__kind__ === "expired") {
+        throw new Error("OTP has expired. Please request a new one.");
       }
 
-      if ('notFound' in result && result.__kind__ === 'notFound') {
-        throw new Error('No account found with this phone number');
+      if ("notFound" in result && result.__kind__ === "notFound") {
+        throw new Error("No account found with this phone number");
       }
 
-      throw new Error('OTP verification failed. Please try again.');
+      throw new Error("OTP verification failed. Please try again.");
     },
     onSuccess: (data) => {
       setClientToken(data.sessionToken);
-      queryClient.invalidateQueries({ queryKey: ['clientAccountStatus'] });
-      queryClient.invalidateQueries({ queryKey: ['clientShipments'] });
-      queryClient.invalidateQueries({ queryKey: ['clientInvoices'] });
+      queryClient.invalidateQueries({ queryKey: ["clientAccountStatus"] });
+      queryClient.invalidateQueries({ queryKey: ["clientShipments"] });
+      queryClient.invalidateQueries({ queryKey: ["clientInvoices"] });
     },
   });
 }
@@ -168,14 +174,14 @@ export function useGetClientAccountStatus() {
   const { sessionToken, isAuthenticated } = useClientSession();
 
   const query = useQuery({
-    queryKey: ['clientAccountStatus', sessionToken],
+    queryKey: ["clientAccountStatus", sessionToken],
     queryFn: async () => {
-      if (!actor) throw new Error('Backend service is not available');
+      if (!actor) throw new Error("Backend service is not available");
       if (!sessionToken) return null;
 
       const result = await actor.getClientAccountStatus(sessionToken);
 
-      if ('authenticated' in result && result.__kind__ === 'authenticated') {
+      if ("authenticated" in result && result.__kind__ === "authenticated") {
         return {
           clientId: result.authenticated.clientId,
           profile: result.authenticated.profile,
@@ -183,7 +189,10 @@ export function useGetClientAccountStatus() {
         };
       }
 
-      if ('unauthenticated' in result && result.__kind__ === 'unauthenticated') {
+      if (
+        "unauthenticated" in result &&
+        result.__kind__ === "unauthenticated"
+      ) {
         return null;
       }
 
@@ -209,26 +218,28 @@ export function useGetClientShipments() {
   const { sessionToken, isAuthenticated } = useClientSession();
 
   return useQuery<Shipment[]>({
-    queryKey: ['clientShipments', sessionToken],
+    queryKey: ["clientShipments", sessionToken],
     queryFn: async () => {
-      if (!actor) throw new Error('Backend service is not available');
-      if (!sessionToken) throw new Error('No session token available');
+      if (!actor) throw new Error("Backend service is not available");
+      if (!sessionToken) throw new Error("No session token available");
 
       const result = await actor.getClientShipmentsBySessionToken(sessionToken);
 
-      if ('success' in result && result.__kind__ === 'success') {
+      if ("success" in result && result.__kind__ === "success") {
         return result.success;
       }
 
-      if ('noSessionToken' in result && result.__kind__ === 'noSessionToken') {
-        throw new Error('Session expired. Please log in again.');
+      if ("noSessionToken" in result && result.__kind__ === "noSessionToken") {
+        throw new Error("Session expired. Please log in again.");
       }
 
-      if ('notLinked' in result && result.__kind__ === 'notLinked') {
-        throw new Error('Your account is not linked to a client profile. Please contact the administrator.');
+      if ("notLinked" in result && result.__kind__ === "notLinked") {
+        throw new Error(
+          "Your account is not linked to a client profile. Please contact the administrator.",
+        );
       }
 
-      throw new Error('Failed to load shipments');
+      throw new Error("Failed to load shipments");
     },
     enabled: !!actor && !actorFetching && isAuthenticated && !!sessionToken,
   });
@@ -239,26 +250,28 @@ export function useGetClientInvoices() {
   const { sessionToken, isAuthenticated } = useClientSession();
 
   return useQuery<Invoice[]>({
-    queryKey: ['clientInvoices', sessionToken],
+    queryKey: ["clientInvoices", sessionToken],
     queryFn: async () => {
-      if (!actor) throw new Error('Backend service is not available');
-      if (!sessionToken) throw new Error('No session token available');
+      if (!actor) throw new Error("Backend service is not available");
+      if (!sessionToken) throw new Error("No session token available");
 
       const result = await actor.getClientInvoicesBySessionToken(sessionToken);
 
-      if ('success' in result && result.__kind__ === 'success') {
+      if ("success" in result && result.__kind__ === "success") {
         return result.success;
       }
 
-      if ('noSessionToken' in result && result.__kind__ === 'noSessionToken') {
-        throw new Error('Session expired. Please log in again.');
+      if ("noSessionToken" in result && result.__kind__ === "noSessionToken") {
+        throw new Error("Session expired. Please log in again.");
       }
 
-      if ('notLinked' in result && result.__kind__ === 'notLinked') {
-        throw new Error('Your account is not linked to a client profile. Please contact the administrator.');
+      if ("notLinked" in result && result.__kind__ === "notLinked") {
+        throw new Error(
+          "Your account is not linked to a client profile. Please contact the administrator.",
+        );
       }
 
-      throw new Error('Failed to load invoices');
+      throw new Error("Failed to load invoices");
     },
     enabled: !!actor && !actorFetching && isAuthenticated && !!sessionToken,
   });
@@ -284,26 +297,34 @@ export function useChangeClientPassword() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: { currentPassword: string; newPassword: string }) => {
-      if (!actor) throw new Error('Backend service is not available');
-      if (!sessionToken) throw new Error('No session token available');
+    mutationFn: async (data: {
+      currentPassword: string;
+      newPassword: string;
+    }) => {
+      if (!actor) throw new Error("Backend service is not available");
+      if (!sessionToken) throw new Error("No session token available");
 
       try {
         await (actor as any).clientChangePassword(
           sessionToken,
           data.currentPassword,
-          data.newPassword
+          data.newPassword,
         );
       } catch (error: any) {
-        if (error.message?.includes('not found') || error.message?.includes('has no method')) {
-          throw new Error('Password change feature is not available yet. Please contact support.');
+        if (
+          error.message?.includes("not found") ||
+          error.message?.includes("has no method")
+        ) {
+          throw new Error(
+            "Password change feature is not available yet. Please contact support.",
+          );
         }
         throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clientAccountStatus'] });
-      toast.success('Password changed successfully');
+      queryClient.invalidateQueries({ queryKey: ["clientAccountStatus"] });
+      toast.success("Password changed successfully");
     },
   });
 }
@@ -322,7 +343,7 @@ export function useAdminLogin() {
       return token;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allClients'] });
+      queryClient.invalidateQueries({ queryKey: ["allClients"] });
     },
   });
 }
@@ -332,7 +353,7 @@ export function useValidateAdminSession() {
   const { adminToken, isAuthenticated } = useAdminSession();
 
   return useQuery({
-    queryKey: ['validateAdminSession', adminToken],
+    queryKey: ["validateAdminSession", adminToken],
     queryFn: async () => {
       if (!actor || !adminToken) return null;
       const validToken = await actor.validateAdminSession(adminToken);
@@ -352,7 +373,7 @@ export function useGetAllClients() {
   const { adminToken, isAuthenticated } = useAdminSession();
 
   return useQuery<AllClientsResponse | null>({
-    queryKey: ['allClients', adminToken],
+    queryKey: ["allClients", adminToken],
     queryFn: async () => {
       if (!actor || !adminToken) return null;
       const data = await actor.getAllClients(adminToken);
@@ -369,22 +390,24 @@ export function useRepairUnlinkedClients() {
 
   return useMutation({
     mutationFn: async () => {
-      if (!actor) throw new Error('Backend service is not available');
-      if (!adminToken) throw new Error('Admin session required');
+      if (!actor) throw new Error("Backend service is not available");
+      if (!adminToken) throw new Error("Admin session required");
 
-      const count = await actor.repairMissingLinkedPrincipals();
+      const count = await actor.repairMissingLinkedPrincipals(adminToken);
       return Number(count);
     },
     onSuccess: (count) => {
-      queryClient.invalidateQueries({ queryKey: ['allClients'] });
+      queryClient.invalidateQueries({ queryKey: ["allClients"] });
       if (count > 0) {
-        toast.success(`Successfully repaired ${count} unlinked client account${count !== 1 ? 's' : ''}`);
+        toast.success(
+          `Successfully repaired ${count} unlinked client account${count !== 1 ? "s" : ""}`,
+        );
       } else {
-        toast.info('No unlinked accounts found');
+        toast.info("No unlinked accounts found");
       }
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to repair client accounts');
+      toast.error(error.message || "Failed to repair client accounts");
     },
   });
 }
@@ -402,8 +425,8 @@ export function useAdminAddOrUpdateClient() {
       address: string;
       mobile: string;
     }) => {
-      if (!actor) throw new Error('Backend service is not available');
-      if (!adminToken) throw new Error('Admin session required');
+      if (!actor) throw new Error("Backend service is not available");
+      if (!adminToken) throw new Error("Admin session required");
 
       const principal = Principal.fromText(data.principalId);
       const profile: UserProfile = {
@@ -414,17 +437,24 @@ export function useAdminAddOrUpdateClient() {
       };
 
       try {
-        await (actor as any).adminUpdateClientProfile(adminToken, principal, profile);
+        await (actor as any).adminUpdateClientProfile(
+          adminToken,
+          principal,
+          profile,
+        );
       } catch (error: any) {
-        if (error.message?.includes('not found') || error.message?.includes('has no method')) {
-          throw new Error('Feature not available. Please contact support.');
+        if (
+          error.message?.includes("not found") ||
+          error.message?.includes("has no method")
+        ) {
+          throw new Error("Feature not available. Please contact support.");
         }
         throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allClients'] });
-      toast.success('Client profile updated successfully');
+      queryClient.invalidateQueries({ queryKey: ["allClients"] });
+      toast.success("Client profile updated successfully");
     },
   });
 }
@@ -445,27 +475,28 @@ export function useCreateClientAccount() {
       gstNumber: string;
       address: string;
     }) => {
-      if (!actor) throw new Error('Backend service is not available');
-      if (!adminToken) throw new Error('Admin session required');
+      if (!actor) throw new Error("Backend service is not available");
+      if (!adminToken) throw new Error("Admin session required");
 
       const result = await actor.createClientAccount(
+        adminToken,
         data.identifier,
         data.password,
         data.email || null,
         data.mobile || null,
         data.companyName,
         data.gstNumber,
-        data.address
+        data.address,
       );
 
       if (!result) {
-        throw new Error('Failed to create client account');
+        throw new Error("Failed to create client account");
       }
 
       return result;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allClients'] });
+      queryClient.invalidateQueries({ queryKey: ["allClients"] });
     },
   });
 }
@@ -481,16 +512,17 @@ export function useProvisionClientAccount() {
       password: string;
       linkedPrincipal: string;
     }) => {
-      if (!actor) throw new Error('Backend service is not available');
-      if (!adminToken) throw new Error('Admin session required');
+      if (!actor) throw new Error("Backend service is not available");
+      if (!adminToken) throw new Error("Admin session required");
 
       await actor.provisionClientAccount(
+        adminToken,
         data.identifier,
-        data.password
+        data.password,
       );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allClients'] });
+      queryClient.invalidateQueries({ queryKey: ["allClients"] });
     },
   });
 }
@@ -504,14 +536,14 @@ export function useGetShipmentsByClient() {
   const { adminToken } = useAdminSession();
 
   return useQuery<Shipment[]>({
-    queryKey: ['shipmentsByClient', adminToken],
+    queryKey: ["shipmentsByClient", adminToken],
     queryFn: async () => {
       if (!actor || !adminToken) return [];
       try {
         const result = await (actor as any).getShipmentsByClient(adminToken);
         return result || [];
       } catch (error) {
-        console.error('Failed to fetch shipments:', error);
+        console.error("Failed to fetch shipments:", error);
         return [];
       }
     },
@@ -532,8 +564,8 @@ export function useCreateShipment() {
       client: Principal;
       coordinates?: { latitude: number; longitude: number };
     }) => {
-      if (!actor) throw new Error('Backend service is not available');
-      if (!adminToken) throw new Error('Admin session required');
+      if (!actor) throw new Error("Backend service is not available");
+      if (!adminToken) throw new Error("Admin session required");
 
       try {
         await (actor as any).createShipment(
@@ -542,19 +574,22 @@ export function useCreateShipment() {
           data.status,
           data.location,
           data.client,
-          data.coordinates || undefined
+          data.coordinates || undefined,
         );
       } catch (error: any) {
-        if (error.message?.includes('not found') || error.message?.includes('has no method')) {
-          throw new Error('Feature not available');
+        if (
+          error.message?.includes("not found") ||
+          error.message?.includes("has no method")
+        ) {
+          throw new Error("Feature not available");
         }
         throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shipmentsByClient'] });
-      queryClient.invalidateQueries({ queryKey: ['allClients'] });
-      toast.success('Shipment created successfully');
+      queryClient.invalidateQueries({ queryKey: ["shipmentsByClient"] });
+      queryClient.invalidateQueries({ queryKey: ["allClients"] });
+      toast.success("Shipment created successfully");
     },
   });
 }
@@ -571,8 +606,8 @@ export function useUpdateShipment() {
       location: string;
       coordinates?: { latitude: number; longitude: number };
     }) => {
-      if (!actor) throw new Error('Backend service is not available');
-      if (!adminToken) throw new Error('Admin session required');
+      if (!actor) throw new Error("Backend service is not available");
+      if (!adminToken) throw new Error("Admin session required");
 
       try {
         await (actor as any).updateShipment(
@@ -580,19 +615,22 @@ export function useUpdateShipment() {
           data.trackingID,
           data.status,
           data.location,
-          data.coordinates || undefined
+          data.coordinates || undefined,
         );
       } catch (error: any) {
-        if (error.message?.includes('not found') || error.message?.includes('has no method')) {
-          throw new Error('Feature not available');
+        if (
+          error.message?.includes("not found") ||
+          error.message?.includes("has no method")
+        ) {
+          throw new Error("Feature not available");
         }
         throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shipmentsByClient'] });
-      queryClient.invalidateQueries({ queryKey: ['allClients'] });
-      toast.success('Shipment updated successfully');
+      queryClient.invalidateQueries({ queryKey: ["shipmentsByClient"] });
+      queryClient.invalidateQueries({ queryKey: ["allClients"] });
+      toast.success("Shipment updated successfully");
     },
   });
 }
@@ -604,22 +642,25 @@ export function useDeleteShipment() {
 
   return useMutation({
     mutationFn: async (trackingID: string) => {
-      if (!actor) throw new Error('Backend service is not available');
-      if (!adminToken) throw new Error('Admin session required');
+      if (!actor) throw new Error("Backend service is not available");
+      if (!adminToken) throw new Error("Admin session required");
 
       try {
         await (actor as any).deleteShipment(adminToken, trackingID);
       } catch (error: any) {
-        if (error.message?.includes('not found') || error.message?.includes('has no method')) {
-          throw new Error('Feature not available');
+        if (
+          error.message?.includes("not found") ||
+          error.message?.includes("has no method")
+        ) {
+          throw new Error("Feature not available");
         }
         throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shipmentsByClient'] });
-      queryClient.invalidateQueries({ queryKey: ['allClients'] });
-      toast.success('Shipment deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ["shipmentsByClient"] });
+      queryClient.invalidateQueries({ queryKey: ["allClients"] });
+      toast.success("Shipment deleted successfully");
     },
   });
 }
@@ -633,14 +674,14 @@ export function useGetInvoicesByClient() {
   const { adminToken } = useAdminSession();
 
   return useQuery<Invoice[]>({
-    queryKey: ['invoicesByClient', adminToken],
+    queryKey: ["invoicesByClient", adminToken],
     queryFn: async () => {
       if (!actor || !adminToken) return [];
       try {
         const result = await (actor as any).getInvoicesByClient(adminToken);
         return result || [];
       } catch (error) {
-        console.error('Failed to fetch invoices:', error);
+        console.error("Failed to fetch invoices:", error);
         return [];
       }
     },
@@ -661,8 +702,8 @@ export function useCreateInvoice() {
       dueDate: bigint;
       client: Principal;
     }) => {
-      if (!actor) throw new Error('Backend service is not available');
-      if (!adminToken) throw new Error('Admin session required');
+      if (!actor) throw new Error("Backend service is not available");
+      if (!adminToken) throw new Error("Admin session required");
 
       try {
         await (actor as any).createInvoice(
@@ -671,19 +712,22 @@ export function useCreateInvoice() {
           BigInt(data.amount),
           data.status,
           data.dueDate,
-          data.client
+          data.client,
         );
       } catch (error: any) {
-        if (error.message?.includes('not found') || error.message?.includes('has no method')) {
-          throw new Error('Feature not available');
+        if (
+          error.message?.includes("not found") ||
+          error.message?.includes("has no method")
+        ) {
+          throw new Error("Feature not available");
         }
         throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invoicesByClient'] });
-      queryClient.invalidateQueries({ queryKey: ['allClients'] });
-      toast.success('Invoice created successfully');
+      queryClient.invalidateQueries({ queryKey: ["invoicesByClient"] });
+      queryClient.invalidateQueries({ queryKey: ["allClients"] });
+      toast.success("Invoice created successfully");
     },
   });
 }
@@ -700,8 +744,8 @@ export function useUpdateInvoice() {
       status: string;
       dueDate: bigint;
     }) => {
-      if (!actor) throw new Error('Backend service is not available');
-      if (!adminToken) throw new Error('Admin session required');
+      if (!actor) throw new Error("Backend service is not available");
+      if (!adminToken) throw new Error("Admin session required");
 
       try {
         await (actor as any).updateInvoice(
@@ -709,19 +753,22 @@ export function useUpdateInvoice() {
           BigInt(data.invoiceNo),
           BigInt(data.amount),
           data.status,
-          data.dueDate
+          data.dueDate,
         );
       } catch (error: any) {
-        if (error.message?.includes('not found') || error.message?.includes('has no method')) {
-          throw new Error('Feature not available');
+        if (
+          error.message?.includes("not found") ||
+          error.message?.includes("has no method")
+        ) {
+          throw new Error("Feature not available");
         }
         throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invoicesByClient'] });
-      queryClient.invalidateQueries({ queryKey: ['allClients'] });
-      toast.success('Invoice updated successfully');
+      queryClient.invalidateQueries({ queryKey: ["invoicesByClient"] });
+      queryClient.invalidateQueries({ queryKey: ["allClients"] });
+      toast.success("Invoice updated successfully");
     },
   });
 }
@@ -733,22 +780,25 @@ export function useDeleteInvoice() {
 
   return useMutation({
     mutationFn: async (invoiceNo: number) => {
-      if (!actor) throw new Error('Backend service is not available');
-      if (!adminToken) throw new Error('Admin session required');
+      if (!actor) throw new Error("Backend service is not available");
+      if (!adminToken) throw new Error("Admin session required");
 
       try {
         await (actor as any).deleteInvoice(adminToken, BigInt(invoiceNo));
       } catch (error: any) {
-        if (error.message?.includes('not found') || error.message?.includes('has no method')) {
-          throw new Error('Feature not available');
+        if (
+          error.message?.includes("not found") ||
+          error.message?.includes("has no method")
+        ) {
+          throw new Error("Feature not available");
         }
         throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invoicesByClient'] });
-      queryClient.invalidateQueries({ queryKey: ['allClients'] });
-      toast.success('Invoice deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ["invoicesByClient"] });
+      queryClient.invalidateQueries({ queryKey: ["allClients"] });
+      toast.success("Invoice deleted successfully");
     },
   });
 }
@@ -759,15 +809,18 @@ export function useExportAllInvoices() {
 
   return useMutation({
     mutationFn: async () => {
-      if (!actor) throw new Error('Backend service is not available');
-      if (!adminToken) throw new Error('Admin session required');
+      if (!actor) throw new Error("Backend service is not available");
+      if (!adminToken) throw new Error("Admin session required");
 
       try {
         const result = await (actor as any).exportAllInvoices(adminToken);
         return result as string[];
       } catch (error: any) {
-        if (error.message?.includes('not found') || error.message?.includes('has no method')) {
-          throw new Error('Feature not available');
+        if (
+          error.message?.includes("not found") ||
+          error.message?.includes("has no method")
+        ) {
+          throw new Error("Feature not available");
         }
         throw error;
       }
@@ -784,14 +837,14 @@ export function useGetRevenueData() {
   const { adminToken } = useAdminSession();
 
   return useQuery<Array<{ date: string; amount: number }>>({
-    queryKey: ['revenueData', adminToken],
+    queryKey: ["revenueData", adminToken],
     queryFn: async () => {
       if (!actor || !adminToken) return [];
       try {
         const result = await (actor as any).getRevenueData(adminToken);
         return result || [];
       } catch (error) {
-        console.error('Failed to fetch revenue data:', error);
+        console.error("Failed to fetch revenue data:", error);
         return [];
       }
     },
@@ -803,15 +856,22 @@ export function useGetLoginHistory() {
   const { actor } = useActor();
   const { adminToken } = useAdminSession();
 
-  return useQuery<Array<{ identifier: string; clientId: string; loginTime: bigint; ipAddress: string | null }>>({
-    queryKey: ['loginHistory', adminToken],
+  return useQuery<
+    Array<{
+      identifier: string;
+      clientId: string;
+      loginTime: bigint;
+      ipAddress: string | null;
+    }>
+  >({
+    queryKey: ["loginHistory", adminToken],
     queryFn: async () => {
       if (!actor || !adminToken) return [];
       try {
         const result = await (actor as any).getLoginHistory(adminToken);
         return result || [];
       } catch (error) {
-        console.error('Failed to fetch login history:', error);
+        console.error("Failed to fetch login history:", error);
         return [];
       }
     },
@@ -826,14 +886,16 @@ export function useGetLoginHistory() {
 export function useSetMsg91ApiKey() {
   return useMutation({
     mutationFn: async (_apiKey: string) => {
-      throw new Error('MSG91 API key configuration has been removed from the backend');
+      throw new Error(
+        "MSG91 API key configuration has been removed from the backend",
+      );
     },
   });
 }
 
 export function useIsMsg91ApiKeyStored() {
   return useQuery({
-    queryKey: ['msg91ApiKeyStored'],
+    queryKey: ["msg91ApiKeyStored"],
     queryFn: async () => false,
     enabled: false,
   });
@@ -842,14 +904,16 @@ export function useIsMsg91ApiKeyStored() {
 export function useVerifyMsg91Token() {
   return useMutation({
     mutationFn: async (_apiKey: string) => {
-      throw new Error('MSG91 token verification has been removed from the backend');
+      throw new Error(
+        "MSG91 token verification has been removed from the backend",
+      );
     },
   });
 }
 
 export function useIsGoogleApiKeyConfigured() {
   return useQuery({
-    queryKey: ['googleApiKeyConfigured'],
+    queryKey: ["googleApiKeyConfigured"],
     queryFn: async () => false,
     enabled: false,
   });
@@ -858,7 +922,9 @@ export function useIsGoogleApiKeyConfigured() {
 export function useStoreGoogleApiKey() {
   return useMutation({
     mutationFn: async (_apiKey: string) => {
-      throw new Error('Google API key storage has been removed from the backend');
+      throw new Error(
+        "Google API key storage has been removed from the backend",
+      );
     },
   });
 }
@@ -868,14 +934,14 @@ export function useGetAllShipmentsForMap() {
   const { adminToken } = useAdminSession();
 
   return useQuery<Shipment[]>({
-    queryKey: ['allShipmentsForMap', adminToken],
+    queryKey: ["allShipmentsForMap", adminToken],
     queryFn: async () => {
       if (!actor || !adminToken) return [];
       try {
         const result = await (actor as any).getAllShipmentsForMap(adminToken);
         return result || [];
       } catch (error) {
-        console.error('Failed to fetch shipments for map:', error);
+        console.error("Failed to fetch shipments for map:", error);
         return [];
       }
     },

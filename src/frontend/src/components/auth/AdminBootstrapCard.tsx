@@ -1,6 +1,12 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ShieldCheck, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { AlertCircle, ShieldCheck } from "lucide-react";
 
 // This component is deprecated in the password-only admin flow
 // Kept for compatibility but should not be rendered
@@ -24,7 +30,8 @@ export function AdminBootstrapCard() {
         <Alert variant="destructive" className="bg-red-950/50 border-red-900">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="text-white/90">
-            Internet Identity-based admin bootstrap is not available in password-only mode.
+            Internet Identity-based admin bootstrap is not available in
+            password-only mode.
           </AlertDescription>
         </Alert>
       </CardContent>

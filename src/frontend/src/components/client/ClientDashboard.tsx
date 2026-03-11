@@ -1,12 +1,18 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ClientShipmentsTable } from './ClientShipmentsTable';
-import { ClientInvoicesTable } from './ClientInvoicesTable';
-import { useClientLogout } from '../../hooks/useQueries';
-import { LogOut, Package, FileText, Loader2, MessageCircle } from 'lucide-react';
-import { toast } from 'sonner';
-import { generateWhatsAppSupportLink } from '@/lib/whatsapp';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { generateWhatsAppSupportLink } from "@/lib/whatsapp";
+import {
+  FileText,
+  Loader2,
+  LogOut,
+  MessageCircle,
+  Package,
+} from "lucide-react";
+import { toast } from "sonner";
+import { useClientLogout } from "../../hooks/useQueries";
+import { ClientInvoicesTable } from "./ClientInvoicesTable";
+import { ClientShipmentsTable } from "./ClientShipmentsTable";
 
 export function ClientDashboard() {
   const clientLogout = useClientLogout();
@@ -14,25 +20,26 @@ export function ClientDashboard() {
   const handleLogout = async () => {
     try {
       await clientLogout.mutateAsync();
-      toast.success('Logged out successfully');
-      
+      toast.success("Logged out successfully");
+
       // Scroll to client portal section
-      const element = document.getElementById('client-portal');
+      const element = document.getElementById("client-portal");
       if (element) {
         const headerOffset = 80;
         const elementPosition = element.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+        const offsetPosition =
+          elementPosition + window.pageYOffset - headerOffset;
+        window.scrollTo({ top: offsetPosition, behavior: "smooth" });
       }
     } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Logout failed. Please try again.');
+      console.error("Logout error:", error);
+      toast.error("Logout failed. Please try again.");
     }
   };
 
   const handleWhatsAppSupport = () => {
     const supportLink = generateWhatsAppSupportLink();
-    window.open(supportLink, '_blank');
+    window.open(supportLink, "_blank");
   };
 
   return (
@@ -40,7 +47,9 @@ export function ClientDashboard() {
       <Card className="bg-neutral-900 border-neutral-800">
         <CardHeader>
           <div className="flex items-center justify-between flex-wrap gap-4">
-            <CardTitle className="text-gold text-2xl">Welcome to Your Dashboard</CardTitle>
+            <CardTitle className="text-gold text-2xl">
+              Welcome to Your Dashboard
+            </CardTitle>
             <div className="flex items-center gap-3">
               <Button
                 onClick={handleWhatsAppSupport}

@@ -1,35 +1,72 @@
-import { useGetClientInvoices } from '../../hooks/useQueries';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, FileText, Download, CreditCard, LogIn, AlertCircle } from 'lucide-react';
-import { useClientSession } from '../../hooks/ClientSessionProvider';
-import type { Invoice, InvoiceStatus } from '../../backend';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AlertCircle,
+  CreditCard,
+  Download,
+  FileText,
+  Loader2,
+  LogIn,
+} from "lucide-react";
+import type { Invoice, InvoiceStatus } from "../../backend";
+import { useClientSession } from "../../hooks/ClientSessionProvider";
+import { useGetClientInvoices } from "../../hooks/useQueries";
 
 export function ClientInvoicesTable() {
   const { isAuthenticated } = useClientSession();
   const { data: invoices, isLoading, error } = useGetClientInvoices();
 
   const getStatusBadge = (status: InvoiceStatus) => {
-    const statusMap: Record<InvoiceStatus, { label: string; variant: 'default' | 'secondary' | 'destructive'; className?: string }> = {
-      paid: { label: 'Paid', variant: 'default', className: 'bg-green-600 hover:bg-green-700' },
-      pending: { label: 'Pending', variant: 'secondary', className: 'bg-yellow-600 hover:bg-yellow-700' },
-      overdue: { label: 'Overdue', variant: 'destructive', className: 'bg-red-600 hover:bg-red-700' },
+    const statusMap: Record<
+      InvoiceStatus,
+      {
+        label: string;
+        variant: "default" | "secondary" | "destructive";
+        className?: string;
+      }
+    > = {
+      paid: {
+        label: "Paid",
+        variant: "default",
+        className: "bg-green-600 hover:bg-green-700",
+      },
+      pending: {
+        label: "Pending",
+        variant: "secondary",
+        className: "bg-yellow-600 hover:bg-yellow-700",
+      },
+      overdue: {
+        label: "Overdue",
+        variant: "destructive",
+        className: "bg-red-600 hover:bg-red-700",
+      },
     };
     const config = statusMap[status];
-    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
+    return (
+      <Badge variant={config.variant} className={config.className}>
+        {config.label}
+      </Badge>
+    );
   };
 
   const handleDownloadPDF = (invoice: Invoice) => {
     // PDF generation would require client profile data
-    console.log('Download PDF for invoice:', invoice.invoiceNo);
+    console.log("Download PDF for invoice:", invoice.invoiceNo);
   };
 
   const handlePayNow = (invoice: Invoice) => {
     const paymentUrl = `https://example.com/pay?invoice=${invoice.invoiceNo}&amount=${invoice.amount}`;
-    window.open(paymentUrl, '_blank');
+    window.open(paymentUrl, "_blank");
   };
 
   // Show login prompt if not authenticated
@@ -39,8 +76,12 @@ export function ClientInvoicesTable() {
         <CardContent className="pt-12 pb-12">
           <div className="text-center">
             <LogIn className="w-16 h-16 mx-auto mb-4 text-gold opacity-50" />
-            <h3 className="text-xl font-semibold text-white mb-2">Authentication Required</h3>
-            <p className="text-white/70">Please log in to view your invoices.</p>
+            <h3 className="text-xl font-semibold text-white mb-2">
+              Authentication Required
+            </h3>
+            <p className="text-white/70">
+              Please log in to view your invoices.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -48,9 +89,10 @@ export function ClientInvoicesTable() {
   }
 
   // Check for linkage errors
-  const isLinkageError = error && 
-    (String(error).includes('no linked principal') || 
-     String(error).includes('Client account has no linked principal'));
+  const isLinkageError =
+    error &&
+    (String(error).includes("no linked principal") ||
+      String(error).includes("Client account has no linked principal"));
 
   return (
     <Card className="bg-neutral-900 border-neutral-800">
@@ -66,8 +108,9 @@ export function ClientInvoicesTable() {
           <Alert className="bg-yellow-900/20 border-yellow-800">
             <AlertCircle className="h-4 w-4 text-yellow-500" />
             <AlertDescription className="text-yellow-400">
-              <strong>Account Not Linked:</strong> Your account is not linked to a client profile. 
-              Please contact the administrator to link your account so you can view your invoices.
+              <strong>Account Not Linked:</strong> Your account is not linked to
+              a client profile. Please contact the administrator to link your
+              account so you can view your invoices.
             </AlertDescription>
           </Alert>
         ) : error ? (
@@ -91,11 +134,20 @@ export function ClientInvoicesTable() {
               </TableHeader>
               <TableBody>
                 {invoices.map((invoice) => (
-                  <TableRow key={invoice.invoiceNo.toString()} className="border-neutral-800">
-                    <TableCell className="text-white font-medium">INV{invoice.invoiceNo.toString()}</TableCell>
-                    <TableCell className="text-white/90">₹{Number(invoice.amount).toLocaleString()}</TableCell>
+                  <TableRow
+                    key={invoice.invoiceNo.toString()}
+                    className="border-neutral-800"
+                  >
+                    <TableCell className="text-white font-medium">
+                      INV{invoice.invoiceNo.toString()}
+                    </TableCell>
+                    <TableCell className="text-white/90">
+                      ₹{Number(invoice.amount).toLocaleString()}
+                    </TableCell>
                     <TableCell className="text-white/70">
-                      {new Date(Number(invoice.dueDate) / 1000000).toLocaleDateString()}
+                      {new Date(
+                        Number(invoice.dueDate) / 1000000,
+                      ).toLocaleDateString()}
                     </TableCell>
                     <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                     <TableCell>
@@ -109,7 +161,7 @@ export function ClientInvoicesTable() {
                           <Download className="w-4 h-4 mr-1" />
                           PDF
                         </Button>
-                        {invoice.status === 'pending' && (
+                        {invoice.status === "pending" && (
                           <Button
                             size="sm"
                             onClick={() => handlePayNow(invoice)}

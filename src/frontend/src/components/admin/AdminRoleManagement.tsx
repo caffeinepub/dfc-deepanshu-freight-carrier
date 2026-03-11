@@ -1,7 +1,13 @@
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { AlertCircle } from "lucide-react";
+import { useState } from "react";
 
 export function AdminRoleManagement() {
   return (
@@ -16,8 +22,8 @@ export function AdminRoleManagement() {
         <Alert className="bg-neutral-800 border-neutral-700">
           <AlertCircle className="h-4 w-4 text-gold" />
           <AlertDescription className="text-white/70">
-            Role management is disabled in password-only authentication mode. Admin access is controlled
-            through the admin password.
+            Role management is disabled in password-only authentication mode.
+            Admin access is controlled through the admin password.
           </AlertDescription>
         </Alert>
       </CardContent>

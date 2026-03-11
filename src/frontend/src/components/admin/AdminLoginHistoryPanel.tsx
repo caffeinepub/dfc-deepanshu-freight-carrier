@@ -1,9 +1,22 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Clock, AlertCircle } from 'lucide-react';
-import { useGetLoginHistory } from '@/hooks/useQueries';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useGetLoginHistory } from "@/hooks/useQueries";
+import { AlertCircle, Clock } from "lucide-react";
 
 export function AdminLoginHistoryPanel() {
   const { data: loginHistory, isLoading, error } = useGetLoginHistory();
@@ -68,7 +81,8 @@ export function AdminLoginHistoryPanel() {
           <Alert className="bg-neutral-800 border-neutral-700">
             <AlertCircle className="h-4 w-4 text-gold" />
             <AlertDescription className="text-white/70">
-              No login history available yet. Login records will appear here once clients start logging in.
+              No login history available yet. Login records will appear here
+              once clients start logging in.
             </AlertDescription>
           </Alert>
         ) : (
@@ -91,10 +105,12 @@ export function AdminLoginHistoryPanel() {
                       {entry.identifier}
                     </TableCell>
                     <TableCell className="text-white/70">
-                      {new Date(Number(entry.loginTime) / 1_000_000).toLocaleString()}
+                      {new Date(
+                        Number(entry.loginTime) / 1_000_000,
+                      ).toLocaleString()}
                     </TableCell>
                     <TableCell className="text-white/70">
-                      {entry.ipAddress || 'N/A'}
+                      {entry.ipAddress || "N/A"}
                     </TableCell>
                   </TableRow>
                 ))}

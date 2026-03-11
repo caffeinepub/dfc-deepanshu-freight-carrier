@@ -8,16 +8,16 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
-export const AdminLoginResult = IDL.Variant({
-  'invalidPassword' : IDL.Null,
-  'success' : IDL.Text,
-});
 export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
 export const Time = IDL.Int;
+export const Coordinates = IDL.Record({
+  'latitude' : IDL.Float64,
+  'longitude' : IDL.Float64,
+});
 export const ClientRole = IDL.Variant({
   'client' : IDL.Null,
   'admin' : IDL.Null,
@@ -52,10 +52,6 @@ export const Invoice = IDL.Record({
   'invoiceNo' : IDL.Nat,
   'amount' : IDL.Nat,
 });
-export const Coordinates = IDL.Record({
-  'latitude' : IDL.Float64,
-  'longitude' : IDL.Float64,
-});
 export const Shipment = IDL.Record({
   'status' : IDL.Text,
   'client' : IDL.Principal,
@@ -69,10 +65,27 @@ export const AllClientsResponse = IDL.Record({
   'invoices' : IDL.Vec(Invoice),
   'shipments' : IDL.Vec(Shipment),
 });
+export const LoginHistoryEntry = IDL.Record({
+  'loginTime' : Time,
+  'clientId' : IDL.Text,
+  'identifier' : IDL.Text,
+  'ipAddress' : IDL.Opt(IDL.Text),
+});
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-  'adminLogin' : IDL.Func([IDL.Text], [AdminLoginResult], ['query']),
+  'adminLogin' : IDL.Func(
+      [IDL.Text],
+      [
+        IDL.Variant({
+          'serverError' : IDL.Null,
+          'invalidPassword' : IDL.Null,
+          'success' : IDL.Text,
+        }),
+      ],
+      [],
+    ),
+  'adminLogout' : IDL.Func([IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'clientPasswordLogin' : IDL.Func(
       [IDL.Text, IDL.Text],
@@ -111,6 +124,7 @@ export const idlService = IDL.Service({
       [
         IDL.Text,
         IDL.Text,
+        IDL.Text,
         IDL.Opt(IDL.Text),
         IDL.Opt(IDL.Text),
         IDL.Text,
@@ -120,7 +134,27 @@ export const idlService = IDL.Service({
       [IDL.Opt(IDL.Text)],
       [],
     ),
+  'createInvoice' : IDL.Func(
+      [IDL.Text, IDL.Nat, IDL.Nat, IDL.Text, Time, IDL.Principal],
+      [],
+      [],
+    ),
+  'createShipment' : IDL.Func(
+      [
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Principal,
+        IDL.Opt(Coordinates),
+      ],
+      [],
+      [],
+    ),
+  'deleteInvoice' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+  'deleteShipment' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'getAllClients' : IDL.Func([IDL.Text], [IDL.Opt(AllClientsResponse)], []),
+  'getAllShipmentsForMap' : IDL.Func([IDL.Text], [IDL.Vec(Shipment)], []),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
   'getClientAccountStatus' : IDL.Func(
@@ -135,7 +169,7 @@ export const idlService = IDL.Service({
           }),
         }),
       ],
-      ['query'],
+      [],
     ),
   'getClientInvoicesBySessionToken' : IDL.Func(
       [IDL.Text],
@@ -146,7 +180,7 @@ export const idlService = IDL.Service({
           'success' : IDL.Vec(Invoice),
         }),
       ],
-      ['query'],
+      [],
     ),
   'getClientShipmentsBySessionToken' : IDL.Func(
       [IDL.Text],
@@ -157,16 +191,24 @@ export const idlService = IDL.Service({
           'success' : IDL.Vec(Shipment),
         }),
       ],
-      ['query'],
+      [],
     ),
+  'getInvoicesByClient' : IDL.Func([IDL.Text], [IDL.Vec(Invoice)], []),
+  'getLoginHistory' : IDL.Func([IDL.Text], [IDL.Vec(LoginHistoryEntry)], []),
+  'getRevenueData' : IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(IDL.Record({ 'date' : IDL.Text, 'amount' : IDL.Nat }))],
+      [],
+    ),
+  'getShipmentsByClient' : IDL.Func([IDL.Text], [IDL.Vec(Shipment)], []),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-  'provisionClientAccount' : IDL.Func([IDL.Text, IDL.Text], [], []),
-  'repairMissingLinkedPrincipals' : IDL.Func([], [IDL.Nat], []),
+  'provisionClientAccount' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
+  'repairMissingLinkedPrincipals' : IDL.Func([IDL.Text], [IDL.Nat], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'sendOtp' : IDL.Func(
       [IDL.Text],
@@ -179,7 +221,17 @@ export const idlService = IDL.Service({
       ],
       [],
     ),
-  'validateAdminSession' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+  'updateInvoice' : IDL.Func(
+      [IDL.Text, IDL.Nat, IDL.Nat, IDL.Text, Time],
+      [],
+      [],
+    ),
+  'updateShipment' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Opt(Coordinates)],
+      [],
+      [],
+    ),
+  'validateAdminSession' : IDL.Func([IDL.Text], [IDL.Bool], []),
   'verifyOtp' : IDL.Func(
       [IDL.Text, IDL.Text],
       [
@@ -200,16 +252,16 @@ export const idlService = IDL.Service({
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
-  const AdminLoginResult = IDL.Variant({
-    'invalidPassword' : IDL.Null,
-    'success' : IDL.Text,
-  });
   const UserRole = IDL.Variant({
     'admin' : IDL.Null,
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
   const Time = IDL.Int;
+  const Coordinates = IDL.Record({
+    'latitude' : IDL.Float64,
+    'longitude' : IDL.Float64,
+  });
   const ClientRole = IDL.Variant({ 'client' : IDL.Null, 'admin' : IDL.Null });
   const UserProfile = IDL.Record({
     'gstNumber' : IDL.Text,
@@ -241,10 +293,6 @@ export const idlFactory = ({ IDL }) => {
     'invoiceNo' : IDL.Nat,
     'amount' : IDL.Nat,
   });
-  const Coordinates = IDL.Record({
-    'latitude' : IDL.Float64,
-    'longitude' : IDL.Float64,
-  });
   const Shipment = IDL.Record({
     'status' : IDL.Text,
     'client' : IDL.Principal,
@@ -258,10 +306,27 @@ export const idlFactory = ({ IDL }) => {
     'invoices' : IDL.Vec(Invoice),
     'shipments' : IDL.Vec(Shipment),
   });
+  const LoginHistoryEntry = IDL.Record({
+    'loginTime' : Time,
+    'clientId' : IDL.Text,
+    'identifier' : IDL.Text,
+    'ipAddress' : IDL.Opt(IDL.Text),
+  });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-    'adminLogin' : IDL.Func([IDL.Text], [AdminLoginResult], ['query']),
+    'adminLogin' : IDL.Func(
+        [IDL.Text],
+        [
+          IDL.Variant({
+            'serverError' : IDL.Null,
+            'invalidPassword' : IDL.Null,
+            'success' : IDL.Text,
+          }),
+        ],
+        [],
+      ),
+    'adminLogout' : IDL.Func([IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'clientPasswordLogin' : IDL.Func(
         [IDL.Text, IDL.Text],
@@ -300,6 +365,7 @@ export const idlFactory = ({ IDL }) => {
         [
           IDL.Text,
           IDL.Text,
+          IDL.Text,
           IDL.Opt(IDL.Text),
           IDL.Opt(IDL.Text),
           IDL.Text,
@@ -309,7 +375,27 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(IDL.Text)],
         [],
       ),
+    'createInvoice' : IDL.Func(
+        [IDL.Text, IDL.Nat, IDL.Nat, IDL.Text, Time, IDL.Principal],
+        [],
+        [],
+      ),
+    'createShipment' : IDL.Func(
+        [
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Principal,
+          IDL.Opt(Coordinates),
+        ],
+        [],
+        [],
+      ),
+    'deleteInvoice' : IDL.Func([IDL.Text, IDL.Nat], [], []),
+    'deleteShipment' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'getAllClients' : IDL.Func([IDL.Text], [IDL.Opt(AllClientsResponse)], []),
+    'getAllShipmentsForMap' : IDL.Func([IDL.Text], [IDL.Vec(Shipment)], []),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
     'getClientAccountStatus' : IDL.Func(
@@ -324,7 +410,7 @@ export const idlFactory = ({ IDL }) => {
             }),
           }),
         ],
-        ['query'],
+        [],
       ),
     'getClientInvoicesBySessionToken' : IDL.Func(
         [IDL.Text],
@@ -335,7 +421,7 @@ export const idlFactory = ({ IDL }) => {
             'success' : IDL.Vec(Invoice),
           }),
         ],
-        ['query'],
+        [],
       ),
     'getClientShipmentsBySessionToken' : IDL.Func(
         [IDL.Text],
@@ -346,16 +432,24 @@ export const idlFactory = ({ IDL }) => {
             'success' : IDL.Vec(Shipment),
           }),
         ],
-        ['query'],
+        [],
       ),
+    'getInvoicesByClient' : IDL.Func([IDL.Text], [IDL.Vec(Invoice)], []),
+    'getLoginHistory' : IDL.Func([IDL.Text], [IDL.Vec(LoginHistoryEntry)], []),
+    'getRevenueData' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(IDL.Record({ 'date' : IDL.Text, 'amount' : IDL.Nat }))],
+        [],
+      ),
+    'getShipmentsByClient' : IDL.Func([IDL.Text], [IDL.Vec(Shipment)], []),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-    'provisionClientAccount' : IDL.Func([IDL.Text, IDL.Text], [], []),
-    'repairMissingLinkedPrincipals' : IDL.Func([], [IDL.Nat], []),
+    'provisionClientAccount' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
+    'repairMissingLinkedPrincipals' : IDL.Func([IDL.Text], [IDL.Nat], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'sendOtp' : IDL.Func(
         [IDL.Text],
@@ -368,7 +462,17 @@ export const idlFactory = ({ IDL }) => {
         ],
         [],
       ),
-    'validateAdminSession' : IDL.Func([IDL.Text], [IDL.Bool], ['query']),
+    'updateInvoice' : IDL.Func(
+        [IDL.Text, IDL.Nat, IDL.Nat, IDL.Text, Time],
+        [],
+        [],
+      ),
+    'updateShipment' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Opt(Coordinates)],
+        [],
+        [],
+      ),
+    'validateAdminSession' : IDL.Func([IDL.Text], [IDL.Bool], []),
     'verifyOtp' : IDL.Func(
         [IDL.Text, IDL.Text],
         [

@@ -1,9 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, MapPin } from 'lucide-react';
-import { useGetAllShipmentsForMap } from '@/hooks/useQueries';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useGetAllShipmentsForMap } from "@/hooks/useQueries";
+import { AlertCircle, MapPin } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 declare global {
   interface Window {
@@ -16,7 +22,9 @@ interface AdminTrackingPanelProps {
   enabled?: boolean;
 }
 
-export function AdminTrackingPanel({ enabled = true }: AdminTrackingPanelProps) {
+export function AdminTrackingPanel({
+  enabled = true,
+}: AdminTrackingPanelProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -28,20 +36,21 @@ export function AdminTrackingPanel({ enabled = true }: AdminTrackingPanelProps) 
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: apiKey is a stable env-var constant
   useEffect(() => {
     // Only load script when panel is enabled
     if (!enabled) {
       return;
     }
 
-    if (!apiKey || apiKey.trim() === '') {
+    if (!apiKey || apiKey.trim() === "") {
       setMapError(null);
       setMapLoaded(false);
       return;
     }
 
     // If Google Maps is already loaded, mark as ready
-    if (window.google && window.google.maps) {
+    if (window.google?.maps) {
       setMapLoaded(true);
       setMapError(null);
       return;
@@ -54,12 +63,12 @@ export function AdminTrackingPanel({ enabled = true }: AdminTrackingPanelProps) 
 
     // Check if script already exists in DOM
     const existingScript = document.querySelector(
-      `script[src*="maps.googleapis.com/maps/api/js"]`
+      `script[src*="maps.googleapis.com/maps/api/js"]`,
     );
     if (existingScript) {
       scriptLoadedRef.current = true;
       // Wait for the existing script to load
-      if (window.google && window.google.maps) {
+      if (window.google?.maps) {
         setMapLoaded(true);
         setMapError(null);
       }
@@ -67,7 +76,7 @@ export function AdminTrackingPanel({ enabled = true }: AdminTrackingPanelProps) 
     }
 
     scriptLoadedRef.current = true;
-    const script = document.createElement('script');
+    const script = document.createElement("script");
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
     script.async = true;
     script.defer = true;
@@ -78,7 +87,7 @@ export function AdminTrackingPanel({ enabled = true }: AdminTrackingPanelProps) 
     };
 
     script.onerror = () => {
-      setMapError('Failed to load Google Maps. Please check your API key.');
+      setMapError("Failed to load Google Maps. Please check your API key.");
       scriptLoadedRef.current = false;
     };
 
@@ -107,31 +116,33 @@ export function AdminTrackingPanel({ enabled = true }: AdminTrackingPanelProps) 
         zoom: 5,
         styles: [
           {
-            featureType: 'all',
-            elementType: 'geometry',
-            stylers: [{ color: '#242f3e' }],
+            featureType: "all",
+            elementType: "geometry",
+            stylers: [{ color: "#242f3e" }],
           },
           {
-            featureType: 'all',
-            elementType: 'labels.text.stroke',
-            stylers: [{ color: '#242f3e' }],
+            featureType: "all",
+            elementType: "labels.text.stroke",
+            stylers: [{ color: "#242f3e" }],
           },
           {
-            featureType: 'all',
-            elementType: 'labels.text.fill',
-            stylers: [{ color: '#746855' }],
+            featureType: "all",
+            elementType: "labels.text.fill",
+            stylers: [{ color: "#746855" }],
           },
           {
-            featureType: 'water',
-            elementType: 'geometry',
-            stylers: [{ color: '#17263c' }],
+            featureType: "water",
+            elementType: "geometry",
+            stylers: [{ color: "#17263c" }],
           },
         ],
       });
     }
 
     // Clear existing markers
-    markersRef.current.forEach((marker) => marker.setMap(null));
+    for (const marker of markersRef.current) {
+      marker.setMap(null);
+    }
     markersRef.current = [];
 
     // Add markers for shipments with valid coordinates
@@ -139,14 +150,14 @@ export function AdminTrackingPanel({ enabled = true }: AdminTrackingPanelProps) 
       const bounds = new window.google.maps.LatLngBounds();
       let hasValidCoordinates = false;
 
-      shipments.forEach((shipment) => {
+      for (const shipment of shipments) {
         // Validate coordinates exist and are valid numbers
         if (
           shipment.coordinates &&
-          typeof shipment.coordinates.latitude === 'number' &&
-          typeof shipment.coordinates.longitude === 'number' &&
-          isFinite(shipment.coordinates.latitude) &&
-          isFinite(shipment.coordinates.longitude) &&
+          typeof shipment.coordinates.latitude === "number" &&
+          typeof shipment.coordinates.longitude === "number" &&
+          Number.isFinite(shipment.coordinates.latitude) &&
+          Number.isFinite(shipment.coordinates.longitude) &&
           shipment.coordinates.latitude >= -90 &&
           shipment.coordinates.latitude <= 90 &&
           shipment.coordinates.longitude >= -180 &&
@@ -164,9 +175,9 @@ export function AdminTrackingPanel({ enabled = true }: AdminTrackingPanelProps) 
             icon: {
               path: window.google.maps.SymbolPath.CIRCLE,
               scale: 8,
-              fillColor: '#D4AF37',
+              fillColor: "#D4AF37",
               fillOpacity: 1,
-              strokeColor: '#ffffff',
+              strokeColor: "#ffffff",
               strokeWeight: 2,
             },
           });
@@ -181,7 +192,7 @@ export function AdminTrackingPanel({ enabled = true }: AdminTrackingPanelProps) 
             `,
           });
 
-          marker.addListener('click', () => {
+          marker.addListener("click", () => {
             infoWindow.open(mapInstanceRef.current, marker);
           });
 
@@ -189,7 +200,7 @@ export function AdminTrackingPanel({ enabled = true }: AdminTrackingPanelProps) 
           bounds.extend(position);
           hasValidCoordinates = true;
         }
-      });
+      }
 
       if (hasValidCoordinates) {
         mapInstanceRef.current.fitBounds(bounds);
@@ -201,7 +212,7 @@ export function AdminTrackingPanel({ enabled = true }: AdminTrackingPanelProps) 
     return null;
   }
 
-  if (!apiKey || apiKey.trim() === '') {
+  if (!apiKey || apiKey.trim() === "") {
     return (
       <Card className="bg-neutral-900 border-neutral-800">
         <CardHeader>
@@ -217,8 +228,8 @@ export function AdminTrackingPanel({ enabled = true }: AdminTrackingPanelProps) 
           <Alert className="bg-neutral-800 border-neutral-700">
             <AlertCircle className="h-4 w-4 text-gold" />
             <AlertDescription className="text-white/70">
-              Google Maps API key is not configured. Please add your API key to the environment
-              configuration to enable live tracking.
+              Google Maps API key is not configured. Please add your API key to
+              the environment configuration to enable live tracking.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -286,18 +297,19 @@ export function AdminTrackingPanel({ enabled = true }: AdminTrackingPanelProps) 
   }
 
   // Filter shipments with valid coordinates using the same validation logic
-  const shipmentsWithCoordinates = shipments?.filter(
-    (s) =>
-      s.coordinates &&
-      typeof s.coordinates.latitude === 'number' &&
-      typeof s.coordinates.longitude === 'number' &&
-      isFinite(s.coordinates.latitude) &&
-      isFinite(s.coordinates.longitude) &&
-      s.coordinates.latitude >= -90 &&
-      s.coordinates.latitude <= 90 &&
-      s.coordinates.longitude >= -180 &&
-      s.coordinates.longitude <= 180
-  ) || [];
+  const shipmentsWithCoordinates =
+    shipments?.filter(
+      (s) =>
+        s.coordinates &&
+        typeof s.coordinates.latitude === "number" &&
+        typeof s.coordinates.longitude === "number" &&
+        Number.isFinite(s.coordinates.latitude) &&
+        Number.isFinite(s.coordinates.longitude) &&
+        s.coordinates.latitude >= -90 &&
+        s.coordinates.latitude <= 90 &&
+        s.coordinates.longitude >= -180 &&
+        s.coordinates.longitude <= 180,
+    ) || [];
 
   return (
     <Card className="bg-neutral-900 border-neutral-800">
@@ -307,7 +319,8 @@ export function AdminTrackingPanel({ enabled = true }: AdminTrackingPanelProps) 
           Live Tracking
         </CardTitle>
         <CardDescription className="text-white/70">
-          Real-time shipment location tracking ({shipmentsWithCoordinates.length} active shipments)
+          Real-time shipment location tracking (
+          {shipmentsWithCoordinates.length} active shipments)
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -315,12 +328,15 @@ export function AdminTrackingPanel({ enabled = true }: AdminTrackingPanelProps) 
           <Alert className="bg-neutral-800 border-neutral-700">
             <AlertCircle className="h-4 w-4 text-gold" />
             <AlertDescription className="text-white/70">
-              No shipments with location data available. Shipments will appear here once they have
-              coordinates assigned.
+              No shipments with location data available. Shipments will appear
+              here once they have coordinates assigned.
             </AlertDescription>
           </Alert>
         ) : (
-          <div ref={mapRef} className="w-full h-[500px] rounded-lg overflow-hidden" />
+          <div
+            ref={mapRef}
+            className="w-full h-[500px] rounded-lg overflow-hidden"
+          />
         )}
       </CardContent>
     </Card>

@@ -1,9 +1,23 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, AlertCircle } from 'lucide-react';
-import { useGetRevenueData } from '@/hooks/useQueries';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useGetRevenueData } from "@/hooks/useQueries";
+import { AlertCircle, TrendingUp } from "lucide-react";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 export function AdminRevenuePanel() {
   const { data: revenueData, isLoading, error } = useGetRevenueData();
@@ -64,7 +78,8 @@ export function AdminRevenuePanel() {
           <Alert className="bg-neutral-800 border-neutral-700">
             <AlertCircle className="h-4 w-4 text-gold" />
             <AlertDescription className="text-white/70">
-              No revenue data available yet. Data will appear here once invoices are marked as paid.
+              No revenue data available yet. Data will appear here once invoices
+              are marked as paid.
             </AlertDescription>
           </Alert>
         </CardContent>
@@ -91,10 +106,10 @@ export function AdminRevenuePanel() {
             <YAxis stroke="#D4AF37" />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#171717',
-                border: '1px solid #404040',
-                borderRadius: '8px',
-                color: '#fff',
+                backgroundColor: "#171717",
+                border: "1px solid #404040",
+                borderRadius: "8px",
+                color: "#fff",
               }}
             />
             <Line
@@ -102,7 +117,7 @@ export function AdminRevenuePanel() {
               dataKey="amount"
               stroke="#D4AF37"
               strokeWidth={2}
-              dot={{ fill: '#D4AF37', r: 4 }}
+              dot={{ fill: "#D4AF37", r: 4 }}
               activeDot={{ r: 6 }}
             />
           </LineChart>

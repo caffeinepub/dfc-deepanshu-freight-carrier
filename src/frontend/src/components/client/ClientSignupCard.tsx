@@ -1,14 +1,20 @@
-import { useState, FormEvent } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useClientSignup } from '../../hooks/useQueries';
-import { Loader2, UserPlus, AlertCircle } from 'lucide-react';
-import { getClientAuthErrorMessage } from '../../utils/clientAuthErrors';
-import { validateClientIdentifier } from '../../utils/clientIdentifier';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertCircle, Loader2, UserPlus } from "lucide-react";
+import { type FormEvent, useState } from "react";
+import { useClientSignup } from "../../hooks/useQueries";
+import { getClientAuthErrorMessage } from "../../utils/clientAuthErrors";
+import { validateClientIdentifier } from "../../utils/clientIdentifier";
 
 interface ClientSignupCardProps {
   onSignupSuccess: () => void;
@@ -16,44 +22,46 @@ interface ClientSignupCardProps {
 
 export function ClientSignupCard({ onSignupSuccess }: ClientSignupCardProps) {
   const [formData, setFormData] = useState({
-    identifier: '',
-    password: '',
-    confirmPassword: '',
-    companyName: '',
-    gstNumber: '',
-    address: '',
+    identifier: "",
+    password: "",
+    confirmPassword: "",
+    companyName: "",
+    gstNumber: "",
+    address: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const clientSignup = useClientSignup();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     // Validate and normalize identifier
     const identifierValidation = validateClientIdentifier(formData.identifier);
     if (!identifierValidation.isValid) {
-      setError(identifierValidation.errorMessage || 'Invalid email or mobile number');
+      setError(
+        identifierValidation.errorMessage || "Invalid email or mobile number",
+      );
       return;
     }
 
     // Validate password
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long');
+      setError("Password must be at least 8 characters long");
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
 
     try {
       // Use normalized identifier and type from validation
       const normalizedIdentifier = identifierValidation.normalized;
-      const isEmail = identifierValidation.type === 'email';
-      
+      const isEmail = identifierValidation.type === "email";
+
       await clientSignup.mutateAsync({
         identifier: normalizedIdentifier,
         password: formData.password,
@@ -66,12 +74,12 @@ export function ClientSignupCard({ onSignupSuccess }: ClientSignupCardProps) {
 
       // Clear form and notify parent
       setFormData({
-        identifier: '',
-        password: '',
-        confirmPassword: '',
-        companyName: '',
-        gstNumber: '',
-        address: '',
+        identifier: "",
+        password: "",
+        confirmPassword: "",
+        companyName: "",
+        gstNumber: "",
+        address: "",
       });
       onSignupSuccess();
     } catch (error: any) {
@@ -99,7 +107,9 @@ export function ClientSignupCard({ onSignupSuccess }: ClientSignupCardProps) {
               type="text"
               placeholder="Enter email or 10-digit mobile"
               value={formData.identifier}
-              onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, identifier: e.target.value })
+              }
               required
               autoFocus
               className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 h-12"
@@ -115,7 +125,9 @@ export function ClientSignupCard({ onSignupSuccess }: ClientSignupCardProps) {
               type="password"
               placeholder="At least 8 characters"
               value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
               required
               className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 h-12"
             />
@@ -130,7 +142,9 @@ export function ClientSignupCard({ onSignupSuccess }: ClientSignupCardProps) {
               type="password"
               placeholder="Re-enter password"
               value={formData.confirmPassword}
-              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, confirmPassword: e.target.value })
+              }
               required
               className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 h-12"
             />
@@ -145,7 +159,9 @@ export function ClientSignupCard({ onSignupSuccess }: ClientSignupCardProps) {
               type="text"
               placeholder="Enter company name"
               value={formData.companyName}
-              onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, companyName: e.target.value })
+              }
               required
               className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50"
             />
@@ -160,7 +176,9 @@ export function ClientSignupCard({ onSignupSuccess }: ClientSignupCardProps) {
               type="text"
               placeholder="Enter GST number"
               value={formData.gstNumber}
-              onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, gstNumber: e.target.value })
+              }
               required
               className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50"
             />
@@ -174,14 +192,19 @@ export function ClientSignupCard({ onSignupSuccess }: ClientSignupCardProps) {
               id="address"
               placeholder="Enter complete address"
               value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, address: e.target.value })
+              }
               required
               className="bg-neutral-950 border-neutral-700 text-white placeholder:text-white/50 min-h-20"
             />
           </div>
 
           {error && (
-            <Alert variant="destructive" className="bg-red-950/50 border-red-900">
+            <Alert
+              variant="destructive"
+              className="bg-red-950/50 border-red-900"
+            >
               <AlertCircle className="h-4 w-4" />
               <AlertDescription className="text-white/90">
                 {error}

@@ -10,7 +10,7 @@ interface InvoiceData {
 
 export function generateInvoicePDF(data: InvoiceData) {
   // Create a simple HTML-based PDF using browser print
-  const printWindow = window.open('', '_blank');
+  const printWindow = window.open("", "_blank");
   if (!printWindow) return;
 
   const html = `

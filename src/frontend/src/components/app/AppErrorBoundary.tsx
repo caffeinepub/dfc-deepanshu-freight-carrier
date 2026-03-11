@@ -1,9 +1,15 @@
-import { Component, ReactNode, ErrorInfo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, RefreshCw, Copy } from 'lucide-react';
-import { toast } from 'sonner';
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertCircle, Copy, RefreshCw } from "lucide-react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
+import { toast } from "sonner";
 
 interface Props {
   children: ReactNode;
@@ -36,9 +42,9 @@ export class AppErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Only log errors once, avoid repeated console spam
     if (!this.state.hasError) {
-      console.error('[AppErrorBoundary] Error caught:', error.message);
+      console.error("[AppErrorBoundary] Error caught:", error.message);
     }
-    
+
     this.setState({
       error,
       errorInfo,
@@ -51,19 +57,22 @@ export class AppErrorBoundary extends Component<Props, State> {
 
   handleCopyError = () => {
     const { error, errorInfo } = this.state;
-    const errorText = `Error: ${error?.message || 'Unknown error'}\n\nStack: ${error?.stack || 'No stack trace'}\n\nComponent Stack: ${errorInfo?.componentStack || 'No component stack'}`;
-    
-    navigator.clipboard.writeText(errorText).then(() => {
-      toast.success('Error details copied to clipboard');
-    }).catch(() => {
-      toast.error('Failed to copy error details');
-    });
+    const errorText = `Error: ${error?.message || "Unknown error"}\n\nStack: ${error?.stack || "No stack trace"}\n\nComponent Stack: ${errorInfo?.componentStack || "No component stack"}`;
+
+    navigator.clipboard
+      .writeText(errorText)
+      .then(() => {
+        toast.success("Error details copied to clipboard");
+      })
+      .catch(() => {
+        toast.error("Failed to copy error details");
+      });
   };
 
   render() {
     if (this.state.hasError) {
       const { error, errorInfo } = this.state;
-      
+
       return (
         <div className="min-h-screen bg-black flex items-center justify-center p-4">
           <Card className="bg-neutral-900 border-neutral-800 max-w-2xl w-full">
@@ -73,7 +82,9 @@ export class AppErrorBoundary extends Component<Props, State> {
                   <AlertCircle className="w-6 h-6 text-red-500" />
                 </div>
                 <div>
-                  <CardTitle className="text-gold text-2xl">Something went wrong</CardTitle>
+                  <CardTitle className="text-gold text-2xl">
+                    Something went wrong
+                  </CardTitle>
                   <CardDescription className="text-white/70">
                     An unexpected error occurred in the application
                   </CardDescription>
@@ -82,9 +93,15 @@ export class AppErrorBoundary extends Component<Props, State> {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <label className="text-white font-medium text-sm">Error Message:</label>
+                <label
+                  htmlFor="error-message-output"
+                  className="text-white font-medium text-sm"
+                >
+                  Error Message:
+                </label>
                 <Textarea
-                  value={error?.message || 'Unknown error'}
+                  id="error-message-output"
+                  value={error?.message || "Unknown error"}
                   readOnly
                   className="bg-neutral-950 border-neutral-700 text-red-400 font-mono text-sm min-h-[80px]"
                 />
@@ -92,8 +109,14 @@ export class AppErrorBoundary extends Component<Props, State> {
 
               {errorInfo?.componentStack && (
                 <div className="space-y-2">
-                  <label className="text-white font-medium text-sm">Component Stack:</label>
+                  <label
+                    htmlFor="error-stack-output"
+                    className="text-white font-medium text-sm"
+                  >
+                    Component Stack:
+                  </label>
                   <Textarea
+                    id="error-stack-output"
                     value={errorInfo.componentStack}
                     readOnly
                     className="bg-neutral-950 border-neutral-700 text-white/70 font-mono text-xs min-h-[120px]"
@@ -120,7 +143,8 @@ export class AppErrorBoundary extends Component<Props, State> {
               </div>
 
               <p className="text-white/50 text-sm text-center pt-2">
-                If this problem persists, please contact support with the error details.
+                If this problem persists, please contact support with the error
+                details.
               </p>
             </CardContent>
           </Card>

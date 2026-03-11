@@ -1,6 +1,12 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import {
+  type ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
-const CLIENT_SESSION_KEY = 'dfc_client_session_token';
+const CLIENT_SESSION_KEY = "dfc_client_session_token";
 
 interface ClientSessionContextType {
   sessionToken: string | null;
@@ -9,13 +15,15 @@ interface ClientSessionContextType {
   clearClientToken: () => void;
 }
 
-const ClientSessionContext = createContext<ClientSessionContextType | undefined>(undefined);
+const ClientSessionContext = createContext<
+  ClientSessionContextType | undefined
+>(undefined);
 
 export function ClientSessionProvider({ children }: { children: ReactNode }) {
   const [sessionToken, setSessionToken] = useState<string | null>(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const stored = localStorage.getItem(CLIENT_SESSION_KEY);
-      const validToken = stored && stored.trim() ? stored.trim() : null;
+      const validToken = stored?.trim() ? stored.trim() : null;
       return validToken;
     }
     return null;
@@ -54,7 +62,9 @@ export function ClientSessionProvider({ children }: { children: ReactNode }) {
 export function useClientSession() {
   const context = useContext(ClientSessionContext);
   if (context === undefined) {
-    throw new Error('useClientSession must be used within a ClientSessionProvider');
+    throw new Error(
+      "useClientSession must be used within a ClientSessionProvider",
+    );
   }
   return context;
 }
